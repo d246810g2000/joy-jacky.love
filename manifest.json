@@ -1,0 +1,21 @@
+{
+  "name": "Joy & Jacky 婚禮邀請函",
+  "short_name": "Joy & Jacky",
+  "description": "誠摯邀請您參加 Joy & Jacky 的婚禮宴席",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fcf9f2",
+  "theme_color": "#8E3535",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
