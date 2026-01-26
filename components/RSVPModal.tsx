@@ -235,7 +235,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
       case 'relation':
         const isGroom = formData.side === 'groom';
         const title = isGroom ? "您和新郎的關係" : "您和新娘的關係";
-        const options = ["親戚", "國中同學", "高中同學", "大學同學", "朋友", "同事", "其他"];
+        const options = ["親戚", "國中同學", "高中同學", "大學同學", "碩士同學", "朋友", "同事", "其他"];
 
         return (
           <div className="space-y-6">
@@ -505,30 +505,30 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
             </div>
  
             {/* Content */}
-            <div className="flex-1 w-full max-w-2xl mx-auto px-4 py-8 md:py-12 flex flex-col gap-8">
+            <div className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 md:py-12 flex flex-col gap-6 md:gap-8">
                  
-                 {/* Wedding Info Summary */}
-                 <div className="text-center space-y-4 mb-4">
-                     <h1 className="font-serif text-3xl md:text-4xl text-[#2c3e50]">李謦伊 & 張家銘</h1>
-                     <p className="font-serif text-lg text-[#8E3535]">2026.05.30 星期六</p>
+                 {/* Wedding Info Summary - Compact on mobile */}
+                 <div className="text-center space-y-2 md:space-y-4 mb-2 md:mb-4">
+                     <h1 className="font-serif text-2xl md:text-4xl text-[#2c3e50]">李謦伊 & 張家銘</h1>
+                     <p className="font-serif text-base md:text-lg text-[#8E3535]">2026.05.30 星期六</p>
                      
-                     <div className="text-sm text-stone-600 bg-white/50 inline-block p-4 rounded-lg border border-stone-100 max-w-lg mx-auto leading-relaxed">
-                         <p className="mb-2"><span className="font-bold text-[#b08d55]">時間：</span> 中午 12:00 入席 · 12:30 準時開席</p>
-                         <p className="mb-2"><span className="font-bold text-[#b08d55]">地點：</span> {APP_CONTENT.venueName} (新竹市東區公道五路二段105號)</p>
-                         <p><span className="font-bold text-[#b08d55]">交通：</span> 高鐵新竹站轉乘計程車 (約15分) / 國道一號公道五路交流道 / 附設停車場</p>
+                     <div className="text-[11px] md:text-sm text-stone-600 bg-white/50 block md:inline-block p-3 md:p-4 rounded-lg border border-stone-100 max-w-lg mx-auto leading-relaxed">
+                         <p className="mb-1 md:mb-2"><span className="font-bold text-[#b08d55]">時間：</span> 12:00 入席 · 12:30 準時開席</p>
+                         <p className="mb-1 md:mb-2"><span className="font-bold text-[#b08d55]">地點：</span> {APP_CONTENT.venueName}</p>
+                         <p className="hidden md:block"><span className="font-bold text-[#b08d55]">交通：</span> 高鐵新竹站轉乘計程車 (約15分) / 國道一號公道五路交流道 / 附設停車場</p>
                      </div>
                  </div>
- 
+
                  {/* Form Card */}
-                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-stone-100 min-h-[400px] flex flex-col">
-                     <div className="p-8 pb-0 text-center">
-                         <h2 className="text-2xl font-serif text-[#8E3535] tracking-wide mb-6">婚禮出席回覆</h2>
-                         <div className="w-10 h-[2px] bg-[#8E3535]/30 mx-auto mb-8" />
+                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-stone-100 min-h-[350px] md:min-h-[400px] flex flex-col">
+                     <div className="p-6 md:p-8 pb-0 text-center">
+                         <h2 className="text-xl md:text-2xl font-serif text-[#8E3535] tracking-wide mb-4 md:mb-6">婚禮出席回覆</h2>
+                         <div className="w-8 h-[2px] bg-[#8E3535]/30 mx-auto mb-6 md:mb-8" />
                      </div>
- 
+
                      {/* Progress Bar */}
-                     <div className="px-8">
-                         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                     <div className="px-6 md:px-8">
+                         <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
                              <motion.div 
                                  className="h-full bg-[#8E3535]"
                                  initial={{ width: 0 }}
@@ -537,8 +537,8 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                              />
                          </div>
                      </div>
- 
-                     <div className="flex-1 p-8 flex flex-col justify-center">
+
+                     <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
                          <AnimatePresence mode="wait" custom={direction}>
                              <motion.div
                                  key={currentStepName}
@@ -552,25 +552,25 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                              </motion.div>
                          </AnimatePresence>
                      </div>
- 
+
                      {/* REFINED BUTTON DESIGN */}
-                     <div className="p-8 pt-0 flex justify-between items-center mt-auto">
+                     <div className="p-6 md:p-8 pt-0 flex justify-between items-center mt-auto">
                          <button 
                              onClick={handlePrev}
                              disabled={currentStepName === 'name' || isSubmitting}
-                             className={`group flex items-center gap-1.5 text-stone-400 hover:text-[#8E3535] transition-colors font-serif text-[15px] tracking-wide ${currentStepName === 'name' ? 'opacity-0 pointer-events-none' : ''}`}
+                             className={`group flex items-center gap-1.5 text-stone-400 hover:text-[#8E3535] transition-colors font-serif text-sm md:text-[15px] tracking-wide ${currentStepName === 'name' ? 'opacity-0 pointer-events-none' : ''}`}
                          >
                              <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
                              <span>上一題</span>
                          </button>
- 
+
                          <button 
                              onClick={handleNext}
                              disabled={!canProceed() || isSubmitting}
                              className={`
-                                 relative overflow-hidden group px-8 py-3 bg-[#8E3535] text-white font-serif tracking-[0.15em] text-[15px]
+                                 relative overflow-hidden group px-6 md:px-8 py-2.5 md:py-3 bg-[#8E3535] text-white font-serif tracking-[0.15em] text-sm md:text-[15px]
                                  rounded-[2px] shadow-[0_4px_14px_rgba(142,53,53,0.25)] transition-all duration-300
-                                 flex items-center gap-3
+                                 flex items-center gap-2 md:gap-3
                                  ${(!canProceed() || isSubmitting) ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_6px_20px_rgba(142,53,53,0.4)] hover:-translate-y-[1px]'}
                              `}
                          >

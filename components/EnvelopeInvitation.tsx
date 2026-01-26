@@ -245,25 +245,25 @@ export const EnvelopeInvitation: React.FC = () => {
                 z: cardZ,
                 transformStyle: "preserve-3d"
               }}
-              // Enhanced Shadow for Glow
-              className="absolute inset-x-[12px] inset-y-[8px] shadow-[0_4px_30px_rgba(212,175,55,0.4)] rounded-[3px] z-10 flex flex-col items-center justify-center origin-bottom overflow-hidden bg-[#d4af37]"
+              // Enhanced Shadow for Glow - Reduced blur on mobile
+              className="absolute inset-x-[12px] inset-y-[8px] shadow-[0_4px_15px_rgba(212,175,55,0.3)] md:shadow-[0_4px_30px_rgba(212,175,55,0.4)] rounded-[3px] z-10 flex flex-col items-center justify-center origin-bottom overflow-hidden bg-[#d4af37]"
             >
                 {/* --- FLOWING BORDER EFFECT (Liquid Gold) --- */}
                 <div className="absolute inset-0 z-0 overflow-hidden rounded-[3px]">
                    {/* Layer 1: Base Metallic Texture (Rich, Darker Gold - Slow Rotation) */}
                    <motion.div
-                      className="absolute inset-[-100%] will-change-transform"
+                      className="absolute inset-[-100%] transform-gpu"
                       style={{
                         background: "conic-gradient(from 0deg, #d4af37, #f3e5d8, #d4af37, #8a6a3d, #d4af37)"
                       }}
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
                    />
                    
                    {/* Layer 2: The "Flowing Light" Beam (Bright White-Gold - Fast Rotation) */}
-                   {/* We use a large container with a blur filter to simulate a beam of light moving along the edge */}
+                   {/* Hidden on small screens to prevent flickering/jittering */}
                    <motion.div
-                      className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 will-change-transform"
+                      className="absolute top-1/2 left-1/2 w-[200%] h-[200%] -translate-x-1/2 -translate-y-1/2 hidden md:block transform-gpu"
                       style={{
                         background: "conic-gradient(from 0deg, transparent 0deg, transparent 80deg, #b08d55 100deg, #fff 110deg, #b08d55 120deg, transparent 140deg)",
                         filter: "blur(6px)"

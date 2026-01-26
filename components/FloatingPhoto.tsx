@@ -61,10 +61,10 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   const rotationDir = index % 2 === 0 ? 1 : -1;
   const rotateZ = useTransform(progress, [start, end], [initialRot, initialRot + (rotationDir * rotateSpeed)]);
 
-  // Width adjustments - Reduced max-width for desktop to be less overwhelming and fit within height
+  // Width adjustments - Increased size slightly for mobile
   const widthClasses = isPortrait 
-    ? "w-[22vw] max-w-[140px] md:w-[12vw] md:max-w-[150px]" 
-    : "w-[28vw] max-w-[180px] md:w-[16vw] md:max-w-[200px]";
+    ? "w-[26vw] max-w-[150px] md:w-[12vw] md:max-w-[150px]" 
+    : "w-[32vw] max-w-[190px] md:w-[16vw] md:max-w-[200px]";
 
   return (
     <motion.div
@@ -77,10 +77,11 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
         rotateZ,
         zIndex: 100 + index, 
       }}
-      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none will-change-transform`}
+      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none transform-gpu`}
     >
       <div 
         className="relative p-[1.5px] bg-white shadow-xl rounded-[1px] transform-gpu backface-hidden border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500"
+        style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(photo);

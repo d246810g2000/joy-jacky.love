@@ -9,15 +9,30 @@ export const LocationInfo: React.FC = () => {
         <div className="glass-panel p-8 rounded-lg border border-white/60 relative overflow-hidden bg-white/40">
            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-100 rounded-full blur-2xl -mr-16 -mt-16" />
            
-           <div className="relative z-10 flex flex-col md:flex-row gap-8 justify-between items-start md:items-center">
-              <div>
-                <h3 className="font-display text-2xl text-[#2c3e50] tracking-wide mb-1">{APP_CONTENT.venueName}</h3>
-                <h4 className="font-serif text-lg text-[#b08d55] italic">{APP_CONTENT.venueHall}</h4>
-              </div>
-              <p className="font-sans text-sm text-[#7f8c8d] max-w-md leading-relaxed text-left md:text-right">
-                {APP_CONTENT.venueDescription}
-              </p>
-           </div>
+                    <div className="flex-none w-full flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                       <div className="flex-1">
+                         <h3 className="font-display text-xl md:text-2xl text-[#2c3e50] tracking-wide mb-1">{APP_CONTENT.venueName}</h3>
+                         <h4 className="font-serif text-base md:text-lg text-[#b08d55] italic">{APP_CONTENT.venueHall}</h4>
+                       </div>
+                       
+                       {/* Mobile Maps Button */}
+                       <a 
+                         href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(APP_CONTENT.venueName + " " + APP_CONTENT.venueAddress)}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="flex md:hidden items-center justify-center gap-2 px-6 py-3 bg-[#8E3535] text-white rounded-full shadow-lg active:scale-95 transition-transform font-medium text-sm"
+                       >
+                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                         </svg>
+                         Google 地圖導航
+                       </a>
+
+                       <p className="font-sans text-sm text-[#7f8c8d] max-w-md leading-relaxed text-left md:text-right hidden md:block">
+                         {APP_CONTENT.venueDescription}
+                       </p>
+                    </div>
         </div>
 
         {/* Map - No Invert for Light Theme */}

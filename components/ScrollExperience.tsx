@@ -81,15 +81,15 @@ export const ScrollExperience: React.FC = () => {
 
       <div className="sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center transform-gpu">
         
-        {/* Ambient Background Effects */}
-        <div className="absolute inset-0 z-0 pointer-events-none transform-gpu will-change-transform">
-           <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/40 blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
-           <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/40 blur-[100px] rounded-full mix-blend-multiply" />
+        {/* Ambient Background Effects - Optimized for mobile */}
+        <div className="absolute inset-0 z-0 pointer-events-none transform-gpu">
+           <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
+           <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
         </div>
 
         <motion.div 
             style={{ scale: bgScale, y: bgY, opacity: bgOpacity }}
-            className="absolute inset-0 z-0 overflow-hidden will-change-transform"
+            className="absolute inset-0 z-0 overflow-hidden transform-gpu"
         >
             {/* 1. Base Image */}
             <img 
@@ -108,7 +108,7 @@ export const ScrollExperience: React.FC = () => {
         {/* Hero Text Content */}
         <motion.div 
           style={{ opacity: textOpacity, scale: textScale, filter: textBlur }}
-          className="absolute top-[12%] md:top-[15%] z-30 flex flex-col items-center text-center px-6 pointer-events-none w-full max-w-4xl will-change-transform"
+          className="absolute top-[12%] md:top-[15%] z-30 flex flex-col items-center text-center px-6 pointer-events-none w-full max-w-4xl transform-gpu"
         >
           {/* Top Label */}
           <motion.div style={{ y: labelY }} className="flex items-center gap-4 mb-4 md:mb-6 opacity-80">
@@ -163,7 +163,7 @@ export const ScrollExperience: React.FC = () => {
               x: bookXOffset,
               perspective: '2500px' 
             }}
-            className="absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 will-change-transform"
+            className="absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 transform-gpu"
         >
           {/* Photos Stream */}
           <motion.div 

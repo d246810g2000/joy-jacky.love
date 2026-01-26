@@ -68,7 +68,7 @@
         font-family: 'Noto Serif TC', serif;
       }
       
-      /* Sparkle/Texture Overlay - Increased opacity slightly for texture */
+      /* Sparkle/Texture Overlay - Optimized for performance */
       .bg-noise {
         position: fixed;
         top: 0;
@@ -77,9 +77,9 @@
         height: 100vh;
         pointer-events: none;
         z-index: 9999;
-        opacity: 0.6; 
+        opacity: 0.15; /* Reduced from 0.6 to improve performance */
         background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
-        mix-blend-mode: overlay;
+        /* Removed mix-blend-mode: overlay as it is extremely heavy on mobile GPUs */
       }
       
       /* Utilities */
@@ -96,22 +96,12 @@
         -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "framer-motion": "https://esm.sh/framer-motion@^12.23.26",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3"
-  }
-}
-</script>
 </head>
   <body>
     <!-- Persistent Gradient Background -->
     <div class="bg-grid-fixed"></div>
     <div class="bg-noise"></div>
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
