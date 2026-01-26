@@ -215,7 +215,7 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
                         transformStyle: "preserve-3d",
                         zIndex: 20
                     }}
-                    className="absolute inset-0 rounded-[6px]"
+                    className="absolute inset-0 rounded-[6px] transform-gpu"
                  >
                      {/* FRONT FACE (The Photo Cover) */}
                      <motion.div 

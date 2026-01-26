@@ -62,8 +62,8 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto })
         rotateY: bookRotateY,
         transformStyle: 'preserve-3d',
       }}
-      // Added will-change-transform to hint the browser to prioritize this element on GPU
-      className="relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px] shadow-2xl will-change-transform"
+      // Added transform-gpu to ensure hardware acceleration
+      className="relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px] shadow-2xl transform-gpu"
     >
       <div className="absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
         {/* Book Spine / Back Cover Base */}
@@ -93,7 +93,7 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto })
 
       {/* --- FRONT COVER DESIGN (High End) --- */}
       <motion.div
-        style={{ rotateY: coverRotateY, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: 50, willChange: 'transform' }}
+        style={{ rotateY: coverRotateY, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: 50 }}
         className="absolute inset-0"
       >
         {/* Outer Front Cover */}
@@ -210,8 +210,8 @@ const FanPage = React.memo(({ rotateY, index, opacity, photos, backPhotos, progr
   return (
     <motion.div
       drag="x" dragConstraints={{ left: 0, right: 0 }}
-      style={{ rotateY: combinedRotateY, x, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: index, willChange: 'transform', cursor: 'grab' }}
-      className="absolute inset-y-[1px] left-0 right-[1px] origin-left"
+      style={{ rotateY: combinedRotateY, x, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: index, cursor: 'grab' }}
+      className="absolute inset-y-[1px] left-0 right-[1px] origin-left transform-gpu"
     >
       {/* Front of Page */}
       <div className={`absolute inset-0 ${paperClass} border-y border-r border-stone-200/60 rounded-r-[1px] overflow-hidden shadow-sm`} style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>

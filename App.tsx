@@ -308,7 +308,7 @@ function App() {
 
       {/* --- REIMAGINED NAVIGATION DOCK (Collapsible Pill) --- */}
       <div 
-        className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${showNav && !isGuestBookExpanded && !showRSVP ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${showNav && !isGuestBookExpanded && !showRSVP ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
           <motion.div 
             layout
@@ -318,7 +318,7 @@ function App() {
                 borderRadius: "9999px"
             }}
             // Match the Audio Button dimensions exactly (w-12 h-12 or w-14 h-14)
-            style={{ "--collapsed-width": typeof window !== 'undefined' && window.innerWidth >= 768 ? "3.5rem" : "3rem" } as any}
+            style={{ "--collapsed-width": typeof window !== 'undefined' && window.innerWidth >= 768 ? "3.5rem" : "3.2rem" } as any}
             className={`
                 bg-white/95 backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
                 flex items-center overflow-hidden h-12 md:h-14

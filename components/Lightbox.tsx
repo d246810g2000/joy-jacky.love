@@ -46,7 +46,7 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY }
         }}
         
         style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-        className="max-h-[60vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7]"
+        className="max-h-[70vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] transform-gpu"
         transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} 
         onClick={(e) => e.stopPropagation()}
       />
@@ -156,7 +156,7 @@ export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClo
         {hasMultiple && (
           <button 
             onClick={handlePrev}
-            className="absolute left-2 md:-left-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/40 border border-[#b08d55]/20 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 hover:scale-110 transition-all pointer-events-auto shadow-sm z-50 backdrop-blur-md"
+            className="absolute left-2 md:-left-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/40 border border-[#b08d55]/20 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 hover:scale-110 transition-all pointer-events-auto shadow-sm z-50 backdrop-blur-md hidden md:flex"
             aria-label="Previous Photo"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -166,10 +166,17 @@ export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClo
         )}
 
         {/* The Image Wrapper */}
-        <div 
-          className="relative w-full md:w-auto md:flex-1 flex justify-center items-center pointer-events-auto perspective-[1500px] max-h-[60vh] md:max-h-full"
+        <motion.div 
+          className="relative w-full md:w-auto md:flex-1 flex justify-center items-center pointer-events-auto perspective-[1500px] max-h-[70vh] md:max-h-full touch-pan-y"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            if (info.offset.x > 100) handlePrev();
+            else if (info.offset.x < -100) handleNext();
+          }}
         >
           <AnimatePresence mode="wait">
             <LightboxImage 
@@ -179,13 +186,13 @@ export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClo
                 rotateY={rotateY} 
             />
           </AnimatePresence>
-        </div>
+        </motion.div>
 
         {/* Navigation Button Right */}
         {hasMultiple && (
           <button 
             onClick={handleNext}
-            className="absolute right-2 md:-right-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/40 border border-[#b08d55]/20 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 hover:scale-110 transition-all pointer-events-auto shadow-sm z-50 backdrop-blur-md"
+            className="absolute right-2 md:-right-16 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/40 border border-[#b08d55]/20 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 hover:scale-110 transition-all pointer-events-auto shadow-sm z-50 backdrop-blur-md hidden md:flex"
             aria-label="Next Photo"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -195,7 +202,7 @@ export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClo
         )}
 
         {/* Metadata Sidebar - Persistent Container */}
-        <div className="w-full md:w-80 flex-shrink-0 text-left pointer-events-auto bg-white/30 md:bg-transparent p-6 md:p-0 rounded-sm md:rounded-none backdrop-blur-md md:backdrop-blur-none z-50 flex flex-col justify-center">
+        <div className="w-full md:w-80 flex-shrink-0 text-left pointer-events-auto bg-white/30 md:bg-transparent p-4 md:p-0 rounded-sm md:rounded-none backdrop-blur-md md:backdrop-blur-none z-50 flex flex-col justify-center">
             {/* Animated Content */}
             <AnimatePresence mode="wait">
                 <motion.div 
