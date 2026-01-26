@@ -8,8 +8,10 @@ import { LocationInfo } from './components/LocationInfo';
 import { GuestBook } from './components/GuestBook';
 import { RSVPModal } from './components/RSVPModal';
 import { BackgroundMusic } from './components/BackgroundMusic';
-import { APP_CONTENT } from './constants';
+import { LoadingScreen } from './components/LoadingScreen';
+import { APP_CONTENT, WEDDING_PHOTOS, BACKGROUND_IMAGE } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Photo } from './types';
 
 // --- Assets & Icons ---
 
@@ -52,6 +54,8 @@ const XIcon = () => (
 );
 
 function App() {
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [showNav, setShowNav] = useState(false);
   const [activeSection, setActiveSection] = useState('timeline');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -66,6 +70,111 @@ function App() {
   // RSVP State
   const [showRSVP, setShowRSVP] = useState(false);
   const [guestBookRefresh, setGuestBookRefresh] = useState(0);
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+
+  // --- Auto Scroll Logic ---
+  const lastInteractionRef = useRef(Date.now());
+  const autoScrollRef = useRef<number | null>(null);
+
+  const stopAutoScroll = () => {
+    if (autoScrollRef.current) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
+    }
+  };
+
+  const startAutoScroll = () => {
+    if (autoScrollRef.current) return;
+    
+    const scroll = () => {
+      // Check if we reached the bottom
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1) {
+        stopAutoScroll();
+        return;
+      }
+      
+      // Dynamic speed for better UX
+      // Progress calculation based on the 350vh ScrollExperience container (250vh scrollable)
+      const scrollRange = window.innerHeight * 2.5;
+      const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
+      
+      let speed = 1.3;
+      if (progress < 0.25) {
+        speed = 2.5; // Faster before the album flips
+      } else if (progress < 0.5) {
+        // Gradient slow down from 2.5 to 0.8 as album opens
+        const t = (progress - 0.25) / (0.5 - 0.25);
+        speed = 2.5 - (2.5 - 0.8) * t;
+      } else if (progress < 0.85) {
+        speed = 0.8; // Maintain slow speed during photo interaction
+      }
+      
+      window.scrollBy(0, speed); 
+      autoScrollRef.current = requestAnimationFrame(scroll);
+    };
+    
+    autoScrollRef.current = requestAnimationFrame(scroll);
+  };
+
+  useEffect(() => {
+    const updateInteraction = () => {
+      lastInteractionRef.current = Date.now();
+      stopAutoScroll();
+    };
+
+    const events = ['mousedown', 'wheel', 'touchstart', 'keydown'];
+    events.forEach(event => window.addEventListener(event, updateInteraction, { passive: true }));
+
+    const inactivityInterval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastInteraction = now - lastInteractionRef.current;
+
+      // Start auto scroll after 5s of inactivity
+      if (
+        timeSinceLastInteraction >= 5000 && 
+        !isInitialLoading && 
+        !showRSVP && 
+        !isGuestBookExpanded && 
+        !isNavigatingRef.current &&
+        !selectedPhoto
+      ) {
+        startAutoScroll();
+      }
+    }, 1000);
+
+    return () => {
+      events.forEach(event => window.removeEventListener(event, updateInteraction));
+      clearInterval(inactivityInterval);
+      stopAutoScroll();
+    };
+  }, [isInitialLoading, showRSVP, isGuestBookExpanded, selectedPhoto]);
+
+  // --- Asset Preloading ---
+  useEffect(() => {
+    const assetsToLoad = [BACKGROUND_IMAGE, ...WEDDING_PHOTOS.map(p => p.url), 'favicon.png'];
+    const totalAssets = assetsToLoad.length;
+    let loadedCount = 0;
+
+    const updateProgress = () => {
+      loadedCount++;
+      const progress = (loadedCount / totalAssets) * 100;
+      setLoadingProgress(progress);
+    };
+
+    assetsToLoad.forEach(url => {
+      const img = new Image();
+      img.src = url;
+      img.onload = updateProgress;
+      img.onerror = updateProgress; // Count as loaded even on error to avoid hanging
+    });
+
+    // Fallback timer to ensure it doesn't hang forever
+    const timer = setTimeout(() => {
+      setLoadingProgress(100);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // --- Countdown Logic ---
   useEffect(() => {
@@ -188,6 +297,19 @@ function App() {
     <main className="w-full min-h-screen bg-transparent text-[#1a1a1a] selection:bg-[#b08d55] selection:text-white">
       
       <AnimatePresence>
+        {isInitialLoading && (
+          <LoadingScreen 
+            progress={loadingProgress} 
+            onComplete={() => {
+              setIsInitialLoading(false);
+              // Set last interaction to 3s ago, so the 5s inactivity check will trigger in 2s
+              lastInteractionRef.current = Date.now() - 3000;
+            }} 
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showRSVP && (
             <RSVPModal 
                 onClose={() => setShowRSVP(false)} 
@@ -197,7 +319,10 @@ function App() {
       </AnimatePresence>
 
       <div className="relative z-10">
-        <ScrollExperience />
+        <ScrollExperience 
+          selectedPhoto={selectedPhoto} 
+          setSelectedPhoto={setSelectedPhoto} 
+        />
       </div>
 
       <div className="relative z-20 -mt-[100vh]">
@@ -266,7 +391,7 @@ function App() {
            />
         </section>
 
-        <footer className="py-40 px-6 text-center bg-[#f9f7f2] border-t border-stone-200 relative overflow-hidden">
+        <footer className="py-40 px-6 text-center bg-transparent border-t border-stone-200 relative overflow-hidden">
            <div className="absolute inset-0 opacity-[0.4] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none mix-blend-multiply" />
            <div className="relative z-10 max-w-lg mx-auto">
               <span className="font-display text-[10px] tracking-[0.5em] uppercase text-[#b08d55] mb-8 block">Joy & Jacky Wedding</span>

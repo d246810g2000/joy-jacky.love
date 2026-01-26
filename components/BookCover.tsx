@@ -136,8 +136,8 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto })
                <p className="font-display text-[7px] tracking-[0.4em] text-[#9ca3af] uppercase mb-1">The Wedding Album</p>
                
                <div className="space-y-1">
-                 {/* Reduced text size to 4xl */}
-                 <h1 className="font-script text-4xl text-[#E8DCC4] drop-shadow-md whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-[#E8DCC4] via-[#FDFBF7] to-[#E8DCC4]">{APP_CONTENT.coupleName}</h1>
+                 {/* Reduced text size to 3xl on mobile, 4xl on desktop */}
+                 <h1 className="font-script text-3xl md:text-4xl text-[#E8DCC4] drop-shadow-md whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-[#E8DCC4] via-[#FDFBF7] to-[#E8DCC4]">{APP_CONTENT.coupleName}</h1>
                  
                  {/* UPDATED: Replaced Hsinchu with Eternity for a more romantic vibe */}
                  <p className="font-serif text-[10px] tracking-[0.25em] text-[#C5A065] uppercase mt-2">Eternity</p>
