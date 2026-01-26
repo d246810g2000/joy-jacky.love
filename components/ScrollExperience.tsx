@@ -7,9 +7,16 @@ import { Lightbox } from './Lightbox';
 import { BACKGROUND_IMAGE, WEDDING_PHOTOS, APP_CONTENT } from '../constants';
 import { Photo } from '../types';
 
-export const ScrollExperience: React.FC = () => {
+interface ScrollExperienceProps {
+  selectedPhoto: Photo | null;
+  setSelectedPhoto: (photo: Photo | null) => void;
+}
+
+export const ScrollExperience: React.FC<ScrollExperienceProps> = ({ 
+  selectedPhoto, 
+  setSelectedPhoto 
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -40,11 +47,11 @@ export const ScrollExperience: React.FC = () => {
 
   // Memoized wave configuration - Triggers compressed for 350vh height
   const waves = useMemo(() => [
-    { photos: WEDDING_PHOTOS.slice(0, 3), trigger: 0.32 },
-    { photos: WEDDING_PHOTOS.slice(4, 7), trigger: 0.40 },
-    { photos: WEDDING_PHOTOS.slice(8, 11), trigger: 0.48 },
-    { photos: WEDDING_PHOTOS.slice(12, 15), trigger: 0.56 },
-    { photos: WEDDING_PHOTOS.slice(16, 20), trigger: 0.64 },
+    { photos: WEDDING_PHOTOS.slice(0, 3), trigger: 0.40 },
+    { photos: WEDDING_PHOTOS.slice(4, 7), trigger: 0.48 },
+    { photos: WEDDING_PHOTOS.slice(8, 11), trigger: 0.56 },
+    { photos: WEDDING_PHOTOS.slice(12, 15), trigger: 0.64 },
+    { photos: WEDDING_PHOTOS.slice(16, 20), trigger: 0.72 },
   ], []);
 
   const photoWaves = useMemo(() => {
@@ -137,22 +144,7 @@ export const ScrollExperience: React.FC = () => {
              </p>
           </motion.div>
           
-          {/* Scroll Indicator */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ delay: 1.2, duration: 1 }}
-            style={{ y: chineseY, opacity: useTransform(scrollYProgress, [0, 0.1], [1, 0]) }}
-            className="absolute top-[55vh] md:top-[60vh] pointer-events-auto"
-          >
-             <div className="flex flex-col items-center gap-3">
-                <div className="px-5 py-2.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 shadow-lg flex items-center gap-2 animate-bounce">
-                  <span className="w-1.5 h-1.5 bg-[#2c3e50] rounded-full animate-pulse" />
-                  <span className="text-[#2c3e50] text-[10px] tracking-[0.25em] font-bold uppercase">往下滑動開啟</span>
-                </div>
-                <div className="h-12 w-[1px] bg-gradient-to-b from-[#2c3e50]/50 to-transparent" />
-             </div>
-          </motion.div>
+          {/* Scroll Indicator removed */}
         </motion.div>
 
         <motion.div 

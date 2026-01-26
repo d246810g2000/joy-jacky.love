@@ -467,7 +467,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
  
    if (currentStepName === 'success') {
       return (
-         <div className="fixed inset-0 z-[200] bg-[#fdfbf7] flex items-center justify-center p-6">
+         <div className="fixed inset-0 z-[200] bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] flex items-center justify-center p-6">
              <div className="text-center space-y-4">
                  {/* Updated Success Icon Color to Theme Red */}
                  <div className="w-20 h-20 bg-[#8E3535]/10 rounded-full flex items-center justify-center mx-auto mb-6 text-[#8E3535]">
@@ -485,7 +485,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
    const progress = getStepProgress();
  
    return (
-     <div className="fixed inset-0 z-[200] bg-[#fdfbf7] overflow-y-auto">
+     <div className="fixed inset-0 z-[200] bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] overflow-y-auto">
         <div className="min-h-screen flex flex-col relative">
             
             {/* Header */}
