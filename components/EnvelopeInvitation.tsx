@@ -41,7 +41,7 @@ const SealGraphic = () => (
 );
 
 // Magical Seal Break Animation (Particles + Glow)
-const SealParticles = ({ progress }: { progress: any }) => {
+const SealParticles = ({ progress, isMobile }: { progress: any; isMobile: boolean }) => {
   // Explosion opacity sequence: appear quickly, hold, fade out
   const opacity = useTransform(progress, [0.32, 0.34, 0.45], [0, 1, 0]);
   
@@ -54,6 +54,17 @@ const SealParticles = ({ progress }: { progress: any }) => {
   // Flash/Glow Effect: Bursts then fades as card reveals (card reveal is 0.5+)
   const glowOpacity = useTransform(progress, [0.33, 0.36, 0.6], [0, 0.8, 0]);
   const glowScale = useTransform(progress, [0.33, 0.6], [1, 2.5]);
+
+  if (isMobile) {
+    return (
+      <motion.div
+        style={{ opacity: glowOpacity, scale: glowScale }}
+        className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
+      >
+         <div className="w-20 h-20 bg-gradient-to-r from-[#d4af37] to-[#fcd34d] blur-[30px] rounded-full mix-blend-screen opacity-70" />
+      </motion.div>
+    );
+  }
 
   return (
     <>
@@ -143,7 +154,11 @@ const ThumbGraphic = ({ side }: { side: 'left' | 'right' }) => {
   );
 };
 
-export const EnvelopeInvitation: React.FC = () => {
+interface EnvelopeInvitationProps {
+  isMobile: boolean;
+}
+
+export const EnvelopeInvitation: React.FC<EnvelopeInvitationProps> = ({ isMobile }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -155,7 +170,7 @@ export const EnvelopeInvitation: React.FC = () => {
   
   // 1. Container/Envelope Movement
   // Start slightly higher since we are overlapping sections now
-  const envelopeRotateX = useTransform(scrollYProgress, [0, 0.35], [35, 0]); 
+  const envelopeRotateX = useTransform(scrollYProgress, [0, 0.35], isMobile ? [0, 0] : [35, 0]); 
   const envelopeScale = useTransform(scrollYProgress, [0, 0.35, 0.9], [0.65, 1, 1.05]); // Starts slightly larger
   const envelopeY = useTransform(scrollYProgress, [0, 0.35, 1], ["50%", "18%", "80%"]);
 
@@ -164,7 +179,7 @@ export const EnvelopeInvitation: React.FC = () => {
   const handOpacity = useTransform(scrollYProgress, [0.7, 0.95], [1, 0]);
 
   // 2. Flap Mechanics
-  const flapRotate = useTransform(scrollYProgress, [0.35, 0.55], [0, 180]);
+  const flapRotate = useTransform(scrollYProgress, [0.35, 0.55], isMobile ? [0, 0] : [0, 180]);
   const flapZIndex = useTransform(scrollYProgress, [0.35, 0.36], [50, 1]); 
   const flapZ = useTransform(scrollYProgress, [0.35, 0.45], [6, 0]);
   
@@ -191,7 +206,10 @@ export const EnvelopeInvitation: React.FC = () => {
     <div ref={containerRef} className="relative h-[150vh] w-full bg-transparent">
       
       {/* Sticky Viewport */}
-      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden perspective-[1200px]">
+      <div
+        className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden perspective-[1200px]"
+        style={{ perspective: isMobile ? 'none' : '1200px' }}
+      >
         
         {/* --- 3D SCENE ROOT --- */}
         <motion.div
@@ -199,7 +217,8 @@ export const EnvelopeInvitation: React.FC = () => {
             scale: envelopeScale,
             rotateX: envelopeRotateX,
             y: envelopeY,
-            transformStyle: "preserve-3d"
+            transformStyle: isMobile ? 'flat' : "preserve-3d",
+            willChange: isMobile ? 'transform' : 'auto'
           }}
           // Updated: Reduced md:max-w to 460px for a more elegant desktop view
           className="relative w-[90vw] max-w-[580px] md:max-w-[460px] aspect-[1.55/1] z-10"
@@ -211,7 +230,7 @@ export const EnvelopeInvitation: React.FC = () => {
             {/* Left Fingers (Back) */}
             <motion.div
                style={{ opacity: handOpacity, rotate: -15 }}
-               className="absolute -bottom-[8%] -left-[5%] w-[30%] h-[30%] pointer-events-none origin-center"
+               className="hidden md:block absolute -bottom-[8%] -left-[5%] w-[30%] h-[30%] pointer-events-none origin-center"
             >
                <div style={{ transform: "translateZ(-10px)" }} className="w-full h-full">
                   <FingersGraphic side="left" />
@@ -221,7 +240,7 @@ export const EnvelopeInvitation: React.FC = () => {
             {/* Right Fingers (Back) */}
             <motion.div
                style={{ opacity: handOpacity, rotate: 15 }}
-               className="absolute -bottom-[8%] -right-[5%] w-[30%] h-[30%] pointer-events-none origin-center"
+               className="hidden md:block absolute -bottom-[8%] -right-[5%] w-[30%] h-[30%] pointer-events-none origin-center"
             >
                <div style={{ transform: "translateZ(-10px)" }} className="w-full h-full">
                   <FingersGraphic side="right" />
@@ -232,7 +251,7 @@ export const EnvelopeInvitation: React.FC = () => {
             {/* 1. Envelope Back (Base) */}
             <motion.div 
               className="absolute inset-0 bg-[#E6E2D6] rounded-[4px] shadow-2xl border border-[#d6d2c4]" 
-              style={{ transform: "translateZ(-1px)", opacity: envelopeGhostOpacity }}
+              style={{ transform: isMobile ? 'none' : "translateZ(-1px)", opacity: isMobile ? 1 : envelopeGhostOpacity }}
             >
                 <div className="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
             </motion.div>
@@ -243,7 +262,9 @@ export const EnvelopeInvitation: React.FC = () => {
                 y: cardY,
                 scale: cardScale,
                 z: cardZ,
-                transformStyle: "preserve-3d"
+                transformStyle: isMobile ? 'flat' : "preserve-3d",
+                willChange: isMobile ? 'transform' : 'auto',
+                opacity: isMobile ? useTransform(scrollYProgress, [0.4, 0.6], [0, 1]) : 1
               }}
               // Enhanced Shadow for Glow - Reduced blur on mobile
               className="absolute inset-x-[12px] inset-y-[8px] shadow-[0_4px_15px_rgba(212,175,55,0.3)] md:shadow-[0_4px_30px_rgba(212,175,55,0.4)] rounded-[3px] z-10 flex flex-col items-center justify-center origin-bottom overflow-hidden bg-[#d4af37]"
@@ -252,7 +273,7 @@ export const EnvelopeInvitation: React.FC = () => {
                 <div className="absolute inset-0 z-0 overflow-hidden rounded-[3px]">
                    {/* Layer 1: Base Metallic Texture (Rich, Darker Gold - Slow Rotation) */}
                    <motion.div
-                      className="absolute inset-[-100%] transform-gpu"
+                      className={`absolute inset-[-100%] ${isMobile ? '' : 'transform-gpu'}`}
                       style={{
                         background: "conic-gradient(from 0deg, #d4af37, #f3e5d8, #d4af37, #8a6a3d, #d4af37)"
                       }}
@@ -362,7 +383,7 @@ export const EnvelopeInvitation: React.FC = () => {
             {/* 3. Envelope Pocket (Front-Bottom & Sides) */}
             <motion.div 
                 className="absolute inset-0 z-20 pointer-events-none" 
-                style={{ transform: "translateZ(2px)", opacity: envelopeGhostOpacity }}
+                style={{ transform: isMobile ? 'none' : "translateZ(2px)", opacity: envelopeGhostOpacity }}
             >
                  <div 
                     style={{ borderLeftWidth: ENVELOPE_CONFIG.FLAP_WIDTH_HALF }}
@@ -380,54 +401,19 @@ export const EnvelopeInvitation: React.FC = () => {
                     className="absolute bottom-0 left-0 right-0 h-0 border-b-[32vw] md:border-b-[200px] border-l-transparent border-r-transparent border-b-[#EBE7DE] shadow-sm" 
                  />
             </motion.div>
-            
-            {/* 
-               👍 LAYER 2: THUMBS (FRONT OF ENVELOPE)
-            */}
-            
-            {/* Left Thumb */}
-            <motion.div
-               style={{ 
-                 opacity: handOpacity, 
-                 rotate: -20,
-                 z: 60,
-                 transformStyle: "preserve-3d"
-               }}
-               className="absolute -bottom-[10%] -left-[10%] w-[35%] h-[35%] pointer-events-none origin-center z-50"
-            >
-               <div className="w-full h-full">
-                  <ThumbGraphic side="left" />
-               </div>
-            </motion.div>
 
-            {/* Right Thumb */}
-            <motion.div
-               style={{ 
-                 opacity: handOpacity, 
-                 rotate: 20,
-                 z: 60, 
-                 transformStyle: "preserve-3d"
-               }}
-               className="absolute -bottom-[10%] -right-[10%] w-[35%] h-[35%] pointer-events-none origin-center z-50"
-            >
-               <div className="w-full h-full">
-                   <ThumbGraphic side="right" />
-               </div>
-            </motion.div>
-
-
-            {/* 4. Top Flap (Animated) */}
+            {/* 4. Top Flap (Static on Mobile, Animated on Desktop) */}
             <motion.div 
                style={{ 
                  rotateX: flapRotate, 
                  zIndex: flapZIndex,
                  transformOrigin: "top",
-                 transformStyle: "preserve-3d",
+                 transformStyle: isMobile ? 'flat' : "preserve-3d",
                  borderTopWidth: ENVELOPE_CONFIG.FLAP_HEIGHT,
                  borderLeftWidth: ENVELOPE_CONFIG.FLAP_WIDTH_HALF,
                  borderRightWidth: ENVELOPE_CONFIG.FLAP_WIDTH_HALF,
                  borderTopColor: flapColor, // Animated Lighting
-                 z: flapZ,
+                 z: isMobile ? 0 : flapZ,
                  opacity: envelopeGhostOpacity
                }}
                className="absolute top-0 left-0 right-0 h-0 border-l-transparent border-r-transparent drop-shadow-lg origin-top"
@@ -451,7 +437,7 @@ export const EnvelopeInvitation: React.FC = () => {
                       <div className="absolute inset-0 bg-red-900/10 blur-xl rounded-full" />
                       
                       {/* Magic Particles behind the seal */}
-                      <SealParticles progress={scrollYProgress} />
+                      <SealParticles progress={scrollYProgress} isMobile={isMobile} />
 
                       {/* Top Half */}
                       <motion.div 
