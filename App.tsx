@@ -7,11 +7,13 @@ import { Timeline } from './components/Timeline';
 import { LocationInfo } from './components/LocationInfo';
 import { GuestBook } from './components/GuestBook';
 import { RSVPModal } from './components/RSVPModal';
+import { Lightbox } from './components/Lightbox';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { LoadingScreen } from './components/LoadingScreen';
 import { APP_CONTENT, WEDDING_PHOTOS, BACKGROUND_IMAGE } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Photo } from './types';
+import { useIsMobile } from './hooks/useIsMobile';
 
 // --- Assets & Icons ---
 
@@ -71,6 +73,7 @@ function App() {
   const [showRSVP, setShowRSVP] = useState(false);
   const [guestBookRefresh, setGuestBookRefresh] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const isMobile = useIsMobile(768);
 
   // --- Auto Scroll Logic ---
   const lastInteractionRef = useRef(Date.now());
@@ -300,6 +303,7 @@ function App() {
         {isInitialLoading && (
           <LoadingScreen 
             progress={loadingProgress} 
+            isMobile={isMobile}
             onComplete={() => {
               setIsInitialLoading(false);
               // Set last interaction to 3s ago, so the 5s inactivity check will trigger in 2s
@@ -322,16 +326,29 @@ function App() {
         <ScrollExperience 
           selectedPhoto={selectedPhoto} 
           setSelectedPhoto={setSelectedPhoto} 
+          isMobile={isMobile}
         />
       </div>
 
+      <AnimatePresence>
+        {selectedPhoto && (
+          <Lightbox 
+            photo={selectedPhoto} 
+            allPhotos={WEDDING_PHOTOS}
+            onClose={() => setSelectedPhoto(null)} 
+            onPhotoChange={setSelectedPhoto}
+            isMobile={isMobile}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="relative z-20 -mt-[100vh]">
         <section id="invitation-section" className="bg-transparent">
-           <EnvelopeInvitation />
+           <EnvelopeInvitation isMobile={isMobile} />
         </section>
         
         <section id="calendar-section" className="bg-transparent relative z-30">
-            <CalendarRevealSection />
+            <CalendarRevealSection isMobile={isMobile} />
         </section>
 
         <div id="sticky-marquee" className={`sticky top-0 z-40 bg-white/60 backdrop-blur-md border-y border-white/40 shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded || showRSVP ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>

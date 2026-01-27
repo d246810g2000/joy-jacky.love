@@ -11,9 +11,10 @@ interface FloatingPhotoProps {
   progress: MotionValue<number>;
   triggerStart: number; 
   onSelect: (photo: Photo) => void; 
+  isMobile: boolean;
 }
 
-export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect }: FloatingPhotoProps) => {
+export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect, isMobile }: FloatingPhotoProps) => {
   const isPortrait = photo.orientation === 'portrait';
   
   // Adjusted for 350vh total height:
@@ -25,15 +26,15 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   const end = start + duration;
 
   // 1. Scale
-  const scale = useTransform(progress, [start, end], [0.1, 5.0]); 
+  const endScale = isMobile ? 3.0 : 5.0;
+  const scale = useTransform(progress, [start, end], [0.1, endScale]); 
   
   // 2. Opacity
   const opacity = useTransform(progress, [start, start + 0.05, end - 0.01, end], [0, 1, 1, 0]);
   
   // 3. X Transform
-  // Check for desktop width to constrain spread
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
-  const spreadFactor = isDesktop ? 0.6 : 1.0; // Reduce spread by 40% on desktop
+  // Increase horizontal spread to allow photos to fly further left and right
+  const spreadFactor = isMobile ? 0.8 : 0.9;
 
   const side = index % 2 === 0 ? 1 : -1; 
   const tier = index % 3; 
@@ -53,13 +54,13 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   const y = useTransform(progress, [start, end], [`${startY}vh`, `${endY}vh`]);
   
   // 5. Z Depth
-  const z = useTransform(progress, [start, end], [0, 1000]);
+  const z = useTransform(progress, [start, end], isMobile ? [0, 0] : [0, 1000]);
 
   // 6. Rotation
   const initialRot = (r2 - 0.5) * 40; 
   const rotateSpeed = 45 + (r1 * 45); 
   const rotationDir = index % 2 === 0 ? 1 : -1;
-  const rotateZ = useTransform(progress, [start, end], [initialRot, initialRot + (rotationDir * rotateSpeed)]);
+  const rotateZ = useTransform(progress, [start, end], isMobile ? [0, 0] : [initialRot, initialRot + (rotationDir * rotateSpeed)]);
 
   // Width adjustments - Increased size slightly for mobile
   const widthClasses = isPortrait 
@@ -76,11 +77,12 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
         z,
         rotateZ,
         zIndex: 100 + index, 
+        willChange: isMobile ? 'transform, opacity' : 'auto'
       }}
-      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none transform-gpu`}
+      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}
     >
       <div 
-        className="relative p-[1.5px] bg-white shadow-xl rounded-[1px] transform-gpu backface-hidden border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500"
+        className={`relative p-[1.5px] bg-white shadow-xl rounded-[1px] ${isMobile ? '' : 'transform-gpu backface-hidden'} border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500`}
         style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         onClick={(e) => {
           e.stopPropagation();

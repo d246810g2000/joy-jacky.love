@@ -140,7 +140,7 @@ const CalendarCover = ({ year }: { year: number }) => {
 };
 
 // 3. The Animated Flipping Calendar Component
-const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) => {
+const FlippingCalendar = ({ scrollYProgress, isMobile }: { scrollYProgress: MotionValue<number>; isMobile: boolean }) => {
     // --- ANIMATION TIMING ---
     // Phase 1: Count & Grow (0.0 -> 0.35)
     // Small scale up before the flip starts creates anticipation
@@ -154,7 +154,7 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
 
     // Phase 2: The "Physics-Based" Flip (0.35 -> 0.7)
     // We go to 175 degrees so it rests almost flat but retains a tiny bit of "bounce" volume visually
-    const rotateX = useTransform(scrollYProgress, [0.35, 0.7], [0, 175]);
+    const rotateX = useTransform(scrollYProgress, [0.35, 0.7], isMobile ? [0, 0] : [0, 175]);
     
     // Scale Compression (Optical Illusion of Bending)
     // Slight variation in timing to feel organic
@@ -162,7 +162,7 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
 
     // Lift Z (Simulate Arc)
     // Moves the page up towards the viewer mid-flip
-    const z = useTransform(scrollYProgress, [0.35, 0.5, 0.7], [0, 60, 0]);
+    const z = useTransform(scrollYProgress, [0.35, 0.5, 0.7], isMobile ? [0, 0, 0] : [0, 60, 0]);
 
     // Sheen Effect
     const sheenOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.6], [0, 0.6, 0]);
@@ -173,27 +173,35 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
     const dropShadowOpacity = useTransform(scrollYProgress, [0.35, 0.5], [0.5, 0]);
     const dropShadowBlur = useTransform(scrollYProgress, [0.35, 0.5], [10, 60]);
 
+    const coverOpacity = useTransform(scrollYProgress, [0.35, 0.55], isMobile ? [1, 0] : [1, 1]);
+
     return (
-        <div className="perspective-[2000px] w-full max-w-[340px] mx-auto aspect-[3/4.2]">
+        <div className={`${isMobile ? '' : 'perspective-[2000px]'} w-full max-w-[340px] mx-auto aspect-[3/4.2]`}>
              <motion.div 
-                style={{ scale, opacity, transformStyle: 'preserve-3d' }}
+                style={{ 
+                    scale, 
+                    opacity, 
+                    transformStyle: isMobile ? 'flat' : 'preserve-3d',
+                    willChange: isMobile ? 'transform, opacity' : 'auto'
+                }}
                 className="relative w-full h-full"
              >
                  {/* --- STACK EFFECT (Pages underneath) --- */}
                  {/* Adds depth by showing pages waiting beneath */}
                  <div className="absolute inset-0 bg-[#f8f6f0] rounded-[6px] border border-stone-200"
-                      style={{ transform: "translateZ(-2px) translateY(3px) translateX(2px)" }} />
+                      style={{ transform: isMobile ? 'none' : "translateZ(-2px) translateY(3px) translateX(2px)" }} />
                  <div className="absolute inset-0 bg-[#f4f1ea] rounded-[6px] border border-stone-200"
-                      style={{ transform: "translateZ(-4px) translateY(6px) translateX(4px)" }} />
+                      style={{ transform: isMobile ? 'none' : "translateZ(-4px) translateY(6px) translateX(4px)" }} />
                  <div className="absolute inset-0 bg-[#ebe7e0] rounded-[6px] border border-stone-200"
-                      style={{ transform: "translateZ(-6px) translateY(9px) translateX(6px)" }} />
+                      style={{ transform: isMobile ? 'none' : "translateZ(-6px) translateY(9px) translateX(6px)" }} />
 
                  {/* --- BASE PAGE (Layer 0) --- */}
                  <motion.div 
                     className="absolute inset-0 bg-[#fdfbf7] rounded-[6px] origin-bottom" 
                     style={{ 
                         transform: "translateZ(0px)", 
-                        boxShadow: useTransform(dropShadowBlur, b => `0px 25px ${b}px rgba(0,0,0,0.2)`) 
+                        boxShadow: useTransform(dropShadowBlur, b => `0px 25px ${b}px rgba(0,0,0,0.2)`),
+                        willChange: isMobile ? 'opacity' : 'auto'
                     }}
                  >
                       <CalendarBase />
@@ -211,11 +219,13 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
                         rotateX, 
                         scaleY, 
                         z,
+                        opacity: coverOpacity,
                         transformOrigin: "top center", 
-                        transformStyle: "preserve-3d",
-                        zIndex: 20
+                        transformStyle: isMobile ? 'flat' : "preserve-3d",
+                        zIndex: 20,
+                        willChange: isMobile ? 'transform, opacity' : 'auto'
                     }}
-                    className="absolute inset-0 rounded-[6px] transform-gpu"
+                    className={`absolute inset-0 rounded-[6px] ${isMobile ? '' : 'transform-gpu'}`}
                  >
                      {/* FRONT FACE (The Photo Cover) */}
                      <motion.div 
@@ -275,7 +285,7 @@ const FlippingCalendar = ({ scrollYProgress }: { scrollYProgress: MotionValue<nu
     );
 };
 
-export const CalendarRevealSection: React.FC = () => {
+export const CalendarRevealSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: containerRef,
@@ -287,7 +297,7 @@ export const CalendarRevealSection: React.FC = () => {
         <div ref={containerRef} className="relative h-[200vh] w-full bg-transparent">
             <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
                 <div className="w-full px-6 relative z-10">
-                    <FlippingCalendar scrollYProgress={scrollYProgress} />
+                    <FlippingCalendar scrollYProgress={scrollYProgress} isMobile={isMobile} />
                 </div>
             </div>
         </div>

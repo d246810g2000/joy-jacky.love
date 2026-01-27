@@ -4,16 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface LoadingScreenProps {
   progress: number;
+  isMobile: boolean;
   onComplete: () => void;
 }
 
-export const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, onComplete }) => {
+export const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, isMobile, onComplete }) => {
   const isLoaded = progress >= 100;
 
   return (
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 1, ease: "easeInOut" } }}
+      style={{ willChange: isMobile ? 'opacity' : 'auto' }}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] overflow-hidden"
     >
       {/* Background Dreamy Elements */}
@@ -25,6 +27,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, onComple
             opacity: [0.3, 0.5, 0.3]
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          style={{ willChange: isMobile ? 'transform, opacity' : 'auto' }}
           className="absolute -top-[10%] -left-[10%] w-[60vw] h-[60vw] bg-rose-100/40 blur-[100px] rounded-full"
         />
         <motion.div 
@@ -34,25 +37,32 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, onComple
             opacity: [0.2, 0.4, 0.2]
           }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          style={{ willChange: isMobile ? 'transform, opacity' : 'auto' }}
           className="absolute -bottom-[10%] -right-[10%] w-[70vw] h-[70vw] bg-sky-100/30 blur-[120px] rounded-full"
         />
       </div>
 
       {/* Main Content Container with 3D Perspective */}
-      <div className="relative z-10 flex flex-col items-center perspective-[1000px]">
+      <div 
+        className="relative z-10 flex flex-col items-center" 
+        style={{ perspective: isMobile ? 'none' : '1000px' }}
+      >
         {/* Floating 3D Heart/Icon */}
         <motion.div
           animate={{ 
             y: [0, -20, 0],
-            rotateY: [0, 360],
-            rotateX: [10, -10, 10]
+            rotateY: isMobile ? [0, 0] : [0, 360],
+            rotateX: isMobile ? [0, 0] : [10, -10, 10]
           }}
           transition={{ 
             y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
             rotateY: { duration: 8, repeat: Infinity, ease: "linear" },
             rotateX: { duration: 4, repeat: Infinity, ease: "easeInOut" }
           }}
-          style={{ transformStyle: 'preserve-3d' }}
+          style={{ 
+            transformStyle: isMobile ? 'flat' : 'preserve-3d',
+            willChange: isMobile ? 'transform' : 'auto'
+          }}
           className="mb-12"
         >
           <div className="relative w-24 h-24 flex items-center justify-center">

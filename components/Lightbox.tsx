@@ -15,9 +15,10 @@ interface LightboxImageProps {
   photo: Photo;
   rotateX: any;
   rotateY: any;
+  isMobile: boolean;
 }
 
-const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY }) => {
+const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, isMobile }) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -26,7 +27,7 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY }
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.2 } }}
-      style={{ transformStyle: 'preserve-3d' }}
+      style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
     >
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -45,8 +46,13 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY }
             filter: isLoaded ? "blur(0px)" : "blur(8px)"
         }}
         
-        style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
-        className="max-h-[70vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] transform-gpu"
+        style={{ 
+          rotateX: isMobile ? 0 : rotateX, 
+          rotateY: isMobile ? 0 : rotateY, 
+          transformStyle: isMobile ? 'flat' : 'preserve-3d',
+          willChange: isMobile ? 'transform, opacity' : 'auto'
+        }}
+        className={`max-h-[70vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] ${isMobile ? '' : 'transform-gpu'}`}
         transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} 
         onClick={(e) => e.stopPropagation()}
       />
@@ -54,7 +60,7 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY }
   );
 };
 
-export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClose, onPhotoChange }) => {
+export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ photo, allPhotos = [], onClose, onPhotoChange, isMobile }) => {
   // Lock body scroll when lightbox is open
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -184,6 +190,7 @@ export const Lightbox: React.FC<LightboxProps> = ({ photo, allPhotos = [], onClo
                 photo={photo} 
                 rotateX={rotateX} 
                 rotateY={rotateY} 
+                isMobile={isMobile}
             />
           </AnimatePresence>
         </motion.div>

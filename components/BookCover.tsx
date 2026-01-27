@@ -8,26 +8,69 @@ import { Photo } from '../types';
 interface BookCoverProps {
   progress: MotionValue<number>;
   onSelectPhoto: (photo: Photo) => void;
+  isMobile: boolean;
 }
 
-export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto }) => {
+export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, isMobile }) => {
   // Enhanced rotation physics for a heavier, more realistic book feel
-  const bookRotateX = useTransform(progress, [0, 0.25, 0.7], [0, 10, 55]); 
-  const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], [0, 2, 25]);
-  const bookRotateY = useTransform(progress, [0, 0.25, 0.7], [0, 0, 15]);
+  const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]); 
+  const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
+  const bookRotateY = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 0, 15]);
   
   // Cover opens slightly faster to reveal content
-  const coverRotateY = useTransform(progress, [0.25, 0.55], [0, -180]);
+  // Mobile: 2D "Gate" or "Page Flip" feel using scaleX + skew
+  // This simulates the cover swinging open without using 3D perspective/rotateY
+  const coverRotateY = useTransform(progress, [0.25, 0.55], isMobile ? [0, 0] : [0, -180]);
+  const coverScaleX = useTransform(progress, [0.25, 0.55], isMobile ? [1, 1] : [1, 1]);
+  const coverSkewY = useTransform(progress, [0.25, 0.55], isMobile ? [0, 0] : [0, 0]);
+  const coverOpacity = useTransform(progress, [0.25, 0.33], isMobile ? [1, 0] : [1, 1]);
   
   // Staggered page turns with more organic, non-uniform variation
-  // Adjusted end angles to create a natural "fanned" stack effect rather than a perfect block
-  const page1RotateY = useTransform(progress, [0.30, 0.60], [0, -179]); // Base page, flat
-  const page2RotateY = useTransform(progress, [0.35, 0.64], [0, -177]); // Tight stack
-  const page3RotateY = useTransform(progress, [0.41, 0.69], [0, -174]); // Slight gap
-  const page4RotateY = useTransform(progress, [0.47, 0.75], [0, -170]); // Increasing gap
-  const page5RotateY = useTransform(progress, [0.54, 0.82], [0, -165]); // Loose
-  const page6RotateY = useTransform(progress, [0.60, 0.89], [0, -159]); // Looser
-  const page7RotateY = useTransform(progress, [0.66, 0.96], [0, -152]); // Fanned out
+  // Mobile: Sequential Fade-to-Zero. Each page disappears to reveal the one beneath.
+  const getPageScaleX = (start: number, end: number) => 
+    useTransform(progress, [start, end], [1, 1]);
+  const getPageSkewY = (start: number, end: number) => 
+    useTransform(progress, [start, end], [0, 0]);
+  const getPageOpacity = (start: number, end: number) => {
+    if (!isMobile) return useTransform(progress, [start, end], [1, 1]);
+    // Mobile: Sharp fade-out to zero so the next layer is perfectly clear
+    return useTransform(progress, [start, end], [1, 0]);
+  }
+
+  const page1RotateY = useTransform(progress, [0.35, 0.43], isMobile ? [0, 0] : [0, -179]);
+  const page1ScaleX = getPageScaleX(0.35, 0.43);
+  const page1SkewY = getPageSkewY(0.35, 0.43);
+  const page1Opacity = getPageOpacity(0.35, 0.43);
+
+  const page2RotateY = useTransform(progress, [0.43, 0.51], isMobile ? [0, 0] : [0, -177]);
+  const page2ScaleX = getPageScaleX(0.43, 0.51);
+  const page2SkewY = getPageSkewY(0.43, 0.51);
+  const page2Opacity = getPageOpacity(0.43, 0.51);
+
+  const page3RotateY = useTransform(progress, [0.51, 0.59], isMobile ? [0, 0] : [0, -174]);
+  const page3ScaleX = getPageScaleX(0.51, 0.59);
+  const page3SkewY = getPageSkewY(0.51, 0.59);
+  const page3Opacity = getPageOpacity(0.51, 0.59);
+
+  const page4RotateY = useTransform(progress, [0.59, 0.67], isMobile ? [0, 0] : [0, -170]);
+  const page4ScaleX = getPageScaleX(0.59, 0.67);
+  const page4SkewY = getPageSkewY(0.59, 0.67);
+  const page4Opacity = getPageOpacity(0.59, 0.67);
+
+  const page5RotateY = useTransform(progress, [0.67, 0.75], isMobile ? [0, 0] : [0, -165]);
+  const page5ScaleX = getPageScaleX(0.67, 0.75);
+  const page5SkewY = getPageSkewY(0.67, 0.75);
+  const page5Opacity = getPageOpacity(0.67, 0.75);
+
+  const page6RotateY = useTransform(progress, [0.75, 0.83], isMobile ? [0, 0] : [0, -159]);
+  const page6ScaleX = getPageScaleX(0.75, 0.83);
+  const page6SkewY = getPageSkewY(0.75, 0.83);
+  const page6Opacity = getPageOpacity(0.75, 0.83);
+
+  const page7RotateY = useTransform(progress, [0.83, 0.91], isMobile ? [0, 0] : [0, -152]);
+  const page7ScaleX = getPageScaleX(0.83, 0.91);
+  const page7SkewY = getPageSkewY(0.83, 0.91);
+  const page7Opacity = getPageOpacity(0.83, 0.91);
 
   const shadowOpacity = useTransform(progress, [0.25, 0.6], [0, 0.3]);
 
@@ -60,40 +103,68 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto })
         rotateX: bookRotateX,
         rotateZ: bookRotateZ,
         rotateY: bookRotateY,
-        transformStyle: 'preserve-3d',
+        transformStyle: isMobile ? 'flat' : 'preserve-3d',
       }}
       // Added transform-gpu to ensure hardware acceleration
-      className="relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px] shadow-2xl transform-gpu"
+      className={`relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px] shadow-2xl ${isMobile ? '' : 'transform-gpu'}`}
     >
-      <div className="absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
+      <div className="absolute inset-0" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
         {/* Book Spine / Back Cover Base */}
-        <div className="absolute inset-0 bg-[#1e293b] rounded-[2px] shadow-2xl" style={{ transform: 'translateZ(-16px)', backfaceVisibility: 'hidden' }} />
+        <div className="absolute inset-0 bg-[#1e293b] rounded-[2px] shadow-2xl" style={{ transform: isMobile ? 'none' : 'translateZ(-16px)', backfaceVisibility: 'hidden' }} />
         
-        {/* Pages Block */}
-        <div className="absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
-           {/* Page Thickness Effect */}
-           <div className="absolute top-[2px] right-0 bottom-[2px] w-[16px] origin-right" style={{ background: paperTexture, transform: 'rotateY(-90deg)' }} />
-           <div className="absolute bottom-0 left-[2px] right-0 h-[16px] origin-bottom" style={{ background: "#EBE8E0", transform: 'rotateX(-90deg)' }} />
-           <div className="absolute top-0 left-[2px] right-0 h-[16px] origin-top" style={{ background: "#EBE8E0", transform: 'rotateX(90deg)' }} />
-           
-           {/* Static Base Page */}
-           <div className={`absolute inset-0 ${paperBg} border border-stone-200/50`} style={{ transform: 'translateZ(0px)' }}>
-              <PhotoGrid photos={slices.base} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={1} />
-           </div>
-        </div>
+      {/* Pages Block */}
+      <div className="absolute inset-0" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
+         {/* Page Thickness Effect (Hidden on mobile) */}
+         {!isMobile && (
+            <>
+              <div className="absolute top-[2px] right-0 bottom-[2px] w-[16px] origin-right" style={{ background: paperTexture, transform: 'rotateY(-90deg)' }} />
+              <div className="absolute bottom-0 left-[2px] right-0 h-[16px] origin-bottom" style={{ background: "#EBE8E0", transform: 'rotateX(-90deg)' }} />
+              <div className="absolute top-0 left-[2px] right-0 h-[16px] origin-top" style={{ background: "#EBE8E0", transform: 'rotateX(90deg)' }} />
+            </>
+         )}
+         
+         {/* Static Base Page (Always visible on mobile to show content after cover slides) */}
+         <div className={`absolute inset-0 ${paperBg} border border-stone-200/50`} style={{ transform: isMobile ? 'none' : 'translateZ(0px)' }}>
+            <PhotoGrid photos={slices.base} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={1} />
+         </div>
       </div>
+    </div>
 
-      <FanPage rotateY={page7RotateY} index={1} opacity={shadowOpacity} photos={slices.p7} backPhotos={slices.p7B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={14} />
-      <FanPage rotateY={page6RotateY} index={2} opacity={shadowOpacity} photos={slices.p6} backPhotos={slices.p6B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={12} />
-      <FanPage rotateY={page5RotateY} index={3} opacity={shadowOpacity} photos={slices.p5} backPhotos={slices.p5B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={10} />
-      <FanPage rotateY={page4RotateY} index={4} opacity={shadowOpacity} photos={slices.p4} backPhotos={slices.p4B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={8} />
-      <FanPage rotateY={page3RotateY} index={5} opacity={shadowOpacity} photos={slices.p3} backPhotos={slices.p3B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={6} />
-      <FanPage rotateY={page2RotateY} index={6} opacity={shadowOpacity} photos={slices.p2} backPhotos={slices.p2B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={4} />
-      <FanPage rotateY={page1RotateY} index={7} opacity={shadowOpacity} photos={slices.p1} backPhotos={slices.p1B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={2} />
+      {!isMobile && (
+        <>
+          <FanPage rotateY={page7RotateY} index={1} opacity={shadowOpacity} photos={slices.p7} backPhotos={slices.p7B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={14} isMobile={isMobile} />
+          <FanPage rotateY={page6RotateY} index={2} opacity={shadowOpacity} photos={slices.p6} backPhotos={slices.p6B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={12} isMobile={isMobile} />
+          <FanPage rotateY={page5RotateY} index={3} opacity={shadowOpacity} photos={slices.p5} backPhotos={slices.p5B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={10} isMobile={isMobile} />
+          <FanPage rotateY={page4RotateY} index={4} opacity={shadowOpacity} photos={slices.p4} backPhotos={slices.p4B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={8} isMobile={isMobile} />
+          <FanPage rotateY={page3RotateY} index={5} opacity={shadowOpacity} photos={slices.p3} backPhotos={slices.p3B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={6} isMobile={isMobile} />
+          <FanPage rotateY={page2RotateY} index={6} opacity={shadowOpacity} photos={slices.p2} backPhotos={slices.p2B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={4} isMobile={isMobile} />
+          <FanPage rotateY={page1RotateY} index={7} opacity={shadowOpacity} photos={slices.p1} backPhotos={slices.p1B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={2} isMobile={isMobile} />
+        </>
+      )}
+
+      {isMobile && (
+        <>
+          <FanPage rotateY={page7RotateY} scaleX={page7ScaleX} skewY={page7SkewY} opacityValue={page7Opacity} index={1} opacity={shadowOpacity} photos={slices.p7} backPhotos={slices.p7B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={14} isMobile={isMobile} />
+          <FanPage rotateY={page6RotateY} scaleX={page6ScaleX} skewY={page6SkewY} opacityValue={page6Opacity} index={2} opacity={shadowOpacity} photos={slices.p6} backPhotos={slices.p6B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={12} isMobile={isMobile} />
+          <FanPage rotateY={page5RotateY} scaleX={page5ScaleX} skewY={page5SkewY} opacityValue={page5Opacity} index={3} opacity={shadowOpacity} photos={slices.p5} backPhotos={slices.p5B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={10} isMobile={isMobile} />
+          <FanPage rotateY={page4RotateY} scaleX={page4ScaleX} skewY={page4SkewY} opacityValue={page4Opacity} index={4} opacity={shadowOpacity} photos={slices.p4} backPhotos={slices.p4B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={8} isMobile={isMobile} />
+          <FanPage rotateY={page3RotateY} scaleX={page3ScaleX} skewY={page3SkewY} opacityValue={page3Opacity} index={5} opacity={shadowOpacity} photos={slices.p3} backPhotos={slices.p3B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={6} isMobile={isMobile} />
+          <FanPage rotateY={page2RotateY} scaleX={page2ScaleX} skewY={page2SkewY} opacityValue={page2Opacity} index={6} opacity={shadowOpacity} photos={slices.p2} backPhotos={slices.p2B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={4} isMobile={isMobile} />
+          <FanPage rotateY={page1RotateY} scaleX={page1ScaleX} skewY={page1SkewY} opacityValue={page1Opacity} index={7} opacity={shadowOpacity} photos={slices.p1} backPhotos={slices.p1B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={2} isMobile={isMobile} />
+        </>
+      )}
 
       {/* --- FRONT COVER DESIGN (High End) --- */}
       <motion.div
-        style={{ rotateY: coverRotateY, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: 50 }}
+        style={{ 
+          rotateY: coverRotateY, 
+          scaleX: coverScaleX,
+          skewY: coverSkewY,
+          opacity: coverOpacity,
+          transformStyle: isMobile ? 'flat' : 'preserve-3d', 
+          transformOrigin: 'left', 
+          zIndex: 50 
+        }}
         className="absolute inset-0"
       >
         {/* Outer Front Cover */}
@@ -188,6 +259,9 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto })
 
 interface FanPageProps {
   rotateY: MotionValue<number>;
+  scaleX?: MotionValue<number>;
+  skewY?: MotionValue<number>;
+  opacityValue?: MotionValue<number>;
   index: number;
   opacity: MotionValue<number>;
   photos: Photo[];
@@ -196,12 +270,14 @@ interface FanPageProps {
   onSelect: (photo: Photo) => void;
   layout?: 'grid' | 'editorial';
   pageNum: number;
+  isMobile: boolean;
 }
 
-const FanPage = React.memo(({ rotateY, index, opacity, photos, backPhotos, progress, onSelect, layout = 'grid', pageNum }: FanPageProps) => {
+const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opacity, photos, backPhotos, progress, onSelect, layout = 'grid', pageNum, isMobile }: FanPageProps) => {
   const x = useMotionValue(0);
   const dragRotateY = useTransform(x, [-100, 100], [-35, 35]);
   const combinedRotateY = useTransform([rotateY, dragRotateY], ([s, d]: any) => s + d);
+  const dragEnabled = !isMobile;
 
   // Paper color and texture
   const paperClass = "bg-[#F9F7F2]";
@@ -209,9 +285,20 @@ const FanPage = React.memo(({ rotateY, index, opacity, photos, backPhotos, progr
 
   return (
     <motion.div
-      drag="x" dragConstraints={{ left: 0, right: 0 }}
-      style={{ rotateY: combinedRotateY, x, transformStyle: 'preserve-3d', transformOrigin: 'left', zIndex: index, cursor: 'grab' }}
-      className="absolute inset-y-[1px] left-0 right-[1px] origin-left transform-gpu"
+      drag={dragEnabled ? 'x' : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      style={{ 
+        rotateY: isMobile ? 0 : combinedRotateY, 
+        scaleX: isMobile && scaleX ? scaleX : 1,
+        skewY: isMobile && skewY ? skewY : 0,
+        opacity: isMobile && opacityValue ? opacityValue : 1,
+        x, 
+        transformStyle: isMobile ? 'flat' : 'preserve-3d', 
+        transformOrigin: 'left', 
+        zIndex: index, 
+        cursor: dragEnabled ? 'grab' : 'default' 
+      }}
+      className={`absolute inset-y-[1px] left-0 right-[1px] origin-left ${isMobile ? '' : 'transform-gpu'}`}
     >
       {/* Front of Page */}
       <div className={`absolute inset-0 ${paperClass} border-y border-r border-stone-200/60 rounded-r-[1px] overflow-hidden shadow-sm`} style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>

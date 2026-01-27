@@ -3,18 +3,19 @@ import React, { useRef, useState, useMemo } from 'react';
 import { useScroll, useTransform, motion, AnimatePresence, useMotionValueEvent } from 'framer-motion';
 import { BookCover } from './BookCover';
 import { FloatingPhoto } from './FloatingPhoto';
-import { Lightbox } from './Lightbox';
 import { BACKGROUND_IMAGE, WEDDING_PHOTOS, APP_CONTENT } from '../constants';
 import { Photo } from '../types';
 
 interface ScrollExperienceProps {
   selectedPhoto: Photo | null;
   setSelectedPhoto: (photo: Photo | null) => void;
+  isMobile: boolean;
 }
 
 export const ScrollExperience: React.FC<ScrollExperienceProps> = ({ 
   selectedPhoto, 
-  setSelectedPhoto 
+  setSelectedPhoto,
+  isMobile
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -41,9 +42,9 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const chineseY = useTransform(scrollYProgress, [0, 0.3], ["0%", "-20%"]);
 
   const bookContainerOpacity = useTransform(scrollYProgress, [0.1, 0.2, 0.9, 1], [0, 1, 1, 0]);
-  const bookScale = useTransform(scrollYProgress, [0, 0.25, 0.7], [1.4, 1.4, 0.65]);
-  const bookYOffset = useTransform(scrollYProgress, [0, 0.25, 0.7], ["-5%", "-5%", "15%"]);
-  const bookXOffset = useTransform(scrollYProgress, [0.25, 0.7], ["0vw", "22vw"]);
+  const bookScale = useTransform(scrollYProgress, [0, 0.25, 0.7], isMobile ? [1.2, 1.2, 0.7] : [1.4, 1.4, 0.65]);
+  const bookYOffset = useTransform(scrollYProgress, [0, 0.25, 0.7], isMobile ? ["0%", "0%", "5%"] : ["-5%", "-5%", "15%"]);
+  const bookXOffset = useTransform(scrollYProgress, [0.25, 0.7], isMobile ? ["0vw", "8vw"] : ["0vw", "22vw"]);
 
   // Memoized wave configuration - Triggers compressed for 350vh height
   const waves = useMemo(() => [
@@ -66,37 +67,32 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
             progress={scrollYProgress}
             triggerStart={wave.trigger}
             onSelect={setSelectedPhoto}
+            isMobile={isMobile}
           />
         ))}
       </React.Fragment>
     ));
-  }, [waves, scrollYProgress, setSelectedPhoto]);
+  }, [waves, scrollYProgress, setSelectedPhoto, isMobile]);
 
   return (
     <div ref={containerRef} className="relative h-[350vh] w-full bg-transparent">
       
-      <AnimatePresence>
-        {selectedPhoto && (
-          <Lightbox 
-            photo={selectedPhoto} 
-            allPhotos={WEDDING_PHOTOS}
-            onClose={() => setSelectedPhoto(null)} 
-            onPhotoChange={setSelectedPhoto}
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center transform-gpu">
+      <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
         
         {/* Ambient Background Effects - Optimized for mobile */}
-        <div className="absolute inset-0 z-0 pointer-events-none transform-gpu">
+        <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
            <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
         </div>
 
         <motion.div 
-            style={{ scale: bgScale, y: bgY, opacity: bgOpacity }}
-            className="absolute inset-0 z-0 overflow-hidden transform-gpu"
+            style={{ 
+              scale: bgScale, 
+              y: bgY, 
+              opacity: bgOpacity,
+              willChange: isMobile ? 'transform, opacity' : 'auto'
+            }}
+            className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
         >
             {/* 1. Base Image */}
             <img 
@@ -114,8 +110,13 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
 
         {/* Hero Text Content */}
         <motion.div 
-          style={{ opacity: textOpacity, scale: textScale, filter: textBlur }}
-          className="absolute top-[12%] md:top-[15%] z-30 flex flex-col items-center text-center px-6 pointer-events-none w-full max-w-4xl transform-gpu"
+          style={{ 
+            opacity: textOpacity, 
+            scale: textScale, 
+            filter: textBlur,
+            willChange: isMobile ? 'transform, opacity' : 'auto'
+          }}
+          className={`absolute top-[12%] md:top-[15%] z-30 flex flex-col items-center text-center px-6 pointer-events-none w-full max-w-4xl ${isMobile ? '' : 'transform-gpu'}`}
         >
           {/* Top Label */}
           <motion.div style={{ y: labelY }} className="flex items-center gap-4 mb-4 md:mb-6 opacity-80">
@@ -153,22 +154,24 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
               scale: bookScale, 
               y: bookYOffset,
               x: bookXOffset,
-              perspective: '2500px' 
+              perspective: isMobile ? 'none' : '2500px',
+              willChange: isMobile ? 'transform, opacity' : 'auto'
             }}
-            className="absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 transform-gpu"
+            className={`absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 ${isMobile ? '' : 'transform-gpu'}`}
         >
           {/* Photos Stream */}
           <motion.div 
-            style={{ x: "-12vw", transformStyle: 'preserve-3d' }}
+            style={{ x: "-12vw", transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
             className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-20" 
           >
              {photoWaves}
           </motion.div>
 
-          <div className="relative z-10" style={{ transformStyle: 'preserve-3d' }}>
+          <div className="relative z-10" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
             <BookCover 
               progress={scrollYProgress} 
               onSelectPhoto={setSelectedPhoto}
+              isMobile={isMobile}
             />
           </div>
         </motion.div>

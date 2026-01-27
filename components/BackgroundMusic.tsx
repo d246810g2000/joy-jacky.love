@@ -119,24 +119,25 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ className = ""
         }
     };
 
-    const enableSound = () => {
+    const enableSound = async () => {
         if (audio) {
-            if (audio.muted) audio.muted = false;
-            if (audio.paused) {
-                audio.play()
-                    .then(() => setIsPlaying(true))
-                    .catch(e => console.warn("Interaction play failed", e));
+            try {
+                audio.muted = false;
+                await audio.play();
+                setIsPlaying(true);
+                ['click', 'touchend', 'keydown'].forEach(event => 
+                    document.removeEventListener(event, enableSound)
+                );
+            } catch (e) {
+                console.warn("Interaction play failed", e);
             }
         }
-        ['click', 'touchstart', 'keydown'].forEach(event => 
-            document.removeEventListener(event, enableSound)
-        );
     };
 
     attemptAutoPlay();
 
-    ['click', 'touchstart', 'keydown'].forEach(event => 
-        document.addEventListener(event, enableSound, { once: true })
+    ['click', 'touchend', 'keydown'].forEach(event => 
+        document.addEventListener(event, enableSound)
     );
 
     return () => {
@@ -144,7 +145,7 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ className = ""
             audio.pause();
             audio.removeEventListener('timeupdate', handleTimeUpdate);
         }
-        ['click', 'touchstart', 'keydown'].forEach(event => 
+        ['click', 'touchend', 'keydown'].forEach(event => 
             document.removeEventListener(event, enableSound)
         );
     };
