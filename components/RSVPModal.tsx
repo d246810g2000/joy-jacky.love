@@ -41,12 +41,12 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
 
   // Calculate progress based on logical path
   const getStepProgress = () => {
-    // Total steps vary based on path (added email step):
-    // Path A (No Attend): Name, Side, Relation, Att, Email, Msg = 6
+    // Total steps vary based on path:
+    // Path A (No Attend): Name, Side, Relation, Att, Msg = 5 (跳過 Email)
     // Path B (Attend, No Paper): Name, Side, Relation, Att, Guests, Paper, Email, Msg = 8
     // Path C (Attend, Yes Paper): Name, Side, Relation, Att, Guests, Paper, Addr, Email, Msg = 9
     
-    let total = 6;
+    let total = 5; // 不到場時總步數為 5
     let current = 0;
 
     const sequence = ['name', 'side', 'relation', 'attendance'];
@@ -64,7 +64,10 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
     else if (currentStepName === 'paperInvite') current = 5;
     else if (currentStepName === 'address') current = 6;
     else if (currentStepName === 'email') {
-        current = total - 2; // email is always second to last
+        // Email 只在出席時才會出現
+        if (formData.attendance === 'yes') {
+            current = total - 2; // email is always second to last for attendees
+        }
     } else if (currentStepName === 'message') {
         current = total - 1;
     } else if (currentStepName === 'success') {
@@ -85,13 +88,13 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'attendance': 
             // Branching Logic 1
             if (formData.attendance === 'yes') setCurrentStepName('guests');
-            else setCurrentStepName('email'); // Skip to email for non-attendees
+            else setCurrentStepName('message'); // 不到場時跳過 email，直接到留言
             break;
         case 'guests': setCurrentStepName('paperInvite'); break;
         case 'paperInvite':
              // Branching Logic 2
              if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
-             else setCurrentStepName('email'); // Go to email after paper invite decision
+             else setCurrentStepName('email'); // 出席且不需要紙本喜帖時，到 email
              break;
         case 'address': setCurrentStepName('email'); break;
         case 'email': setCurrentStepName('message'); break;
@@ -110,12 +113,15 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'paperInvite': setCurrentStepName('guests'); break;
         case 'address': setCurrentStepName('paperInvite'); break;
         case 'email':
-            // Reverse Branching Logic for email step
-            if (formData.attendance === 'no') setCurrentStepName('attendance');
-            else if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
+            // Reverse Branching Logic for email step (只有出席者才會到這裡)
+            if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
             else setCurrentStepName('paperInvite');
             break;
-        case 'message': setCurrentStepName('email'); break;
+        case 'message':
+            // 如果不到場，從 message 返回時直接回到 attendance（跳過 email）
+            if (formData.attendance === 'no') setCurrentStepName('attendance');
+            else setCurrentStepName('email'); // 出席者從 message 返回時到 email
+            break;
     }
   };
 
