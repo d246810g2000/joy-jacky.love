@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ScrollExperience } from './components/ScrollExperience';
 import { EnvelopeInvitation } from './components/EnvelopeInvitation';
 import { CalendarRevealSection } from './components/CalendarRevealSection';
 import { Timeline } from './components/Timeline';
 import { LocationInfo } from './components/LocationInfo';
 import { GuestBook } from './components/GuestBook';
-import { RSVPModal } from './components/RSVPModal';
 import { Lightbox } from './components/Lightbox';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -56,6 +56,7 @@ const XIcon = () => (
 );
 
 function App() {
+  const navigate = useNavigate();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showNav, setShowNav] = useState(false);
@@ -69,8 +70,6 @@ function App() {
   // Ref to ignore scroll events when clicking nav items
   const isNavigatingRef = useRef(false);
   
-  // RSVP State
-  const [showRSVP, setShowRSVP] = useState(false);
   const [guestBookRefresh, setGuestBookRefresh] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const isMobile = useIsMobile(768);
@@ -136,7 +135,6 @@ function App() {
       if (
         timeSinceLastInteraction >= 5000 && 
         !isInitialLoading && 
-        !showRSVP && 
         !isGuestBookExpanded && 
         !isNavigatingRef.current &&
         !selectedPhoto
@@ -150,7 +148,7 @@ function App() {
       clearInterval(inactivityInterval);
       stopAutoScroll();
     };
-  }, [isInitialLoading, showRSVP, isGuestBookExpanded, selectedPhoto]);
+  }, [isInitialLoading, isGuestBookExpanded, selectedPhoto]);
 
   // --- Asset Preloading ---
   useEffect(() => {
@@ -313,15 +311,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showRSVP && (
-            <RSVPModal 
-                onClose={() => setShowRSVP(false)} 
-                onSubmitted={() => setGuestBookRefresh(prev => prev + 1)} 
-            />
-        )}
-      </AnimatePresence>
-
       <div className="relative z-10">
         <ScrollExperience 
           selectedPhoto={selectedPhoto} 
@@ -351,7 +340,7 @@ function App() {
             <CalendarRevealSection isMobile={isMobile} />
         </section>
 
-        <div id="sticky-marquee" className={`sticky top-0 z-40 bg-white/60 backdrop-blur-md border-y border-white/40 shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded || showRSVP ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>
+        <div id="sticky-marquee" className={`sticky top-0 z-40 bg-white/60 backdrop-blur-md border-y border-white/40 shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>
           <motion.div 
             className="flex flex-nowrap min-w-max"
             animate={{ x: "-50%" }} 
@@ -404,7 +393,7 @@ function App() {
            <GuestBook 
                 onExpandChange={setIsGuestBookExpanded} 
                 refreshTrigger={guestBookRefresh}
-                onWriteMessage={() => setShowRSVP(true)}
+                onWriteMessage={() => navigate('/rsvp')}
            />
         </section>
 
@@ -417,15 +406,16 @@ function App() {
                 您的蒞臨將是我們最大的榮幸。<br/> 請於 4月30日 前確認出席。
               </p>
               
-              <button 
-                onClick={() => setShowRSVP(true)}
+              <Link 
+                to="/rsvp"
                 className="relative group px-12 py-5 overflow-hidden rounded-[2px] 
                            bg-gradient-to-b from-[#9E4242] to-[#752a2a]
                            border border-[#b08d55]/30
                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_10px_30px_-10px_rgba(142,53,53,0.6)]
                            hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_20px_40px_-10px_rgba(142,53,53,0.8)]
                            transform hover:scale-[1.03] hover:-translate-y-1
-                           transition-all duration-500 ease-out"
+                           transition-all duration-500 ease-out
+                           inline-block"
               >
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out z-0" />
                 <div className="relative z-10 flex items-center gap-3">
@@ -438,7 +428,7 @@ function App() {
                 </div>
                 <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20 pointer-events-none" />
                 <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/20 pointer-events-none" />
-              </button>
+              </Link>
            </div>
            
            <div className="mt-32 pt-10 border-t border-stone-200/60 text-[9px] text-stone-400 uppercase tracking-[0.4em]">
@@ -450,7 +440,7 @@ function App() {
 
       {/* --- REIMAGINED NAVIGATION DOCK (Collapsible Pill) --- */}
       <div 
-        className={`fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${showNav && !isGuestBookExpanded && !showRSVP ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${showNav && !isGuestBookExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
           <motion.div 
             layout
@@ -538,7 +528,7 @@ function App() {
 
       {/* Standalone Audio Button (Visible on Mobile & Desktop) */}
       <div 
-        className={`fixed bottom-8 right-8 md:bottom-8 md:right-8 z-50 transition-all duration-500 ease-out ${!isGuestBookExpanded && !showRSVP ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-8 right-8 md:bottom-8 md:right-8 z-50 transition-all duration-500 ease-out ${!isGuestBookExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
           <BackgroundMusic className="w-12 h-12 md:w-14 md:h-14 shadow-lg" />
       </div>

@@ -140,7 +140,6 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
       animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
       exit={{ opacity: 0, backdropFilter: "blur(0px)", transition: { duration: 0.4, ease: "easeInOut" } }}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fdfbf7]/85 p-0 md:p-8 overflow-hidden"
-      onClick={onClose}
     >
       {/* Background Sparkles & Glow */}
       <motion.div 
