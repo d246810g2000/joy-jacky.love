@@ -4,6 +4,7 @@ import { motion, useTransform, useMotionValue } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { APP_CONTENT, WEDDING_PHOTOS } from '../constants';
 import { Photo } from '../types';
+import { MobileAlbumGrid } from './MobileAlbumGrid';
 
 interface BookCoverProps {
   progress: MotionValue<number>;
@@ -12,17 +13,22 @@ interface BookCoverProps {
 }
 
 export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, isMobile }) => {
+  // 手機端使用輕量級分頁網格，完全跳過 3D 計算，避免 iPhone WebKit 記憶體問題
+  if (isMobile) {
+    return <MobileAlbumGrid progress={progress} onSelectPhoto={onSelectPhoto} />;
+  }
+
+  // 桌面端保持原有的 3D 翻書效果
   // Enhanced rotation physics for a heavier, more realistic book feel
   const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]); 
   const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
   const bookRotateY = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 0, 15]);
   
-  // Cover opens slightly faster to reveal content
-  // Mobile: 2D "Gate" or "Page Flip" feel using scaleX + skew
-  // This simulates the cover swinging open without using 3D perspective/rotateY
-  const coverRotateY = useTransform(progress, [0.25, 0.55], isMobile ? [0, 0] : [0, -180]);
-  const coverScaleX = useTransform(progress, [0.25, 0.55], isMobile ? [1, 1] : [1, 1]);
-  const coverSkewY = useTransform(progress, [0.25, 0.55], isMobile ? [0, 0] : [0, 0]);
+  // Cover opens faster to avoid overlapping with first page
+  // 封面需要在第一頁開始翻轉之前完成，避免超過內頁
+  const coverRotateY = useTransform(progress, [0.25, 0.35], isMobile ? [0, 0] : [0, -180]);
+  const coverScaleX = useTransform(progress, [0.25, 0.35], isMobile ? [1, 1] : [1, 1]);
+  const coverSkewY = useTransform(progress, [0.25, 0.35], isMobile ? [0, 0] : [0, 0]);
   const coverOpacity = useTransform(progress, [0.25, 0.33], isMobile ? [1, 0] : [1, 1]);
   
   // Staggered page turns with more organic, non-uniform variation

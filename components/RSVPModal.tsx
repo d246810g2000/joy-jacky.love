@@ -9,7 +9,7 @@ interface RSVPModalProps {
   onSubmitted: () => void;
 }
 
-type Step = 'name' | 'side' | 'relation' | 'attendance' | 'guests' | 'paperInvite' | 'address' | 'message' | 'success';
+type Step = 'name' | 'side' | 'relation' | 'attendance' | 'guests' | 'paperInvite' | 'address' | 'email' | 'message' | 'success';
 
 export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) => {
   const [currentStepName, setCurrentStepName] = useState<Step>('name');
@@ -32,6 +32,8 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
     // Address
     zipCode: '',
     address: '',
+    // Email
+    email: '',
     // Message
     message: '',
     publishToGuestbook: true
@@ -39,20 +41,20 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
 
   // Calculate progress based on logical path
   const getStepProgress = () => {
-    // Total steps vary based on path:
-    // Path A (No Attend): Name, Side, Relation, Att, Msg = 5
-    // Path B (Attend, No Paper): Name, Side, Relation, Att, Guests, Paper, Msg = 7
-    // Path C (Attend, Yes Paper): Name, Side, Relation, Att, Guests, Paper, Addr, Msg = 8
+    // Total steps vary based on path (added email step):
+    // Path A (No Attend): Name, Side, Relation, Att, Email, Msg = 6
+    // Path B (Attend, No Paper): Name, Side, Relation, Att, Guests, Paper, Email, Msg = 8
+    // Path C (Attend, Yes Paper): Name, Side, Relation, Att, Guests, Paper, Addr, Email, Msg = 9
     
-    let total = 5;
+    let total = 6;
     let current = 0;
 
     const sequence = ['name', 'side', 'relation', 'attendance'];
     
     // Determine path length
     if (formData.attendance === 'yes') {
-        total = 7;
-        if (formData.needPaperInvite === 'yes') total = 8;
+        total = 8;
+        if (formData.needPaperInvite === 'yes') total = 9;
     }
 
     // Determine current index
@@ -61,7 +63,9 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
     } else if (currentStepName === 'guests') current = 4;
     else if (currentStepName === 'paperInvite') current = 5;
     else if (currentStepName === 'address') current = 6;
-    else if (currentStepName === 'message') {
+    else if (currentStepName === 'email') {
+        current = total - 2; // email is always second to last
+    } else if (currentStepName === 'message') {
         current = total - 1;
     } else if (currentStepName === 'success') {
         current = total;
@@ -81,15 +85,16 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'attendance': 
             // Branching Logic 1
             if (formData.attendance === 'yes') setCurrentStepName('guests');
-            else setCurrentStepName('message');
+            else setCurrentStepName('email'); // Skip to email for non-attendees
             break;
         case 'guests': setCurrentStepName('paperInvite'); break;
         case 'paperInvite':
              // Branching Logic 2
              if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
-             else setCurrentStepName('message');
+             else setCurrentStepName('email'); // Go to email after paper invite decision
              break;
-        case 'address': setCurrentStepName('message'); break;
+        case 'address': setCurrentStepName('email'); break;
+        case 'email': setCurrentStepName('message'); break;
         case 'message': handleSubmit(); break;
     }
   };
@@ -104,12 +109,13 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'guests': setCurrentStepName('attendance'); break;
         case 'paperInvite': setCurrentStepName('guests'); break;
         case 'address': setCurrentStepName('paperInvite'); break;
-        case 'message': 
-            // Reverse Branching Logic
+        case 'email':
+            // Reverse Branching Logic for email step
             if (formData.attendance === 'no') setCurrentStepName('attendance');
-            else if (formData.needPaperInvite === 'no') setCurrentStepName('paperInvite');
-            else setCurrentStepName('address');
+            else if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
+            else setCurrentStepName('paperInvite');
             break;
+        case 'message': setCurrentStepName('email'); break;
     }
   };
 
@@ -122,6 +128,11 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
       case 'guests': return true; // Defaults are valid
       case 'paperInvite': return !!formData.needPaperInvite;
       case 'address': return formData.zipCode.trim().length > 0 && formData.address.trim().length > 0;
+      case 'email': {
+        // Email validation: required and must be valid format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return formData.email.trim().length > 0 && emailRegex.test(formData.email.trim());
+      }
       case 'message': return true; // Optional
       default: return true;
     }
@@ -424,46 +435,69 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                </div>
            );
  
-       case 'message':
-         return (
-           <div className="space-y-6">
-              <div className="space-y-2">
-                 <label className="block text-xl md:text-2xl font-serif text-[#2c3e50]">
-                    有什麼想對我們說的話嗎？
-                 </label>
-                 <p className="text-sm text-stone-400">您的祝福是我們最大的動力</p>
-              </div>
-              
-              <textarea 
-                 value={formData.message}
-                 onChange={(e) => setFormData({...formData, message: e.target.value})}
-                 placeholder="請留下您想跟我們說的話..."
-                 className="w-full min-h-[120px] text-lg border border-stone-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#8E3535] focus:ring-1 focus:ring-[#8E3535] transition-all bg-stone-50 resize-none"
-              />
- 
-              <label className="flex items-start gap-3 cursor-pointer group">
-                 <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
-                     {formData.publishToGuestbook && (
-                         <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                         </svg>
-                     )}
-                 </div>
-                 <input 
-                     type="checkbox" 
-                     className="hidden"
-                     checked={formData.publishToGuestbook}
-                     onChange={(e) => setFormData({...formData, publishToGuestbook: e.target.checked})}
-                 />
-                 <div className="flex-1">
-                     <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
-                     <p className="text-xs text-stone-400 mt-0.5">勾選後，您的留言將會顯示在網站的「祝福留言」區塊</p>
-                 </div>
-              </label>
-           </div>
-         );
-     }
-   };
+      case 'email':
+        return (
+          <div className="space-y-6">
+             <div className="space-y-2">
+                <label className="block text-xl md:text-2xl font-serif text-[#2c3e50]">
+                   您的 Email <span className="text-[#8E3535]">*</span>
+                </label>
+                <p className="text-sm text-stone-400">方便我們寄送電子喜帖與婚禮通知</p>
+             </div>
+             <input 
+                type="email" 
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                placeholder="example@email.com"
+                className="w-full text-lg border border-stone-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#8E3535] focus:ring-1 focus:ring-[#8E3535] transition-all bg-stone-50"
+                autoFocus
+             />
+             {formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()) && (
+                <p className="text-sm text-red-500">請輸入有效的 Email 格式</p>
+             )}
+          </div>
+        );
+
+      case 'message':
+        return (
+          <div className="space-y-6">
+             <div className="space-y-2">
+                <label className="block text-xl md:text-2xl font-serif text-[#2c3e50]">
+                   有什麼想對我們說的話嗎？
+                </label>
+                <p className="text-sm text-stone-400">您的祝福是我們最大的動力</p>
+             </div>
+             
+             <textarea 
+                value={formData.message}
+                onChange={(e) => setFormData({...formData, message: e.target.value})}
+                placeholder="請留下您想跟我們說的話..."
+                className="w-full min-h-[120px] text-lg border border-stone-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#8E3535] focus:ring-1 focus:ring-[#8E3535] transition-all bg-stone-50 resize-none"
+             />
+
+             <label className="flex items-start gap-3 cursor-pointer group">
+                <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
+                    {formData.publishToGuestbook && (
+                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    )}
+                </div>
+                <input 
+                    type="checkbox" 
+                    className="hidden"
+                    checked={formData.publishToGuestbook}
+                    onChange={(e) => setFormData({...formData, publishToGuestbook: e.target.checked})}
+                />
+                <div className="flex-1">
+                    <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
+                    <p className="text-xs text-stone-400 mt-0.5">勾選後，您的留言將會顯示在網站的「祝福留言」區塊</p>
+                </div>
+             </label>
+          </div>
+        );
+    }
+  };
  
    if (currentStepName === 'success') {
       return (
