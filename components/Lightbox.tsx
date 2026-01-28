@@ -27,7 +27,6 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.2 } }}
-      style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
     >
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -46,11 +45,14 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, 
             filter: isLoaded ? "blur(0px)" : "blur(8px)"
         }}
         
-        style={{ 
-          rotateX: isMobile ? 0 : rotateX, 
-          rotateY: isMobile ? 0 : rotateY, 
-          transformStyle: isMobile ? 'flat' : 'preserve-3d',
-          willChange: isMobile ? 'transform, opacity' : 'auto'
+        style={isMobile ? { 
+          // 手機端：完全移除 3D 變換，只保留簡單的 2D 效果
+          willChange: 'transform, opacity'
+        } : { 
+          // 桌面端：保留 3D 懸停效果
+          rotateX, 
+          rotateY, 
+          transformStyle: 'preserve-3d'
         }}
         className={`max-h-[70vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] ${isMobile ? '' : 'transform-gpu'}`}
         transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} 
@@ -98,7 +100,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, handleNext, handlePrev]);
 
-  // --- 3D Hover Effect Logic ---
+  // --- 3D Hover Effect Logic (桌面端專用) ---
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -108,7 +110,10 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [10, -10]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [-10, 10]);
 
+  // 手機端跳過鼠標事件處理，減少計算開銷
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -124,6 +129,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return;
     x.set(0);
     y.set(0);
   };
@@ -173,7 +179,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
 
         {/* The Image Wrapper */}
         <motion.div 
-          className="relative w-full md:w-auto md:flex-1 flex justify-center items-center pointer-events-auto perspective-[1500px] max-h-[70vh] md:max-h-full touch-pan-y"
+          className={`relative w-full md:w-auto md:flex-1 flex justify-center items-center pointer-events-auto max-h-[70vh] md:max-h-full touch-pan-y ${isMobile ? '' : 'perspective-[1500px]'}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           drag="x"
