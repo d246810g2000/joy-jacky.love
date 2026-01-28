@@ -13,12 +13,98 @@ interface BookCoverProps {
 }
 
 export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, isMobile }) => {
-  // 手機端使用輕量級分頁網格，完全跳過 3D 計算，避免 iPhone WebKit 記憶體問題
+  // 手機和電腦端都使用靜態 PNG 封面圖片
+  // 封面不淡化，始終顯示
+  const contentOpacity = useTransform(progress, [0.25, 0.35], [0, 1]);
+  
+  // 封面翻轉動畫（手機和電腦端共用）
+  const coverRotateY = useTransform(progress, [0.25, 0.35], [0, -180]);
+  
+  // 手機端：封面翻轉後向右平移，讓相簿內容置中
+  // 平移距離約為相簿寬度的 25-30%，確保翻轉後相簿內容置中
+  const mobileCoverTranslateX = useTransform(progress, [0.25, 0.35], [0, 80]);
+  
   if (isMobile) {
-    return <MobileAlbumGrid progress={progress} onSelectPhoto={onSelectPhoto} />;
+    return (
+      <motion.div className="relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px]">
+        {/* 相簿內容（在封面下方顯示，跟著封面一起平移） */}
+        <motion.div
+          style={{ 
+            opacity: contentOpacity,
+            x: mobileCoverTranslateX
+          }}
+          className="absolute inset-0"
+        >
+          <MobileAlbumGrid progress={progress} onSelectPhoto={onSelectPhoto} />
+        </motion.div>
+        
+        {/* 靜態 PNG 封面 - 翻轉到左邊並向右平移，讓相簿置中 */}
+        <motion.div
+          style={{ 
+            rotateY: coverRotateY,
+            x: mobileCoverTranslateX,
+            transformStyle: 'preserve-3d',
+            transformOrigin: 'left',
+            zIndex: 10
+          }}
+          className="absolute inset-0"
+        >
+          {/* 封面正面 */}
+          <div className="absolute inset-0 rounded-r-[2px] overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden' }}>
+            <img
+              src={`${import.meta.env.BASE_URL}book-cover.png`}
+              alt="Wedding Album Cover"
+              className="w-full h-full object-contain"
+              style={{ pointerEvents: 'none' }}
+              onError={(e) => {
+                console.error('Failed to load cover image:', e.currentTarget.src);
+              }}
+            />
+          </div>
+          
+          {/* 封面背面（翻轉後顯示） */}
+          <div 
+            className="absolute inset-0 bg-[#F9F7F2] rounded-r-[2px] overflow-hidden border-r border-stone-200 shadow-inner" 
+            style={{ 
+              transform: 'rotateY(180deg) translateZ(1px)', 
+              backfaceVisibility: 'hidden' 
+            }}
+          >
+            {/* 透出封面正面顏色 - 半透明封面圖片作為背景層，添加輕微模糊效果 */}
+            <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply blur-sm">
+              <img
+                src={`${import.meta.env.BASE_URL}book-cover.png`}
+                alt=""
+                className="w-full h-full object-cover"
+                style={{ pointerEvents: 'none', transform: 'scaleX(-1)' }}
+              />
+            </div>
+            
+            {/* Paper Texture */}
+            <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
+            
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center z-10">
+              <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br/>從這裡開始"</p>
+              <div className="w-8 md:w-12 h-[1px] bg-[#C5A065] opacity-50 mb-3 md:mb-4" />
+              <p className="font-display text-[8px] md:text-[9px] text-[#888] tracking-widest uppercase leading-relaxed px-4">
+                記錄我們<br/>
+                最美好的瞬間
+              </p>
+            </div>
+            
+            {/* Bookplate */}
+            <div className="absolute bottom-4 md:bottom-6 left-0 right-0 flex justify-center opacity-60">
+              <div className="border border-[#dcdcdc] px-3 md:px-4 py-1">
+                <span className="font-mono text-[7px] md:text-[8px] text-[#aaa] uppercase tracking-widest">Ex Libris</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    );
   }
 
-  // 桌面端保持原有的 3D 翻書效果
+  // 桌面端：使用靜態 PNG 封面 + 3D 翻書效果（內頁）
   // Enhanced rotation physics for a heavier, more realistic book feel
   const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]); 
   const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
@@ -26,10 +112,10 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
   
   // Cover opens faster to avoid overlapping with first page
   // 封面需要在第一頁開始翻轉之前完成，避免超過內頁
-  const coverRotateY = useTransform(progress, [0.25, 0.35], isMobile ? [0, 0] : [0, -180]);
-  const coverScaleX = useTransform(progress, [0.25, 0.35], isMobile ? [1, 1] : [1, 1]);
-  const coverSkewY = useTransform(progress, [0.25, 0.35], isMobile ? [0, 0] : [0, 0]);
-  const coverOpacity = useTransform(progress, [0.25, 0.33], isMobile ? [1, 0] : [1, 1]);
+  // coverRotateY 已在函數開頭定義（手機和電腦端共用）
+  const coverScaleX = useTransform(progress, [0.25, 0.35], [1, 1]);
+  const coverSkewY = useTransform(progress, [0.25, 0.35], [0, 0]);
+  // 封面不淡化，始終顯示（opacity 固定為 1）
   
   // Staggered page turns with more organic, non-uniform variation
   // Mobile: Sequential Fade-to-Zero. Each page disappears to reveal the one beneath.
@@ -160,92 +246,51 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
         </>
       )}
 
-      {/* --- FRONT COVER DESIGN (High End) --- */}
+      {/* --- FRONT COVER DESIGN (Static PNG) --- */}
       <motion.div
         style={{ 
           rotateY: coverRotateY, 
           scaleX: coverScaleX,
           skewY: coverSkewY,
-          opacity: coverOpacity,
-          transformStyle: isMobile ? 'flat' : 'preserve-3d', 
+          opacity: 1, // 封面不淡化，始終顯示
+          transformStyle: 'preserve-3d', 
           transformOrigin: 'left', 
           zIndex: 50 
         }}
         className="absolute inset-0"
       >
-        {/* Outer Front Cover */}
-        <div className="absolute inset-0 bg-[#0B1221] rounded-r-[2px] flex flex-col items-center shadow-2xl border-l border-white/10 overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
-          
-          {/* 1. Luxurious Dark Navy Base Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-[#020617]" />
-
-          {/* 2. Metallic Gold Thread Weave Effect */}
-          {/* Diagonal hatch pattern to simulate woven metallic fabric */}
-          <div className="absolute inset-0 opacity-[0.08] mix-blend-plus-lighter" 
-               style={{ 
-                  backgroundImage: "repeating-linear-gradient(45deg, #C5A065 0px, #C5A065 1px, transparent 1px, transparent 3px)" 
-               }} 
+        {/* Outer Front Cover - Static PNG */}
+        <div className="absolute inset-0 rounded-r-[2px] overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden' }}>
+          <img
+            src={`${import.meta.env.BASE_URL}book-cover.png`}
+            alt="Wedding Album Cover"
+            className="w-full h-full object-cover"
+            style={{ pointerEvents: 'none' }}
+            onError={(e) => {
+              console.error('Failed to load cover image:', e.currentTarget.src);
+            }}
           />
-          <div className="absolute inset-0 opacity-[0.06] mix-blend-plus-lighter" 
-               style={{ 
-                  backgroundImage: "repeating-linear-gradient(-45deg, #C5A065 0px, #C5A065 1px, transparent 1px, transparent 3px)" 
-               }} 
-          />
-
-          {/* 3. Linen Texture Overlay (Maintains tactile feel) */}
-          <div className="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/black-linen.png')] mix-blend-overlay pointer-events-none" />
-          
-          {/* 4. Subtle Gloss Sheen (Simulates light catching the metallic threads) */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#C5A065]/5 to-transparent opacity-40 pointer-events-none" />
-          
-          {/* Double Gold Border */}
-          <div className="absolute inset-4 border border-[#C5A065]/40 rounded-[1px] pointer-events-none" />
-          <div className="absolute inset-5 border-[0.5px] border-[#C5A065]/70 rounded-[1px] pointer-events-none" />
-
-          {/* Cover Content */}
-          <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 text-center">
-            
-            <div className="space-y-5">
-               {/* Shortened top line to pull text up */}
-               <div className="w-px h-8 bg-gradient-to-b from-transparent via-[#C5A065] to-transparent mx-auto opacity-60" />
-               
-               {/* Smaller font size (7px) and slight margin adjust */}
-               <p className="font-display text-[7px] tracking-[0.4em] text-[#9ca3af] uppercase mb-1">The Wedding Album</p>
-               
-               <div className="space-y-1">
-                 {/* Reduced text size to 3xl on mobile, 4xl on desktop */}
-                 <h1 className="font-script text-3xl md:text-4xl text-[#E8DCC4] drop-shadow-md whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-[#E8DCC4] via-[#FDFBF7] to-[#E8DCC4]">{APP_CONTENT.coupleName}</h1>
-                 
-                 {/* UPDATED: Replaced Hsinchu with Eternity for a more romantic vibe */}
-                 <p className="font-serif text-[10px] tracking-[0.25em] text-[#C5A065] uppercase mt-2">Eternity</p>
-               </div>
-
-               <div className="w-px h-12 bg-gradient-to-t from-transparent via-[#C5A065] to-transparent mx-auto opacity-60" />
-            </div>
-
-            {/* Realistic Debossed Stamp Logo */}
-            <div className="absolute bottom-8">
-                {/* Outer depression (Inset Shadow) */}
-                <div className="w-10 h-10 rounded-full border border-[#C5A065]/30 flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.5),0_1px_1px_rgba(255,255,255,0.05)] bg-[#0F172A]/40">
-                    {/* Inner raised ring */}
-                    <div className="w-8 h-8 rounded-full border-[0.5px] border-[#C5A065]/50 flex items-center justify-center shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-                        <span className="font-display text-[9px] text-[#C5A065] font-bold tracking-widest opacity-90" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>J&J</span>
-                    </div>
-                </div>
-            </div>
-
-          </div>
         </div>
 
         {/* Inner Left Cover (Inside of the hard cover) */}
         <div className="absolute inset-0 bg-[#F9F7F2] rounded-r-[2px] overflow-hidden border-r border-stone-200 shadow-inner" style={{ transform: 'rotateY(180deg) translateZ(1px)', backfaceVisibility: 'hidden' }}>
+           {/* 透出封面正面顏色 - 半透明封面圖片作為背景層，添加輕微模糊效果 */}
+           <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply blur-sm">
+             <img
+               src={`${import.meta.env.BASE_URL}book-cover.png`}
+               alt=""
+               className="w-full h-full object-cover"
+               style={{ pointerEvents: 'none', transform: 'scaleX(-1)' }}
+             />
+           </div>
+           
            {/* Paper Texture */}
            <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
            
-           <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-              <p className="font-serif italic text-2xl text-[#1a1d23]/80 mb-4">"執子之手，<br/>與子偕老"</p>
-              <div className="w-12 h-[1px] bg-[#C5A065] opacity-50 mb-4" />
-              <p className="font-display text-[9px] text-[#888] tracking-widest uppercase leading-loose">
+           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center z-10">
+              <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br/>從這裡開始"</p>
+              <div className="w-8 md:w-12 h-[1px] bg-[#C5A065] opacity-50 mb-3 md:mb-4" />
+              <p className="font-display text-[8px] md:text-[9px] text-[#888] tracking-widest uppercase leading-relaxed px-4">
                 記錄我們<br/>
                 最美好的瞬間
               </p>

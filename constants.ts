@@ -72,7 +72,9 @@ export const APP_CONTENT = {
   quote: "在時間的畫布上，我們即將用愛，畫上最燦爛的一筆。誠邀您來見證，我們的永恆。",
   intro: "We invite you to celebrate our love story.",
   // ★★★ 修正點：網址必須包含 /exec 結尾 ★★★
-  googleScriptUrl: "https://script.google.com/macros/s/AKfycbxNy1_3RYRt-I2sT3qaRFx2wY4OalCjpbN0xlAB7fM7Bzu3sYoI4tsflv5yNMqnli_F/exec" 
+  googleScriptUrl: "https://script.google.com/macros/s/AKfycbxNy1_3RYRt-I2sT3qaRFx2wY4OalCjpbN0xlAB7fM7Bzu3sYoI4tsflv5yNMqnli_F/exec",
+  // 相簿封面圖片（靜態 PNG，手機和電腦端共用）
+  bookCoverImage: "/book-cover.png" // 封面 PNG 圖片位於 public 資料夾中
 };
 
 export const TIMELINE_EVENTS = [
