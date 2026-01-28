@@ -1,17 +1,13 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { APP_CONTENT } from '../constants';
 import { GuestBookEntry } from '../types';
 
-interface RSVPModalProps {
-  onClose: () => void;
-  onSubmitted: () => void;
-}
-
 type Step = 'name' | 'side' | 'relation' | 'attendance' | 'guests' | 'paperInvite' | 'address' | 'email' | 'message' | 'success';
 
-export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) => {
+const RSVPPage: React.FC = () => {
+  const navigate = useNavigate();
   const [currentStepName, setCurrentStepName] = useState<Step>('name');
   const [direction, setDirection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,11 +37,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
 
   // Calculate progress based on logical path
   const getStepProgress = () => {
-    // Total steps vary based on path:
-    // Path A (No Attend): Name, Side, Relation, Att, Msg = 5 (跳過 Email)
-    // Path B (Attend, No Paper): Name, Side, Relation, Att, Guests, Paper, Email, Msg = 8
-    // Path C (Attend, Yes Paper): Name, Side, Relation, Att, Guests, Paper, Addr, Email, Msg = 9
-    
     let total = 5; // 不到場時總步數為 5
     let current = 0;
 
@@ -64,9 +55,8 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
     else if (currentStepName === 'paperInvite') current = 5;
     else if (currentStepName === 'address') current = 6;
     else if (currentStepName === 'email') {
-        // Email 只在出席時才會出現
         if (formData.attendance === 'yes') {
-            current = total - 2; // email is always second to last for attendees
+            current = total - 2;
         }
     } else if (currentStepName === 'message') {
         current = total - 1;
@@ -86,15 +76,13 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'side': setCurrentStepName('relation'); break;
         case 'relation': setCurrentStepName('attendance'); break;
         case 'attendance': 
-            // Branching Logic 1
             if (formData.attendance === 'yes') setCurrentStepName('guests');
-            else setCurrentStepName('message'); // 不到場時跳過 email，直接到留言
+            else setCurrentStepName('message');
             break;
         case 'guests': setCurrentStepName('paperInvite'); break;
         case 'paperInvite':
-             // Branching Logic 2
              if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
-             else setCurrentStepName('email'); // 出席且不需要紙本喜帖時，到 email
+             else setCurrentStepName('email');
              break;
         case 'address': setCurrentStepName('email'); break;
         case 'email': setCurrentStepName('message'); break;
@@ -113,14 +101,12 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         case 'paperInvite': setCurrentStepName('guests'); break;
         case 'address': setCurrentStepName('paperInvite'); break;
         case 'email':
-            // Reverse Branching Logic for email step (只有出席者才會到這裡)
             if (formData.needPaperInvite === 'yes') setCurrentStepName('address');
             else setCurrentStepName('paperInvite');
             break;
         case 'message':
-            // 如果不到場，從 message 返回時直接回到 attendance（跳過 email）
             if (formData.attendance === 'no') setCurrentStepName('attendance');
-            else setCurrentStepName('email'); // 出席者從 message 返回時到 email
+            else setCurrentStepName('email');
             break;
     }
   };
@@ -131,15 +117,14 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
       case 'side': return !!formData.side;
       case 'relation': return !!formData.relation;
       case 'attendance': return !!formData.attendance;
-      case 'guests': return true; // Defaults are valid
+      case 'guests': return true;
       case 'paperInvite': return !!formData.needPaperInvite;
       case 'address': return formData.zipCode.trim().length > 0 && formData.address.trim().length > 0;
       case 'email': {
-        // Email validation: required and must be valid format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return formData.email.trim().length > 0 && emailRegex.test(formData.email.trim());
       }
-      case 'message': return true; // Optional
+      case 'message': return true;
       default: return true;
     }
   };
@@ -147,55 +132,40 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
   const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    // 1. Send data to Google Sheets
     if (APP_CONTENT.googleScriptUrl && APP_CONTENT.googleScriptUrl.startsWith('http')) {
         try {
             await fetch(APP_CONTENT.googleScriptUrl, {
                 method: "POST",
-                // GAS Fix: Use 'no-cors' mode to bypass CORS preflight issues.
-                // The response will be opaque (we can't read it), but the request will succeed.
                 mode: "no-cors", 
                 headers: {
-                    // GAS Fix: Enforce text/plain to prevent the browser from sending an OPTIONS request.
                     "Content-Type": "text/plain",
                 },
-                // Ensure the body is a stringified JSON object so GAS can parse e.postData.contents
                 body: JSON.stringify({
                     action: 'rsvp',
                     ...formData
                 }),
             });
-            // Note: with 'no-cors', we can't check response.ok, so we assume success if no network error.
         } catch (error) {
             console.warn("Submission error (proceeding to success for demo):", error);
-            // We proceed even on error for UX in this demo context, or you could show an alert.
         }
     } else {
         console.warn("Google Script URL is not configured or invalid.");
     }
 
-    // 2. Publish to Guestbook if checked and message exists
-    // (Actual logic is handled by backend sync, we just refresh local view later)
-
-    // 3. Show Success (Wait a bit for UX if it was instant)
     setTimeout(() => {
         setIsSubmitting(false);
         setCurrentStepName('success');
         setTimeout(() => {
-            onSubmitted();
-            onClose();
-        }, 3500); // Give user time to read the success message
+            navigate('/');
+        }, 3500);
     }, 800);
   };
 
-  // --- Helper for Select Inputs ---
   const generateOptions = (max: number, unit: string) => {
       return Array.from({ length: max + 1 }, (_, i) => (
           <option key={i} value={i}>{i} {unit}</option>
       ));
   };
-
-  // --- Render Steps ---
   
   const renderStepContent = () => {
     switch (currentStepName) {
@@ -324,7 +294,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
       case 'guests':
          return (
              <div className="space-y-6">
-                 {/* Adult Count */}
                  <div className="space-y-2">
                      <label className="block text-lg font-serif text-[#2c3e50]">成人人數 <span className="text-[#8E3535]">*</span></label>
                      <select 
@@ -336,7 +305,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                      </select>
                  </div>
 
-                 {/* Children Count */}
                  <div className="space-y-2">
                      <label className="block text-lg font-serif text-[#2c3e50]">兒童人數</label>
                      <select 
@@ -348,7 +316,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                      </select>
                  </div>
 
-                 {/* High Chair Count */}
                  <div className="space-y-2">
                      <label className="block text-lg font-serif text-[#2c3e50]">兒童座椅數量</label>
                      <select 
@@ -360,7 +327,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                      </select>
                  </div>
 
-                 {/* Vegetarian Count */}
                  <div className="space-y-2">
                      <label className="block text-lg font-serif text-[#2c3e50]">素食人數</label>
                      <select 
@@ -507,9 +473,8 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
  
    if (currentStepName === 'success') {
       return (
-         <div className="fixed inset-0 z-[200] bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] flex items-center justify-center p-6">
+         <div className="min-h-screen bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] flex items-center justify-center p-6">
              <div className="text-center space-y-4">
-                 {/* Updated Success Icon Color to Theme Red */}
                  <div className="w-20 h-20 bg-[#8E3535]/10 rounded-full flex items-center justify-center mx-auto mb-6 text-[#8E3535]">
                      <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -517,6 +482,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                  </div>
                  <h2 className="text-2xl font-serif text-[#2c3e50] font-bold">感謝您的回覆！</h2>
                  <p className="text-stone-500">我們已收到您的出席資訊，期待與您相見。</p>
+                 <p className="text-sm text-stone-400 mt-4">即將返回首頁...</p>
              </div>
          </div>
       );
@@ -525,14 +491,14 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
    const progress = getStepProgress();
  
    return (
-     <div className="fixed inset-0 z-[200] bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] overflow-y-auto">
+     <div className="min-h-screen bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff]">
         <div className="min-h-screen flex flex-col relative">
             
             {/* Header */}
             <div className="bg-white border-b border-stone-100 sticky top-0 z-10 shadow-sm">
                  <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
                      <button 
-                         onClick={onClose}
+                         onClick={() => navigate('/')}
                          className="flex items-center gap-2 text-[#8E3535] hover:text-[#7a2e2e] transition-colors"
                      >
                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -547,7 +513,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
             {/* Content */}
             <div className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 md:py-12 flex flex-col gap-6 md:gap-8">
                  
-                 {/* Wedding Info Summary - Compact on mobile */}
+                 {/* Wedding Info Summary */}
                  <div className="text-center space-y-2 md:space-y-4 mb-2 md:mb-4">
                      <h1 className="font-serif text-2xl md:text-4xl text-[#2c3e50]">李謦伊 & 張家銘</h1>
                      <p className="font-serif text-base md:text-lg text-[#8E3535]">2026.05.30 星期六</p>
@@ -558,14 +524,14 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                          <p className="hidden md:block"><span className="font-bold text-[#b08d55]">交通：</span> 高鐵新竹站轉乘計程車 (約15分) / 國道一號公道五路交流道 / 附設停車場</p>
                      </div>
                  </div>
-
+ 
                  {/* Form Card */}
                  <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-stone-100 min-h-[350px] md:min-h-[400px] flex flex-col">
                      <div className="p-6 md:p-8 pb-0 text-center">
                          <h2 className="text-xl md:text-2xl font-serif text-[#8E3535] tracking-wide mb-4 md:mb-6">婚禮出席回覆</h2>
                          <div className="w-8 h-[2px] bg-[#8E3535]/30 mx-auto mb-6 md:mb-8" />
                      </div>
-
+ 
                      {/* Progress Bar */}
                      <div className="px-6 md:px-8">
                          <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
@@ -577,7 +543,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                              />
                          </div>
                      </div>
-
+ 
                      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
                          <AnimatePresence mode="wait" custom={direction}>
                              <motion.div
@@ -592,8 +558,8 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                              </motion.div>
                          </AnimatePresence>
                      </div>
-
-                     {/* REFINED BUTTON DESIGN */}
+ 
+                     {/* Buttons */}
                      <div className="p-6 md:p-8 pt-0 flex justify-between items-center mt-auto">
                          <button 
                              onClick={handlePrev}
@@ -603,7 +569,7 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                              <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
                              <span>上一題</span>
                          </button>
-
+ 
                          <button 
                              onClick={handleNext}
                              disabled={!canProceed() || isSubmitting}
@@ -633,7 +599,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
                                   <span className="relative z-10 text-[10px] transform group-hover:translate-x-1 transition-transform">→</span>
                              )}
                              
-                             {/* Shine Effect */}
                              {!isSubmitting && (
                                  <div className="absolute inset-0 -translate-x-[100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out z-0" />
                              )}
@@ -645,4 +610,6 @@ export const RSVPModal: React.FC<RSVPModalProps> = ({ onClose, onSubmitted }) =>
         </div>
      </div>
    );
- };
+};
+
+export default RSVPPage;
