@@ -128,7 +128,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, isMobile
                 className="group relative px-10 py-4 bg-[#8E3535] text-white rounded-[2px] shadow-lg overflow-hidden transition-all hover:scale-105 active:scale-95"
               >
                 <span className="relative z-10 font-serif tracking-[0.4em] text-sm pl-[0.4em]">
-                  開啟喜帖
+                  開啟邀請函
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-[#8E3535] via-[#a84d4d] to-[#8E3535] bg-[length:200%_100%] animate-shimmer" />
                 

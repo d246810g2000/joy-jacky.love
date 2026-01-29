@@ -74,11 +74,56 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
     ));
   }, [waves, scrollYProgress, setSelectedPhoto, isMobile]);
 
+  const hintOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.7, 0.8], [0, 1, 1, 0]);
+  const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
+
   return (
     <div ref={containerRef} className="relative h-[350vh] w-full bg-transparent">
       
       <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
         
+        {/* Hint Text for Gallery */}
+        <motion.div
+          style={{ 
+            opacity: hintOpacity, 
+            x: isMobile ? "-50%" : -hintOffset,
+            y: isMobile ? hintOffset : "-50%",
+          }}
+          className={`absolute z-[60] pointer-events-none ${isMobile ? 'left-1/2 bottom-[8%]' : 'left-8 md:left-12 top-1/2'}`}
+        >
+          <motion.div 
+            animate={{ 
+              y: isMobile ? [0, -3, 0] : [0, -5, 0],
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+            className="bg-white/50 backdrop-blur-xl px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4"
+          >
+            <motion.span 
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-[#8a6a3d] text-[10px] md:text-sm font-serif leading-none"
+            >
+              ✦
+            </motion.span>
+            
+            <span className="text-[#8a6a3d] text-[11px] md:text-[15px] tracking-[0.2em] md:tracking-[0.4em] font-serif md:[writing-mode:vertical-rl] whitespace-nowrap font-medium opacity-90">
+              點擊照片開啟婚紗藝廊
+            </span>
+            
+            <motion.span 
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+              className="text-[#8a6a3d] text-[10px] md:text-sm font-serif leading-none"
+            >
+              ✦
+            </motion.span>
+          </motion.div>
+        </motion.div>
+
         {/* Ambient Background Effects - Optimized for mobile */}
         <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />

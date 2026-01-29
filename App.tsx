@@ -55,11 +55,18 @@ const XIcon = () => (
   </svg>
 );
 
+const InvitationIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+  </svg>
+);
+
 function App() {
   const navigate = useNavigate();
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showNav, setShowNav] = useState(false);
+  const [showRSVPButton, setShowRSVPButton] = useState(false);
   const [activeSection, setActiveSection] = useState('timeline');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
@@ -100,15 +107,17 @@ function App() {
       const scrollRange = window.innerHeight * 2.5;
       const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
       
-      let speed = 1.3;
+      let speed = isMobile ? 0.8 : 1.3;
       if (progress < 0.25) {
-        speed = 2.5; // Faster before the album flips
+        speed = isMobile ? 1.5 : 2.5; // Faster before the album flips
       } else if (progress < 0.5) {
-        // Gradient slow down from 2.5 to 0.8 as album opens
+        // Gradient slow down
         const t = (progress - 0.25) / (0.5 - 0.25);
-        speed = 2.5 - (2.5 - 0.8) * t;
+        const startSpeed = isMobile ? 1.5 : 2.5;
+        const endSpeed = isMobile ? 0.5 : 0.8;
+        speed = startSpeed - (startSpeed - endSpeed) * t;
       } else if (progress < 0.85) {
-        speed = 0.8; // Maintain slow speed during photo interaction
+        speed = isMobile ? 0.5 : 0.8; // Maintain slow speed during photo interaction
       }
       
       window.scrollBy(0, speed); 
@@ -124,16 +133,16 @@ function App() {
       stopAutoScroll();
     };
 
-    const events = ['mousedown', 'wheel', 'touchstart', 'keydown'];
+    const events = ['mousedown', 'wheel', 'touchstart', 'touchmove', 'keydown'];
     events.forEach(event => window.addEventListener(event, updateInteraction, { passive: true }));
 
     const inactivityInterval = setInterval(() => {
       const now = Date.now();
       const timeSinceLastInteraction = now - lastInteractionRef.current;
 
-      // Start auto scroll after 5s of inactivity
+      // Start auto scroll after 8s of inactivity
       if (
-        timeSinceLastInteraction >= 5000 && 
+        timeSinceLastInteraction >= 8000 && 
         !isInitialLoading && 
         !isGuestBookExpanded && 
         !isNavigatingRef.current &&
@@ -211,7 +220,16 @@ function App() {
           setShowNav(rect.top <= 2);
       }
 
-      // 2. Active Section Spy (Only if not manually navigating)
+      // 2. Show RSVP Button when invitation section starts appearing
+      const invitation = document.getElementById('invitation-section');
+      if (invitation) {
+          const rect = invitation.getBoundingClientRect();
+          // 出現時機：當信封完全消失時 (約在 invitation 區塊捲動 0.45 進度時)
+          // 區塊高度為 150vh，0.45 進度即捲動 45vh (150vh - 100vh = 50vh 總捲動量)
+          setShowRSVPButton(rect.top <= -window.innerHeight * 0.45);
+      }
+
+      // 3. Active Section Spy (Only if not manually navigating)
       if (!isNavigatingRef.current) {
           const viewportCenter = window.scrollY + (window.innerHeight / 2);
           
@@ -465,6 +483,21 @@ function App() {
                         exit={{ opacity: 0 }}
                         className="flex items-center px-1.5 gap-1"
                     >
+                         {/* RSVP Button */}
+                         <button 
+                            onClick={() => {
+                                navigate('/rsvp');
+                                setIsNavExpanded(false);
+                            }}
+                            className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#8E3535] hover:bg-stone-50 transition-colors duration-300 shrink-0"
+                            aria-label="RSVP"
+                         >
+                            <InvitationIcon />
+                         </button>
+
+                         {/* Left Divider */}
+                         <div className="w-px h-5 bg-stone-200 mx-0.5" />
+
                          {/* Nav Items */}
                          {navItems.map((item) => {
                            const isActive = activeSection === item.id;
@@ -528,9 +561,26 @@ function App() {
 
       {/* Standalone Audio Button (Visible on Mobile & Desktop) */}
       <div 
-        className={`fixed bottom-8 right-8 md:bottom-8 md:right-8 z-50 transition-all duration-500 ease-out ${!isGuestBookExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-8 right-8 md:bottom-8 md:right-8 z-50 transition-all duration-500 ease-out ${!isGuestBookExpanded ? (isNavExpanded && isMobile ? '-translate-y-20 opacity-100' : 'translate-y-0 opacity-100') : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
           <BackgroundMusic className="w-12 h-12 md:w-14 md:h-14 shadow-lg" />
+      </div>
+
+      {/* Floating RSVP Button (Bottom Left) */}
+      <div 
+        className={`fixed bottom-8 left-8 z-50 transition-all duration-500 ease-out ${showRSVPButton && !isGuestBookExpanded && !isNavExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+      >
+        <Link 
+          to="/rsvp"
+          className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-white/95 backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300"
+        >
+          <span className="text-[#8E3535] group-hover:scale-110 transition-transform duration-300">
+            <InvitationIcon />
+          </span>
+          <span className="font-serif text-[#8E3535] text-sm md:text-base tracking-widest font-medium">
+            出席回函
+          </span>
+        </Link>
       </div>
 
     </main>
