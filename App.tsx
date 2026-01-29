@@ -572,14 +572,16 @@ function App() {
       >
         <Link 
           to="/rsvp"
-          className="flex items-center gap-2.5 px-6 py-3 rounded-full bg-white/95 backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300"
+          className={`flex items-center justify-center rounded-full bg-white/95 backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300 ${showNav ? 'w-12 h-12 p-0' : 'px-6 py-3 gap-2.5'}`}
         >
           <span className="text-[#8E3535] group-hover:scale-110 transition-transform duration-300">
             <InvitationIcon />
           </span>
-          <span className="font-serif text-[#8E3535] text-sm md:text-base tracking-widest font-medium">
-            出席回函
-          </span>
+          {!showNav && (
+            <span className="font-serif text-[#8E3535] text-sm md:text-base tracking-widest font-medium">
+              出席回函
+            </span>
+          )}
         </Link>
       </div>
 
