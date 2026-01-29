@@ -78,7 +78,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
 
   return (
-    <div ref={containerRef} className="relative h-[350vh] w-full bg-transparent">
+    <div ref={containerRef} className="relative h-[280vh] w-full bg-transparent">
       
       <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
         

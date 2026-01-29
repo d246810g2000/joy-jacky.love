@@ -1,20 +1,47 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🤍 Joy & Jacky：致 我們的永恆瞬間
 
-# Run and deploy your AI Studio app
+這不僅是一個網頁，更是一封裝滿了愛與期待的數位情書。我們將彼此的故事化作代碼，將每一份心動交織成光影，誠摯地邀請您，一同走進我們的幸福序章。
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/drive/1lpxxIAUjaH5F5XRVUppMZemjm4Ecsrme
+## 🌹 幸福亮點
 
-## Run Locally
+*   **光影流轉的愛戀**：沉浸式的捲動體驗，帶您回顧我們從相識到相守的每一刻精彩瞬間。
+*   **雋永的婚紗藝廊**：每一張照片都藏著一段情話，左右滑動間，細品我們鏡頭下的溫暖承諾。
+*   **愛的迴聲牆**：寫下您的祝福留言，讓這份喜悅在數位世界中永遠閃耀。
+*   **約定之日**：整合倒數計時與交通資訊，期待在 2026.05.30 那個美好的午后，見到最親愛的您。
 
-**Prerequisites:**  Node.js
+---
 
+## 🕯️ 幕後故事
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+這個專案是我們共同守護的小天地，運用了現代技術編織而成：
+
+*   **React + TypeScript**：穩定的承諾，就像我們的感情。
+*   **Framer Motion**：優雅的律動，捕捉愛情的每一個細微變化。
+*   **Tailwind CSS**：細膩的點綴，打造專屬於我們的唯美風格。
+
+---
+
+## 💍 開啟幸福 (Run Locally)
+
+如果您也想在本地開啟這份邀請：
+
+1.  **珍藏依賴**：
+    ```bash
+    npm install
+    ```
+2.  **喚醒驚喜**：
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## ✨ 獻給所有相信愛的人
+
+「每一個眼神，都是我們永恆故事的開始。」
+
+期待與您在婚禮現場相見。
+
+*Joy & Jacky 敬邀*

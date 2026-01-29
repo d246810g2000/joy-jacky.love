@@ -103,21 +103,21 @@ function App() {
       }
       
       // Dynamic speed for better UX
-      // Progress calculation based on the 350vh ScrollExperience container (250vh scrollable)
-      const scrollRange = window.innerHeight * 2.5;
+      // Progress calculation based on the ScrollExperience container
+      const scrollRange = window.innerHeight * 1.8;
       const progress = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
       
-      let speed = isMobile ? 0.8 : 1.3;
+      let speed = isMobile ? 1.4 : 2.2;
       if (progress < 0.25) {
-        speed = isMobile ? 1.5 : 2.5; // Faster before the album flips
+        speed = isMobile ? 2.2 : 3.5; // Faster before the album flips
       } else if (progress < 0.5) {
         // Gradient slow down
         const t = (progress - 0.25) / (0.5 - 0.25);
-        const startSpeed = isMobile ? 1.5 : 2.5;
-        const endSpeed = isMobile ? 0.5 : 0.8;
+        const startSpeed = isMobile ? 2.2 : 3.5;
+        const endSpeed = isMobile ? 1.0 : 1.5;
         speed = startSpeed - (startSpeed - endSpeed) * t;
       } else if (progress < 0.85) {
-        speed = isMobile ? 0.5 : 0.8; // Maintain slow speed during photo interaction
+        speed = isMobile ? 1.0 : 1.5; // Maintain slow speed during photo interaction
       }
       
       window.scrollBy(0, speed); 
