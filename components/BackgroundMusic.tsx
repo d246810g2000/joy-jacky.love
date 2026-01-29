@@ -102,52 +102,11 @@ export const BackgroundMusic: React.FC<BackgroundMusicProps> = ({ className = ""
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
 
-    // Robust Autoplay Strategy
-    const attemptAutoPlay = async () => {
-        try {
-            audio.muted = false;
-            await audio.play();
-            setIsPlaying(true);
-        } catch (error) {
-            try {
-                audio.muted = true;
-                await audio.play();
-                setIsPlaying(true);
-            } catch (mutedError) {
-                setIsPlaying(false);
-            }
-        }
-    };
-
-    const enableSound = async () => {
-        if (audio) {
-            try {
-                audio.muted = false;
-                await audio.play();
-                setIsPlaying(true);
-                ['click', 'touchend', 'keydown'].forEach(event => 
-                    document.removeEventListener(event, enableSound)
-                );
-            } catch (e) {
-                console.warn("Interaction play failed", e);
-            }
-        }
-    };
-
-    attemptAutoPlay();
-
-    ['click', 'touchend', 'keydown'].forEach(event => 
-        document.addEventListener(event, enableSound)
-    );
-
     return () => {
         if (audio) {
             audio.pause();
             audio.removeEventListener('timeupdate', handleTimeUpdate);
         }
-        ['click', 'touchend', 'keydown'].forEach(event => 
-            document.removeEventListener(event, enableSound)
-        );
     };
   }, []);
 

@@ -189,6 +189,31 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
             else if (info.offset.x < -100) handleNext();
           }}
         >
+          {isMobile && hasMultiple && (
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 1 }}
+              className="absolute -bottom-6 left-[-1rem] right-[-1rem] flex items-center justify-center gap-4 text-[#b08d55] opacity-60 z-[60] pointer-events-none whitespace-nowrap"
+            >
+              <motion.span
+                animate={{ x: [-4, 4, -4] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="text-xs"
+              >
+                ←
+              </motion.span>
+              <span className="text-[11px] tracking-[0.2em] font-serif mr-[-0.2em]">左右滑動切換照片</span>
+              <motion.span
+                animate={{ x: [4, -4, 4] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="text-xs"
+              >
+                →
+              </motion.span>
+            </motion.div>
+          )}
+
           <AnimatePresence mode="wait">
             <LightboxImage 
                 key={photo.id} 
