@@ -94,11 +94,17 @@ interface PageGridProps {
 
 const PageGrid = React.memo(({ photos, progress, onSelect, layout, pageNum }: PageGridProps) => {
   const containerPadding = layout === 'editorial' ? 'p-4 md:p-5' : 'p-3 md:p-4';
+  // editorial：大格放橫向(h)、小格放直向(v)，依 orientation 排序讓版面更協調
+  const ordered = layout === 'editorial'
+    ? [...photos.slice(0, 4)].sort((a, b) =>
+        (a.orientation === 'landscape' ? -1 : 1) - (b.orientation === 'landscape' ? -1 : 1)
+      )
+    : photos.slice(0, 4);
 
   return (
     <div className={`absolute inset-0 ${containerPadding} flex flex-col justify-between overflow-hidden`}>
       <div className={`w-full h-full grid ${layout === 'editorial' ? 'grid-cols-2 grid-rows-3' : 'grid-cols-2 grid-rows-2'} gap-3`}>
-        {photos.slice(0, 4).map((photo, i) => {
+        {ordered.map((photo, i) => {
           let classes = "relative overflow-hidden";
           
           if (layout === 'editorial') {
@@ -136,10 +142,13 @@ interface PhotoItemProps {
 }
 
 const PhotoItem = React.memo(({ photo, index, progress, onSelect }: PhotoItemProps) => {
-  // 輕量級視差效果 - 只用簡單的 translateY，範圍更小
   const direction = index % 2 === 0 ? 1 : -1;
-  const range = photo.orientation === 'portrait' ? 5 : 3; // 減小範圍避免過度計算
+  const range = photo.orientation === 'portrait' ? 5 : 3;
   const parallaxY = useTransform(progress, [0, 1], [`${-range * direction}%`, `${range * direction}%`]);
+  const isPortrait = photo.orientation === 'portrait';
+  const objectClass = isPortrait
+    ? "object-cover object-top"
+    : "object-cover object-center";
 
   return (
     <motion.div 
@@ -151,7 +160,7 @@ const PhotoItem = React.memo(({ photo, index, progress, onSelect }: PhotoItemPro
         <motion.img 
           src={photo.url} 
           style={{ y: parallaxY }} 
-          className="absolute inset-0 w-full h-[115%] -top-[7.5%] object-cover opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]" 
+          className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
           alt={photo.alt} 
         />
         {/* 顆粒覆蓋 */}

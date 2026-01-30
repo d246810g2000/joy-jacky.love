@@ -382,24 +382,26 @@ interface PhotoGridProps {
 }
 
 const PhotoGrid = React.memo(({ photos, progress, isBackPage = false, onSelect, layout = 'grid', pageNum }: PhotoGridProps) => {
-  // Use padding to create "Matte Board" effect (negative space)
   const containerPadding = layout === 'editorial' ? 'p-4 md:p-5' : 'p-3 md:p-4';
+  // editorial：大格放橫向(h)、小格放直向(v)，依 orientation 排序讓版面更協調
+  const ordered = layout === 'editorial'
+    ? [...photos.slice(0, 4)].sort((a, b) =>
+        (a.orientation === 'landscape' ? -1 : 1) - (b.orientation === 'landscape' ? -1 : 1)
+      )
+    : photos.slice(0, 4);
 
   return (
     <div className={`absolute inset-0 ${containerPadding} flex flex-col justify-between overflow-hidden`}>
       <div className={`w-full h-full grid ${layout === 'editorial' ? 'grid-cols-2 grid-rows-3' : 'grid-cols-2 grid-rows-2'} gap-3`}>
-        {photos.slice(0, 4).map((p, i) => {
-          // --- Layout Logic ---
+        {ordered.map((p, i) => {
           let classes = "relative overflow-hidden";
           
           if (layout === 'editorial') {
-             // Editorial: First item is large (Top Half), others are smaller
              if (i === 0) classes += " col-span-2 row-span-2";
-             else if (i === 1) classes += " col-span-1 row-span-1"; // Hidden or small?
+             else if (i === 1) classes += " col-span-1 row-span-1";
              else if (i === 2) classes += " col-span-1 row-span-1";
-             else classes += " hidden"; // Hide 4th photo in editorial mode to keep it clean
+             else classes += " hidden";
           } else {
-             // Grid: Standard 2x2
              classes += " col-span-1 row-span-1";
           }
 
@@ -433,15 +435,15 @@ const PhotoItem = React.memo(({ photo, index, progress, isBackPage = false, onSe
   const direction = index % 2 === 0 ? 1 : -1;
   const range = photo.orientation === 'portrait' ? 8 : 4; 
   const parallaxY = useTransform(progress, [0, 1], [`${-range * direction}%`, `${range * direction}%`]);
+  const isPortrait = photo.orientation === 'portrait';
+  const objectClass = isPortrait
+    ? "object-cover object-top"
+    : "object-cover object-center";
 
   return (
     <motion.div 
       onClick={() => onSelect(photo)}
       whileHover={{ scale: 1.01 }}
-      // Elegant Photo Frame Style:
-      // 1. White border (Matte)
-      // 2. Subtle shadow for depth
-      // 3. No harsh borders, just clean paper feel
       className="relative w-full h-full bg-white p-[3px] md:p-[4px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(197,160,101,0.15)] cursor-pointer transition-all duration-500 ease-out group"
       style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
     >
@@ -449,7 +451,7 @@ const PhotoItem = React.memo(({ photo, index, progress, isBackPage = false, onSe
           <motion.img 
             src={photo.url} 
             style={{ y: parallaxY }} 
-            className={`absolute inset-0 w-full h-[115%] -top-[7.5%] object-cover opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
+            className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
             alt={photo.alt} 
           />
           {/* Grain Overlay on Photo */}
