@@ -2,7 +2,6 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { Photo } from '../types';
-import { APP_CONTENT } from '../constants';
 
 interface LightboxProps {
   photo: Photo;
@@ -258,13 +257,13 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
                             </span>
                         </div>
                         <h2 className="font-serif text-3xl text-[#2c3e50] italic leading-tight min-h-[4rem] flex items-center">
-                            {photo.description || photo.alt}
+                            {photo.title || photo.alt}
                         </h2>
                     </div>
 
                     <div className="hidden md:block">
                       <p className="text-[#7f8c8d] text-xs leading-relaxed font-light italic opacity-75">
-                        "每一個眼神，都是我們永恆故事的開始。"
+                        {photo.description ? `"${photo.description}"` : "每一個眼神，都是我們永恆故事的開始。"}
                       </p>
                     </div>
                 </motion.div>
@@ -293,15 +292,15 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
                     </div>
                 </div>
 
-                {/* Static Grid */}
+                {/* Static Grid：國家與地點 */}
                 <div className="grid grid-cols-2 gap-4 text-[10px] text-stone-500 font-mono">
                     <div>
-                        <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">日期</p>
-                        <p className="text-[#2c3e50] font-medium">{APP_CONTENT.date}</p>
+                        <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">國家／地區</p>
+                        <p className="text-[#2c3e50] font-medium">{photo.country ?? "—"}</p>
                     </div>
                     <div>
                         <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">地點</p>
-                        <p className="text-[#2c3e50] font-medium">{APP_CONTENT.location}</p>
+                        <p className="text-[#2c3e50] font-medium">{photo.location ?? "—"}</p>
                     </div>
                 </div>
             </div>

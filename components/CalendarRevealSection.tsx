@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent, MotionValue } from 'framer-motion';
-import { WEDDING_PHOTOS } from '../constants';
+import { CALENDAR_COVER_IMAGE } from '../constants';
 
 // --- Calendar Sub-components (Moved from Timeline) ---
 
@@ -79,17 +79,14 @@ const CalendarBase = () => {
     );
 };
 
-// 2. The Cover Layer (Moment 9 Photo + Year Counter)
+// 2. The Cover Layer（月曆封面：jinghua-v-01）
 const CalendarCover = ({ year }: { year: number }) => {
-    // Moment 9 is index 8 - Vertical Shot
-    const coverPhoto = WEDDING_PHOTOS[8]; 
-
     return (
         <div className="w-full h-full relative overflow-hidden bg-stone-900 rounded-[2px] border-[0.5px] border-white/20">
             {/* Photo Background */}
             <div className="absolute inset-0">
                 <img 
-                    src={coverPhoto.url} 
+                    src={CALENDAR_COVER_IMAGE} 
                     alt="Our Story" 
                     className="w-full h-full object-cover object-center" 
                 />

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GuestBookEntry } from '../types';
-import { WEDDING_PHOTOS, APP_CONTENT } from '../constants';
+import { WEDDING_PHOTOS, APP_CONTENT, THREADS_POST_IMAGE } from '../constants';
 
 // --- Mock Data for Fallback ---
 const MOCK_ENTRIES: GuestBookEntry[] = [
@@ -108,8 +108,6 @@ interface CouplePostProps {
 }
 
 const CouplePost: React.FC<CouplePostProps> = ({ likes, isLiked, onLike, onComment }) => {
-    const mainPhoto = WEDDING_PHOTOS[2]; 
-    
     return (
       <div className="flex gap-3 relative">
           <div className="flex flex-col items-center gap-2">
@@ -141,8 +139,8 @@ const CouplePost: React.FC<CouplePostProps> = ({ likes, isLiked, onLike, onComme
                   誠摯邀請大家來參加我們的婚禮，見證我們的幸福時刻！
               </p>
 
-              <div className="mt-3 rounded-xl overflow-hidden border border-stone-100 shadow-sm relative bg-stone-100">
-                  <img src={mainPhoto.url} alt="Wedding" className="w-full h-auto object-cover max-h-[400px]" />
+              <div className="mt-3 rounded-xl overflow-hidden border border-stone-100 shadow-sm relative bg-stone-100 h-[280px] sm:h-[340px] md:h-[400px]">
+                  <img src={THREADS_POST_IMAGE} alt="Wedding" className="w-full h-full object-cover object-[center_65%]" />
               </div>
 
               <div className="flex items-center gap-4 mt-3 text-black">
