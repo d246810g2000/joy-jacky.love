@@ -77,8 +77,11 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const hintOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.7, 0.8], [0, 1, 1, 0]);
   const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
 
+  // 電腦版捲動慢約 0.5 倍：容器加高讓同樣動畫需更多捲動距離
+  const scrollHeight = isMobile ? '280vh' : '420vh';
+
   return (
-    <div ref={containerRef} className="relative h-[280vh] w-full bg-transparent">
+    <div ref={containerRef} className="relative w-full bg-transparent" style={{ height: scrollHeight }}>
       
       <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
         
