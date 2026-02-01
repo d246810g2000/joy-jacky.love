@@ -46,14 +46,22 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const bookYOffset = useTransform(scrollYProgress, [0, 0.25, 0.7], isMobile ? ["0%", "0%", "5%"] : ["-5%", "-5%", "15%"]);
   const bookXOffset = useTransform(scrollYProgress, [0.25, 0.7], isMobile ? ["0vw", "8vw"] : ["0vw", "22vw"]);
 
-  // Memoized wave configuration - Triggers compressed for 350vh height
-  const waves = useMemo(() => [
-    { photos: WEDDING_PHOTOS.slice(0, 3), trigger: 0.40 },
-    { photos: WEDDING_PHOTOS.slice(4, 7), trigger: 0.48 },
-    { photos: WEDDING_PHOTOS.slice(8, 11), trigger: 0.56 },
-    { photos: WEDDING_PHOTOS.slice(12, 15), trigger: 0.64 },
-    { photos: WEDDING_PHOTOS.slice(16, 20), trigger: 0.72 },
-  ], []);
+  // 依照片數量動態產生 waves，照片越多飛出總時間越長（scroll 區間越大）
+  const waves = useMemo(() => {
+    const total = WEDDING_PHOTOS.length;
+    const photosPerWave = Math.max(3, Math.min(5, Math.ceil(total / 8)));
+    const numWaves = Math.ceil(total / photosPerWave);
+    const flyOutStart = 0.35;
+    const flyOutRange = Math.min(0.62, 0.12 * numWaves + 0.38);
+    const flyOutEnd = Math.min(0.98, flyOutStart + flyOutRange);
+    const triggers = numWaves <= 1
+      ? [flyOutStart]
+      : Array.from({ length: numWaves }, (_, i) => flyOutStart + (flyOutEnd - flyOutStart) * (i / (numWaves - 1)));
+    return Array.from({ length: numWaves }, (_, i) => ({
+      photos: WEDDING_PHOTOS.slice(i * photosPerWave, Math.min((i + 1) * photosPerWave, total)),
+      trigger: triggers[i] ?? flyOutStart,
+    })).filter(w => w.photos.length > 0);
+  }, []);
 
   const photoWaves = useMemo(() => {
     return waves.map((wave, waveIdx) => (
@@ -77,8 +85,11 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const hintOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.7, 0.8], [0, 1, 1, 0]);
   const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
 
-  // 電腦版捲動慢約 0.5 倍：容器加高讓同樣動畫需更多捲動距離
-  const scrollHeight = isMobile ? '280vh' : '420vh';
+  // 電腦版捲動慢約 0.5 倍；照片越多飛出區段越高，總飛出時間越長
+  const photoCount = WEDDING_PHOTOS.length;
+  const baseVh = isMobile ? 280 : 420;
+  const extraVhPerPhoto = Math.max(0, (photoCount - 24) * 10);
+  const scrollHeight = `${baseVh + extraVhPerPhoto}vh`;
 
   return (
     <div ref={containerRef} className="relative w-full bg-transparent" style={{ height: scrollHeight }}>

@@ -128,7 +128,10 @@ function App() {
   };
 
   useEffect(() => {
-    const updateInteraction = () => {
+    const updateInteraction = (e: Event) => {
+      const target = e.target as HTMLElement;
+      // 點選音樂開啟不算觸碰螢幕，不重置計時
+      if (target?.closest?.('[data-no-interaction]')) return;
       lastInteractionRef.current = Date.now();
       stopAutoScroll();
     };
@@ -140,9 +143,9 @@ function App() {
       const now = Date.now();
       const timeSinceLastInteraction = now - lastInteractionRef.current;
 
-      // Start auto scroll after 8s of inactivity
+      // 停留 1 秒就開始自動捲動（手機與電腦皆同）
       if (
-        timeSinceLastInteraction >= 8000 && 
+        timeSinceLastInteraction >= 1000 && 
         !isInitialLoading && 
         !isGuestBookExpanded && 
         !isNavigatingRef.current &&
@@ -559,8 +562,9 @@ function App() {
           </motion.div>
       </div>
 
-      {/* Standalone Audio Button (Visible on Mobile & Desktop) */}
+      {/* Standalone Audio Button（點選音樂不算觸碰螢幕，不影響 1 秒後自動捲動） */}
       <div 
+        data-no-interaction
         className={`fixed bottom-8 right-8 md:bottom-8 md:right-8 z-50 transition-all duration-500 ease-out ${!isGuestBookExpanded ? (isNavExpanded && isMobile ? '-translate-y-20 opacity-100' : 'translate-y-0 opacity-100') : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
           <BackgroundMusic className="w-12 h-12 md:w-14 md:h-14 shadow-lg" />

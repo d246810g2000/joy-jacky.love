@@ -19,10 +19,10 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   
   // Adjusted for 350vh total height:
   // Reduced delay spacing to ensure group stays together
-  const delay = index * 0.05; 
+  const delay = index * 0.03; 
   const start = triggerStart + delay;
-  // 加快飛出速度，讓照片更快飛上去
-  const duration = 0.18; 
+  // 單張飛出動畫佔用的 scroll 區間（較大 = 飛出較慢）
+  const duration = 0.34; 
   const end = start + duration;
 
   // 1. Scale
@@ -56,11 +56,9 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   // 5. Z Depth
   const z = useTransform(progress, [start, end], isMobile ? [0, 0] : [0, 1000]);
 
-  // 6. Rotation
-  const initialRot = (r2 - 0.5) * 40; 
-  const rotateSpeed = 45 + (r1 * 45); 
+  // 6. Rotation（電腦版最多 ±10 度，手機不旋轉）
   const rotationDir = index % 2 === 0 ? 1 : -1;
-  const rotateZ = useTransform(progress, [start, end], isMobile ? [0, 0] : [initialRot, initialRot + (rotationDir * rotateSpeed)]);
+  const rotateZ = useTransform(progress, [start, end], isMobile ? [0, 0] : [rotationDir * -10, rotationDir * 10]);
 
   // Width adjustments - 放大飛出照片的寬度
   const widthClasses = isPortrait 
