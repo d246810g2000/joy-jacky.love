@@ -144,7 +144,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
       initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
       animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
       exit={{ opacity: 0, backdropFilter: "blur(0px)", transition: { duration: 0.4, ease: "easeInOut" } }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fdfbf7]/85 p-0 md:p-8 overflow-hidden"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fdfbf7]/85 p-0 md:py-6 md:px-4 overflow-hidden"
     >
       {/* Background Sparkles & Glow */}
       <motion.div 
@@ -161,66 +161,53 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
         className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.9)_0%,transparent_70%)]" 
       />
 
-      {/* 頂部固定區：第一列 上一張／下一張 + 左右切換提示 + 關閉；第二列 拖曳滑桿 */}
+      {/* 頂部固定區：單一列 = 上一張／下一張(手機) + 提示(手機) + 滑桿 + 關閉，節省空間 */}
       <motion.div 
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
-        className="fixed top-0 left-0 right-0 z-[110] flex flex-col gap-2 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-3 pointer-events-auto bg-[#fdfbf7]/80 backdrop-blur-md border-b border-[#b08d55]/10"
+        className="fixed top-0 left-0 right-0 z-[110] flex items-center gap-3 px-4 py-3 pt-[max(1rem,env(safe-area-inset-top))] pointer-events-auto bg-[#fdfbf7]/80 backdrop-blur-md border-b border-[#b08d55]/10"
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 shrink-0">
-            {hasMultiple ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePrev}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] active:scale-95 hover:bg-white hover:border-[#b08d55]/50 transition-all shadow-sm backdrop-blur-md"
-                  aria-label="上一張"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] active:scale-95 hover:bg-white hover:border-[#b08d55]/50 transition-all shadow-sm backdrop-blur-md"
-                  aria-label="下一張"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </>
-            ) : (
-              <span className="w-[1px]" aria-hidden />
-            )}
-          </div>
-          {hasMultiple && (
-            <div className="flex items-center justify-center gap-1.5 text-[#b08d55] opacity-70 pointer-events-none min-w-0 flex-1">
-              <span className="text-[11px] tracking-[0.2em] font-serif whitespace-nowrap">左右滑動切換照片</span>
-            </div>
+        {/* 手機版：上一張／下一張；電腦版留空 */}
+        <div className="flex items-center gap-2 shrink-0">
+          {hasMultiple && isMobile ? (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] active:scale-95 hover:bg-white hover:border-[#b08d55]/50 transition-all shadow-sm backdrop-blur-md"
+                aria-label="上一張"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] active:scale-95 hover:bg-white hover:border-[#b08d55]/50 transition-all shadow-sm backdrop-blur-md"
+                aria-label="下一張"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          ) : hasMultiple && !isMobile ? null : (
+            <span className="w-[1px]" aria-hidden />
           )}
-          <motion.button 
-            initial={{ opacity: 0, rotate: -90 }}
-            animate={{ opacity: 1, rotate: 0 }}
-            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-            onClick={onClose}
-            className="relative w-10 h-10 flex items-center justify-center rounded-full text-[#2c3e50]/40 hover:text-[#2c3e50] hover:bg-black/5 transition-all group shrink-0"
-            aria-label="Close Lightbox"
-          >
-            <div className="relative w-6 h-6">
-              <span className="absolute top-1/2 left-0 w-full h-px bg-current rotate-45 transition-transform group-hover:scale-x-110" />
-              <span className="absolute top-1/2 left-0 w-full h-px bg-current -rotate-45 transition-transform group-hover:scale-x-110" />
-            </div>
-            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity font-display uppercase whitespace-nowrap">關閉</span>
-          </motion.button>
         </div>
-        {/* 拖曳滑桿：固定在上方 */}
-        {hasMultiple && (
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[9px] text-stone-400 font-mono w-5 shrink-0">1</span>
+        {/* 手機版：中央提示「左右滑動切換照片」；電腦版留空 */}
+        {hasMultiple && isMobile && (
+          <div className="flex items-center justify-center text-[#b08d55] opacity-70 pointer-events-none shrink-0">
+            <span className="text-[11px] tracking-[0.2em] font-serif whitespace-nowrap">左右滑動切換照片</span>
+          </div>
+        )}
+        {hasMultiple && !isMobile && <div className="w-0 min-w-0 shrink" aria-hidden />}
+        {/* 滑桿與關閉鈕同一列；單張時留空撐開 */}
+        {hasMultiple ? (
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0">1</span>
             <input
               type="range"
               min={1}
@@ -230,22 +217,64 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
               className="flex-1 h-1.5 min-w-0 appearance-none bg-stone-200/60 rounded-full cursor-pointer accent-[#b08d55] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#b08d55] [&::-webkit-slider-thumb]:shadow-[0_0_0_2px_#fdfbf7] [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#b08d55] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
               aria-label="跳至第幾張照片"
             />
-            <span className="text-[9px] text-stone-400 font-mono w-5 shrink-0 text-right">{allPhotos.length}</span>
+            <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 text-right">{allPhotos.length}</span>
             <span className="text-[9px] text-stone-400 font-display tracking-wider shrink-0 hidden sm:inline">第 {String(currentIndex + 1).padStart(2, '0')} / {allPhotos.length}</span>
           </div>
+        ) : (
+          <div className="min-w-0 flex-1" aria-hidden />
         )}
+        <motion.button 
+          initial={{ opacity: 0, rotate: -90 }}
+          animate={{ opacity: 1, rotate: 0 }}
+          exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+          onClick={onClose}
+          className="relative w-10 h-10 flex items-center justify-center rounded-full text-[#2c3e50]/40 hover:text-[#2c3e50] hover:bg-black/5 transition-all group shrink-0"
+          aria-label="Close Lightbox"
+        >
+          <div className="relative w-6 h-6">
+            <span className="absolute top-1/2 left-0 w-full h-px bg-current rotate-45 transition-transform group-hover:scale-x-110" />
+            <span className="absolute top-1/2 left-0 w-full h-px bg-current -rotate-45 transition-transform group-hover:scale-x-110" />
+          </div>
+          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity font-display uppercase whitespace-nowrap">關閉</span>
+        </motion.button>
       </motion.div>
+
+      {/* 電腦版：上一張／下一張在整個頁面的最左與最右，不擋照片與文字 */}
+      {!isMobile && hasMultiple && (
+        <>
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="fixed left-4 md:left-6 top-1/2 -translate-y-1/2 z-[105] w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 active:scale-95 transition-all shadow-lg backdrop-blur-md pointer-events-auto"
+            aria-label="上一張"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-[105] w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white/90 border border-[#b08d55]/30 text-[#2c3e50] hover:bg-white hover:border-[#b08d55]/50 active:scale-95 transition-all shadow-lg backdrop-blur-md pointer-events-auto"
+            aria-label="下一張"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-7 md:w-7 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </>
+      )}
 
       <motion.div 
         initial={{ y: 20, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         exit={{ y: -20, opacity: 0, scale: 0.95, filter: "blur(10px)", transition: { duration: 0.3, ease: "easeIn" } }}
-        className="relative w-full max-w-6xl h-full flex flex-col items-center justify-center gap-2 md:gap-6 pointer-events-none px-3 md:px-0 overflow-y-auto md:overflow-visible pb-[env(safe-area-inset-bottom)] pt-24 md:pt-28"
+        className={`relative w-full max-w-6xl h-full flex flex-col items-center justify-center gap-2 md:gap-6 pointer-events-none px-3 md:px-0 overflow-y-auto md:overflow-visible pb-[env(safe-area-inset-bottom)] pt-16 md:pt-18 ${!isMobile ? 'md:flex-row md:items-center md:gap-8 md:max-w-[calc(100vw-11rem)] md:w-full' : ''}`}
       >
 
-        {/* The Image Wrapper */}
+        {/* 電腦版：照片左側，橫向照佔更寬以發揮寬螢幕優勢；手機版：照片在上 */}
         <motion.div 
-          className={`relative w-full flex justify-center items-center pointer-events-auto max-h-[48vh] md:max-h-[60vh] touch-pan-y shrink-0 ${isMobile ? '' : 'perspective-[1500px]'}`}
+          className={`relative w-full flex justify-center items-center pointer-events-auto max-h-[48vh] touch-pan-y shrink-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-h-[75vh] md:flex-[1_1_80%] md:min-w-0' : 'md:max-h-[70vh] md:flex-[1_1_55%] md:min-w-0') : 'md:max-h-[60vh]'} ${isMobile ? '' : 'perspective-[1500px]'}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           drag="x"
@@ -267,8 +296,8 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
           </AnimatePresence>
         </motion.div>
 
-        {/* Metadata：照片下方，電腦版也為直向排列 */}
-        <div className="w-full max-w-2xl flex-shrink-0 text-left pointer-events-auto bg-white/30 md:bg-transparent p-3 md:px-0 md:pt-2 pb-5 md:pb-0 rounded-sm md:rounded-none backdrop-blur-md md:backdrop-blur-none z-50 flex flex-col justify-center min-h-0">
+        {/* 電腦版：標題與文字右側垂直置中，橫向照時右側較窄以讓照片更寬；手機版：照片下方 */}
+        <div className={`w-full max-w-2xl flex-shrink-0 text-left pointer-events-auto bg-white/30 md:bg-transparent p-3 md:px-0 md:pl-4 pb-5 md:pb-0 rounded-sm md:rounded-none backdrop-blur-md md:backdrop-blur-none z-50 flex flex-col justify-center min-h-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-w-none md:flex-[0_1_18%] md:pt-0' : 'md:max-w-none md:flex-[0_1_38%] md:pt-0') : 'md:pt-2'}`}>
             {/* Animated Content */}
             <AnimatePresence mode="wait">
                 <motion.div 
