@@ -2,9 +2,10 @@
 import React, { useMemo } from 'react';
 import { motion, useTransform, useMotionValue } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
-import { APP_CONTENT, WEDDING_PHOTOS } from '../constants';
+import { WEDDING_PHOTOS } from '../constants';
 import { Photo } from '../types';
 import { MobileAlbumGrid } from './MobileAlbumGrid';
+import { getLayoutSequence, partitionPhotosByLayouts, type AlbumLayoutType, type AlbumPage } from '../albumLayouts';
 
 interface BookCoverProps {
   progress: MotionValue<number>;
@@ -166,24 +167,28 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
 
   const shadowOpacity = useTransform(progress, [0.25, 0.6], [0, 0.3]);
 
-  // Slices of 4 photos per page
-  const slices = useMemo(() => ({
-    base: WEDDING_PHOTOS.slice(0, 4),
-    p1: WEDDING_PHOTOS.slice(4, 8),
-    p1B: WEDDING_PHOTOS.slice(8, 12),
-    p2: WEDDING_PHOTOS.slice(12, 16),
-    p2B: WEDDING_PHOTOS.slice(16, 20),
-    p3: WEDDING_PHOTOS.slice(0, 4),        
-    p3B: WEDDING_PHOTOS.slice(4, 8),
-    p4: WEDDING_PHOTOS.slice(8, 12),
-    p4B: WEDDING_PHOTOS.slice(12, 16),
-    p5: WEDDING_PHOTOS.slice(16, 20),
-    p5B: WEDDING_PHOTOS.slice(0, 4),
-    p6: WEDDING_PHOTOS.slice(4, 8),
-    p6B: WEDDING_PHOTOS.slice(8, 12),
-    p7: WEDDING_PHOTOS.slice(12, 16),
-    p7B: WEDDING_PHOTOS.slice(16, 20),
-  }), []);
+  // 四種版面隨機穿插：1 張直式 / 2 張橫式上下 / 上 1 橫下 2 直左右 / 4 張直式格狀
+  const slices = useMemo(() => {
+    const sequence = getLayoutSequence(15);
+    const albumPages = partitionPhotosByLayouts(WEDDING_PHOTOS, sequence);
+    return {
+      base: albumPages[0],
+      p1: albumPages[1],
+      p1B: albumPages[2],
+      p2: albumPages[3],
+      p2B: albumPages[4],
+      p3: albumPages[5],
+      p3B: albumPages[6],
+      p4: albumPages[7],
+      p4B: albumPages[8],
+      p5: albumPages[9],
+      p5B: albumPages[10],
+      p6: albumPages[11],
+      p6B: albumPages[12],
+      p7: albumPages[13],
+      p7B: albumPages[14],
+    };
+  }, []);
 
   // Elegant paper texture (Warm Linen)
   const paperBg = "bg-[#F9F7F2]"; // Warm cream/off-white
@@ -217,32 +222,32 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
          
          {/* Static Base Page (Always visible on mobile to show content after cover slides) */}
          <div className={`absolute inset-0 ${paperBg} border border-stone-200/50`} style={{ transform: isMobile ? 'none' : 'translateZ(0px)' }}>
-            <PhotoGrid photos={slices.base} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={1} />
+            <PhotoGrid layout={slices.base.layout} photos={slices.base.photos} progress={progress} onSelect={onSelectPhoto} pageNum={1} />
          </div>
       </div>
     </div>
 
       {!isMobile && (
         <>
-          <FanPage rotateY={page7RotateY} index={1} opacity={shadowOpacity} photos={slices.p7} backPhotos={slices.p7B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={14} isMobile={isMobile} />
-          <FanPage rotateY={page6RotateY} index={2} opacity={shadowOpacity} photos={slices.p6} backPhotos={slices.p6B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={12} isMobile={isMobile} />
-          <FanPage rotateY={page5RotateY} index={3} opacity={shadowOpacity} photos={slices.p5} backPhotos={slices.p5B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={10} isMobile={isMobile} />
-          <FanPage rotateY={page4RotateY} index={4} opacity={shadowOpacity} photos={slices.p4} backPhotos={slices.p4B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={8} isMobile={isMobile} />
-          <FanPage rotateY={page3RotateY} index={5} opacity={shadowOpacity} photos={slices.p3} backPhotos={slices.p3B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={6} isMobile={isMobile} />
-          <FanPage rotateY={page2RotateY} index={6} opacity={shadowOpacity} photos={slices.p2} backPhotos={slices.p2B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={4} isMobile={isMobile} />
-          <FanPage rotateY={page1RotateY} index={7} opacity={shadowOpacity} photos={slices.p1} backPhotos={slices.p1B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={2} isMobile={isMobile} />
+          <FanPage rotateY={page7RotateY} index={1} opacity={shadowOpacity} frontPage={slices.p7} backPage={slices.p7B} progress={progress} onSelect={onSelectPhoto} pageNum={14} isMobile={isMobile} />
+          <FanPage rotateY={page6RotateY} index={2} opacity={shadowOpacity} frontPage={slices.p6} backPage={slices.p6B} progress={progress} onSelect={onSelectPhoto} pageNum={12} isMobile={isMobile} />
+          <FanPage rotateY={page5RotateY} index={3} opacity={shadowOpacity} frontPage={slices.p5} backPage={slices.p5B} progress={progress} onSelect={onSelectPhoto} pageNum={10} isMobile={isMobile} />
+          <FanPage rotateY={page4RotateY} index={4} opacity={shadowOpacity} frontPage={slices.p4} backPage={slices.p4B} progress={progress} onSelect={onSelectPhoto} pageNum={8} isMobile={isMobile} />
+          <FanPage rotateY={page3RotateY} index={5} opacity={shadowOpacity} frontPage={slices.p3} backPage={slices.p3B} progress={progress} onSelect={onSelectPhoto} pageNum={6} isMobile={isMobile} />
+          <FanPage rotateY={page2RotateY} index={6} opacity={shadowOpacity} frontPage={slices.p2} backPage={slices.p2B} progress={progress} onSelect={onSelectPhoto} pageNum={4} isMobile={isMobile} />
+          <FanPage rotateY={page1RotateY} index={7} opacity={shadowOpacity} frontPage={slices.p1} backPage={slices.p1B} progress={progress} onSelect={onSelectPhoto} pageNum={2} isMobile={isMobile} />
         </>
       )}
 
       {isMobile && (
         <>
-          <FanPage rotateY={page7RotateY} scaleX={page7ScaleX} skewY={page7SkewY} opacityValue={page7Opacity} index={1} opacity={shadowOpacity} photos={slices.p7} backPhotos={slices.p7B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={14} isMobile={isMobile} />
-          <FanPage rotateY={page6RotateY} scaleX={page6ScaleX} skewY={page6SkewY} opacityValue={page6Opacity} index={2} opacity={shadowOpacity} photos={slices.p6} backPhotos={slices.p6B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={12} isMobile={isMobile} />
-          <FanPage rotateY={page5RotateY} scaleX={page5ScaleX} skewY={page5SkewY} opacityValue={page5Opacity} index={3} opacity={shadowOpacity} photos={slices.p5} backPhotos={slices.p5B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={10} isMobile={isMobile} />
-          <FanPage rotateY={page4RotateY} scaleX={page4ScaleX} skewY={page4SkewY} opacityValue={page4Opacity} index={4} opacity={shadowOpacity} photos={slices.p4} backPhotos={slices.p4B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={8} isMobile={isMobile} />
-          <FanPage rotateY={page3RotateY} scaleX={page3ScaleX} skewY={page3SkewY} opacityValue={page3Opacity} index={5} opacity={shadowOpacity} photos={slices.p3} backPhotos={slices.p3B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={6} isMobile={isMobile} />
-          <FanPage rotateY={page2RotateY} scaleX={page2ScaleX} skewY={page2SkewY} opacityValue={page2Opacity} index={6} opacity={shadowOpacity} photos={slices.p2} backPhotos={slices.p2B} progress={progress} onSelect={onSelectPhoto} layout="editorial" pageNum={4} isMobile={isMobile} />
-          <FanPage rotateY={page1RotateY} scaleX={page1ScaleX} skewY={page1SkewY} opacityValue={page1Opacity} index={7} opacity={shadowOpacity} photos={slices.p1} backPhotos={slices.p1B} progress={progress} onSelect={onSelectPhoto} layout="grid" pageNum={2} isMobile={isMobile} />
+          <FanPage rotateY={page7RotateY} scaleX={page7ScaleX} skewY={page7SkewY} opacityValue={page7Opacity} index={1} opacity={shadowOpacity} frontPage={slices.p7} backPage={slices.p7B} progress={progress} onSelect={onSelectPhoto} pageNum={14} isMobile={isMobile} />
+          <FanPage rotateY={page6RotateY} scaleX={page6ScaleX} skewY={page6SkewY} opacityValue={page6Opacity} index={2} opacity={shadowOpacity} frontPage={slices.p6} backPage={slices.p6B} progress={progress} onSelect={onSelectPhoto} pageNum={12} isMobile={isMobile} />
+          <FanPage rotateY={page5RotateY} scaleX={page5ScaleX} skewY={page5SkewY} opacityValue={page5Opacity} index={3} opacity={shadowOpacity} frontPage={slices.p5} backPage={slices.p5B} progress={progress} onSelect={onSelectPhoto} pageNum={10} isMobile={isMobile} />
+          <FanPage rotateY={page4RotateY} scaleX={page4ScaleX} skewY={page4SkewY} opacityValue={page4Opacity} index={4} opacity={shadowOpacity} frontPage={slices.p4} backPage={slices.p4B} progress={progress} onSelect={onSelectPhoto} pageNum={8} isMobile={isMobile} />
+          <FanPage rotateY={page3RotateY} scaleX={page3ScaleX} skewY={page3SkewY} opacityValue={page3Opacity} index={5} opacity={shadowOpacity} frontPage={slices.p3} backPage={slices.p3B} progress={progress} onSelect={onSelectPhoto} pageNum={6} isMobile={isMobile} />
+          <FanPage rotateY={page2RotateY} scaleX={page2ScaleX} skewY={page2SkewY} opacityValue={page2Opacity} index={6} opacity={shadowOpacity} frontPage={slices.p2} backPage={slices.p2B} progress={progress} onSelect={onSelectPhoto} pageNum={4} isMobile={isMobile} />
+          <FanPage rotateY={page1RotateY} scaleX={page1ScaleX} skewY={page1SkewY} opacityValue={page1Opacity} index={7} opacity={shadowOpacity} frontPage={slices.p1} backPage={slices.p1B} progress={progress} onSelect={onSelectPhoto} pageNum={2} isMobile={isMobile} />
         </>
       )}
 
@@ -315,22 +320,20 @@ interface FanPageProps {
   opacityValue?: MotionValue<number>;
   index: number;
   opacity: MotionValue<number>;
-  photos: Photo[];
-  backPhotos?: Photo[]; 
+  frontPage: AlbumPage;
+  backPage: AlbumPage;
   progress: MotionValue<number>;
   onSelect: (photo: Photo) => void;
-  layout?: 'grid' | 'editorial';
   pageNum: number;
   isMobile: boolean;
 }
 
-const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opacity, photos, backPhotos, progress, onSelect, layout = 'grid', pageNum, isMobile }: FanPageProps) => {
+const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opacity, frontPage, backPage, progress, onSelect, pageNum, isMobile }: FanPageProps) => {
   const x = useMotionValue(0);
   const dragRotateY = useTransform(x, [-100, 100], [-35, 35]);
   const combinedRotateY = useTransform([rotateY, dragRotateY], ([s, d]: any) => s + d);
   const dragEnabled = !isMobile;
 
-  // Paper color and texture
   const paperClass = "bg-[#F9F7F2]";
   const paperTextureClass = "bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] opacity-40";
 
@@ -351,20 +354,16 @@ const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opaci
       }}
       className={`absolute inset-y-[1px] left-0 right-[1px] origin-left ${isMobile ? '' : 'transform-gpu'}`}
     >
-      {/* Front of Page */}
       <div className={`absolute inset-0 ${paperClass} border-y border-r border-stone-200/60 rounded-r-[1px] overflow-hidden shadow-sm`} style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
         <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
-        <PhotoGrid photos={photos} progress={progress} onSelect={onSelect} layout={layout} pageNum={pageNum} />
-        {/* Shadow Gradient for depth near spine */}
+        <PhotoGrid layout={frontPage.layout} photos={frontPage.photos} progress={progress} onSelect={onSelect} pageNum={pageNum} />
         <div className="absolute top-0 bottom-0 left-0 w-8 bg-gradient-to-r from-black/5 to-transparent pointer-events-none" />
         <motion.div style={{ opacity }} className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-transparent pointer-events-none" />
       </div>
 
-      {/* Back of Page */}
       <div className={`absolute inset-0 ${paperClass} border-y border-l border-stone-200/60 rounded-l-[1px] overflow-hidden shadow-sm`} style={{ transform: 'rotateY(180deg) translateZ(1px)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
          <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
-         {backPhotos && <PhotoGrid photos={backPhotos} progress={progress} isBackPage={true} onSelect={onSelect} layout={layout === 'grid' ? 'editorial' : 'grid'} pageNum={pageNum + 1} />}
-         {/* Shadow Gradient for depth near spine */}
+         <PhotoGrid layout={backPage.layout} photos={backPage.photos} progress={progress} isBackPage={true} onSelect={onSelect} pageNum={pageNum + 1} />
          <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-black/5 to-transparent pointer-events-none" />
          <div className="absolute inset-0 bg-black/2 pointer-events-none" />
       </div>
@@ -373,51 +372,64 @@ const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opaci
 });
 
 interface PhotoGridProps {
+  layout: AlbumLayoutType;
   photos: Photo[];
   progress: MotionValue<number>;
   isBackPage?: boolean;
   onSelect: (photo: Photo) => void;
-  layout?: 'grid' | 'editorial';
   pageNum?: number;
 }
 
-const PhotoGrid = React.memo(({ photos, progress, isBackPage = false, onSelect, layout = 'grid', pageNum }: PhotoGridProps) => {
-  const containerPadding = layout === 'editorial' ? 'p-4 md:p-5' : 'p-3 md:p-4';
-  // editorial：大格放橫向(h)、小格放直向(v)，依 orientation 排序讓版面更協調
-  const ordered = layout === 'editorial'
-    ? [...photos.slice(0, 4)].sort((a, b) =>
-        (a.orientation === 'landscape' ? -1 : 1) - (b.orientation === 'landscape' ? -1 : 1)
-      )
-    : photos.slice(0, 4);
+const PhotoGrid = React.memo(({ layout, photos, progress, isBackPage = false, onSelect, pageNum }: PhotoGridProps) => {
+  const containerPadding = 'p-3 md:p-4';
+  const gap = 'gap-2 md:gap-3';
+
+  // 分頁時已依 orientation（publicId h/v）放入對應版面，直接使用傳入順序
+  const ordered = photos;
+
+  const gridConfig = (() => {
+    switch (layout) {
+      case 'single-portrait':
+        return { grid: 'grid-cols-1 grid-rows-1', cells: [{ key: 0, col: 1, row: 1 }] };
+      case 'two-horizontal':
+        return { grid: 'grid-cols-1 grid-rows-2', cells: [{ key: 0, col: 1, row: 1 }, { key: 1, col: 1, row: 1 }] };
+      case 'one-h-two-v':
+        return {
+          grid: 'grid-cols-2 grid-rows-2',
+          cells: [
+            { key: 0, col: 2, row: 1 }, // 上橫
+            { key: 1, col: 1, row: 1 },
+            { key: 2, col: 1, row: 1 },
+          ],
+        };
+      case 'four-portrait-grid':
+        return {
+          grid: 'grid-cols-2 grid-rows-2',
+          cells: [{ key: 0, col: 1, row: 1 }, { key: 1, col: 1, row: 1 }, { key: 2, col: 1, row: 1 }, { key: 3, col: 1, row: 1 }],
+        };
+      default:
+        return { grid: 'grid-cols-2 grid-rows-2', cells: [] };
+    }
+  })();
 
   return (
     <div className={`absolute inset-0 ${containerPadding} flex flex-col justify-between overflow-hidden`}>
-      <div className={`w-full h-full grid ${layout === 'editorial' ? 'grid-cols-2 grid-rows-3' : 'grid-cols-2 grid-rows-2'} gap-3`}>
-        {ordered.map((p, i) => {
-          let classes = "relative overflow-hidden";
-          
-          if (layout === 'editorial') {
-             if (i === 0) classes += " col-span-2 row-span-2";
-             else if (i === 1) classes += " col-span-1 row-span-1";
-             else if (i === 2) classes += " col-span-1 row-span-1";
-             else classes += " hidden";
-          } else {
-             classes += " col-span-1 row-span-1";
-          }
-
+      <div className={`w-full h-full grid ${gridConfig.grid} ${gap}`}>
+        {gridConfig.cells.map((cell, i) => {
+          const photo = ordered[cell.key];
+          if (!photo) return null;
+          const spanClass = cell.col === 2 ? 'col-span-2' : cell.row === 2 ? 'row-span-2' : '';
           return (
-            <div key={p.id} className={classes}>
-               <PhotoItem photo={p} index={i} progress={progress} isBackPage={isBackPage} onSelect={onSelect} />
+            <div key={`${photo.id}-${i}`} className={`relative overflow-hidden ${spanClass}`}>
+              <PhotoItem photo={photo} index={i} progress={progress} isBackPage={isBackPage} onSelect={onSelect} />
             </div>
           );
         })}
       </div>
-      
-      {/* Elegant Page Number */}
-      {pageNum && (
-         <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
-            <span className="font-display text-[7px] text-[#b08d55] tracking-[0.3em] opacity-60">- {String(pageNum).padStart(2, '0')} -</span>
-         </div>
+      {pageNum != null && (
+        <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+          <span className="font-display text-[7px] text-[#b08d55] tracking-[0.3em] opacity-60">- {String(pageNum).padStart(2, '0')} -</span>
+        </div>
       )}
     </div>
   );
@@ -449,10 +461,12 @@ const PhotoItem = React.memo(({ photo, index, progress, isBackPage = false, onSe
     >
       <div className="relative w-full h-full overflow-hidden bg-stone-100">
           <motion.img 
-            src={photo.url} 
+            src={photo.compressedUrl ?? photo.url} 
             style={{ y: parallaxY }} 
             className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
-            alt={photo.alt} 
+            alt={photo.alt}
+            loading="lazy"
+            decoding="async"
           />
           {/* Grain Overlay on Photo */}
           <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none mix-blend-overlay" />

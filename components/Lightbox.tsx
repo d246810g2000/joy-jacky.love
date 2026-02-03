@@ -15,10 +15,174 @@ interface LightboxImageProps {
   rotateX: any;
   rotateY: any;
   isMobile: boolean;
+  onZoomChange?: (zoomed: boolean) => void;
 }
 
-const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, isMobile }) => {
+const getTouchDistance = (a: React.Touch, b: React.Touch) =>
+  Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+const getTouchCenter = (a: React.Touch, b: React.Touch) => ({
+  x: (a.clientX + b.clientX) / 2,
+  y: (a.clientY + b.clientY) / 2,
+});
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_SLOP = 40;
+const TAP_MOVE_SLOP = 15;
+const DOUBLE_TAP_ZOOM = 2;
+
+const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, isMobile, onZoomChange }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const pinchRef = React.useRef<{
+    initialDistance: number;
+    initialScale: number;
+    initialTranslate: { x: number; y: number };
+    initialCenter: { x: number; y: number };
+  } | null>(null);
+  const panRef = React.useRef<{ startClientX: number; startClientY: number; startTranslateX: number; startTranslateY: number } | null>(null);
+  const doubleTapRef = React.useRef<{ lastTime: number; lastX: number; lastY: number } | null>(null);
+  const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
+  const touchMovedRef = React.useRef(false);
+
+  const resetZoom = useCallback(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+    onZoomChange?.(false);
+  }, [onZoomChange]);
+
+  React.useEffect(() => {
+    onZoomChange?.(scale > 1);
+  }, [scale, onZoomChange]);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isMobile || e.touches.length === 0) return;
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        pinchRef.current = {
+          initialDistance: getTouchDistance(e.touches[0], e.touches[1]),
+          initialScale: scale,
+          initialTranslate: { ...translate },
+          initialCenter: getTouchCenter(e.touches[0], e.touches[1]),
+        };
+        touchStartRef.current = null;
+      } else if (e.touches.length === 1) {
+        touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        touchMovedRef.current = false;
+        if (scale > 1) {
+          panRef.current = {
+            startClientX: e.touches[0].clientX,
+            startClientY: e.touches[0].clientY,
+            startTranslateX: translate.x,
+            startTranslateY: translate.y,
+          };
+        }
+      }
+    },
+    [isMobile, scale, translate]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isMobile || e.touches.length === 0) return;
+      if (e.touches.length === 2 && pinchRef.current) {
+        e.preventDefault();
+        const dist = getTouchDistance(e.touches[0], e.touches[1]);
+        const center = getTouchCenter(e.touches[0], e.touches[1]);
+        const ratio = dist / pinchRef.current.initialDistance;
+        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pinchRef.current.initialScale * ratio));
+        const dx = center.x - pinchRef.current.initialCenter.x;
+        const dy = center.y - pinchRef.current.initialCenter.y;
+        setScale(newScale);
+        setTranslate({
+          x: pinchRef.current.initialTranslate.x + dx / newScale,
+          y: pinchRef.current.initialTranslate.y + dy / newScale,
+        });
+        onZoomChange?.(newScale > 1);
+      } else if (e.touches.length === 1) {
+        if (touchStartRef.current) {
+          const dx = e.touches[0].clientX - touchStartRef.current.x;
+          const dy = e.touches[0].clientY - touchStartRef.current.y;
+          if (Math.hypot(dx, dy) > TAP_MOVE_SLOP) touchMovedRef.current = true;
+        }
+        if (scale > 1 && panRef.current) {
+          e.preventDefault();
+          const dx = e.touches[0].clientX - panRef.current.startClientX;
+          const dy = e.touches[0].clientY - panRef.current.startClientY;
+          setTranslate({
+            x: panRef.current.startTranslateX + dx / scale,
+            y: panRef.current.startTranslateY + dy / scale,
+          });
+        }
+      }
+    },
+    [isMobile, scale]
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length < 2) pinchRef.current = null;
+      if (e.touches.length < 1) {
+        panRef.current = null;
+        // 手機雙擊：未滑動且兩次點擊時間/位置接近則切換縮放
+        if (isMobile && e.changedTouches.length > 0 && !touchMovedRef.current) {
+          const t = e.changedTouches[0];
+          const now = Date.now();
+          const prev = doubleTapRef.current;
+          const isDoubleTap =
+            prev &&
+            now - prev.lastTime <= DOUBLE_TAP_MS &&
+            Math.hypot(t.clientX - prev.lastX, t.clientY - prev.lastY) <= DOUBLE_TAP_SLOP;
+          doubleTapRef.current = { lastTime: now, lastX: t.clientX, lastY: t.clientY };
+          if (isDoubleTap) {
+            if (scale > 1) {
+              resetZoom();
+            } else {
+              const el = containerRef.current;
+              if (el) {
+                const rect = el.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const tapOffsetX = t.clientX - centerX;
+                const tapOffsetY = t.clientY - centerY;
+                setScale(DOUBLE_TAP_ZOOM);
+                setTranslate({ x: -tapOffsetX, y: -tapOffsetY });
+                onZoomChange?.(true);
+              }
+            }
+          }
+        }
+      }
+    },
+    [isMobile, scale, resetZoom, onZoomChange]
+  );
+
+  const imgContent = (
+    <motion.img
+      src={photo.url}
+      alt={photo.alt}
+      onLoad={() => setIsLoaded(true)}
+      initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
+      animate={{
+        opacity: isLoaded ? 1 : 0,
+        scale: isLoaded ? 1 : 0.96,
+        filter: isLoaded ? "blur(0px)" : "blur(8px)",
+      }}
+      style={
+        isMobile
+          ? { willChange: "transform, opacity" }
+          : { rotateX, rotateY, transformStyle: "preserve-3d" }
+      }
+      className={`${isMobile && photo.orientation === 'portrait' ? 'max-h-[60vh]' : 'max-h-[48vh]'} md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] ${isMobile ? "touch-none" : ""} ${isMobile ? "" : "transform-gpu"}`}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+      onClick={(e) => e.stopPropagation()}
+      draggable={false}
+    />
+  );
 
   return (
     <motion.div
@@ -29,37 +193,52 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, 
     >
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-            <div className="w-10 h-10 border-[3px] border-stone-200 border-t-[#b08d55] rounded-full animate-spin" />
+          <div className="w-10 h-10 border-[3px] border-stone-200 border-t-[#b08d55] rounded-full animate-spin" />
         </div>
       )}
-      <motion.img
-        src={photo.url}
-        alt={photo.alt}
-        onLoad={() => setIsLoaded(true)}
-        
-        initial={{ opacity: 0, scale: 0.96, filter: "blur(8px)" }}
-        animate={{ 
-            opacity: isLoaded ? 1 : 0, 
-            scale: isLoaded ? 1 : 0.96,
-            filter: isLoaded ? "blur(0px)" : "blur(8px)"
-        }}
-        
-        style={isMobile ? { 
-          // 手機端：完全移除 3D 變換，只保留簡單的 2D 效果
-          willChange: 'transform, opacity'
-        } : { 
-          // 桌面端：保留 3D 懸停效果
-          rotateX, 
-          rotateY, 
-          transformStyle: 'preserve-3d'
-        }}
-        className={`max-h-[48vh] md:max-h-[85vh] w-auto max-w-full object-contain rounded-[2px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25)] border border-white/60 cursor-default select-none relative z-10 bg-[#fdfbf7] ${isMobile ? '' : 'transform-gpu'}`}
-        transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} 
-        onClick={(e) => e.stopPropagation()}
-      />
+      {isMobile ? (
+        <div
+          ref={containerRef}
+          className="relative flex items-center justify-center w-full min-h-[40vh] overflow-hidden touch-none"
+          style={{ touchAction: "none" }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          <div
+            style={{
+              transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+              transformOrigin: "center center",
+            }}
+            className="flex items-center justify-center origin-center"
+          >
+            {imgContent}
+          </div>
+          {scale > 1 ? (
+            <button
+              type="button"
+              onClick={resetZoom}
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 rounded-full bg-black/50 text-white text-xs backdrop-blur-sm"
+              aria-label="還原縮放"
+            >
+              還原縮放 · 或雙擊畫面
+            </button>
+          ) : (
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] pointer-events-none">
+              雙擊放大
+            </span>
+          )}
+        </div>
+      ) : (
+        imgContent
+      )}
     </motion.div>
   );
 };
+
+const PRELOAD_NEXT = 3;
+const PRELOAD_PREV = 1;
 
 export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ photo, allPhotos = [], onClose, onPhotoChange, isMobile }) => {
   // Lock body scroll when lightbox is open
@@ -72,7 +251,27 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
 
   // --- Navigation Logic ---
   const currentIndex = allPhotos.findIndex(p => p.id === photo.id);
+
+  // 進入藝廊後偷載下一張與前後幾張高清圖，切下一張時不用轉圈
+  useEffect(() => {
+    if (allPhotos.length <= 1) return;
+    const indices: number[] = [];
+    for (let i = 1; i <= PRELOAD_NEXT; i++) indices.push((currentIndex + i) % allPhotos.length);
+    for (let i = 1; i <= PRELOAD_PREV; i++) indices.push((currentIndex - i + allPhotos.length) % allPhotos.length);
+    indices.forEach((i) => {
+      const p = allPhotos[i];
+      if (p?.url) {
+        const img = new Image();
+        img.src = p.url;
+      }
+    });
+  }, [currentIndex, allPhotos]);
   const hasMultiple = allPhotos.length > 1;
+
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
+  useEffect(() => {
+    setIsImageZoomed(false);
+  }, [photo.id]);
 
   const handleNext = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -204,21 +403,31 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
           </div>
         )}
         {hasMultiple && !isMobile && <div className="w-0 min-w-0 shrink" aria-hidden />}
-        {/* 滑桿與關閉鈕同一列；單張時留空撐開 */}
-        {hasMultiple ? (
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0">1</span>
-            <input
-              type="range"
-              min={1}
-              max={allPhotos.length}
-              value={currentIndex + 1}
-              onChange={handleSliderChange}
-              className="flex-1 h-1.5 min-w-0 appearance-none bg-stone-200/60 rounded-full cursor-pointer accent-[#b08d55] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#b08d55] [&::-webkit-slider-thumb]:shadow-[0_0_0_2px_#fdfbf7] [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#b08d55] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
-              aria-label="跳至第幾張照片"
-            />
-            <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 text-right">{allPhotos.length}</span>
-            <span className="text-[9px] text-stone-400 font-display tracking-wider shrink-0 hidden sm:inline">第 {String(currentIndex + 1).padStart(2, '0')} / {allPhotos.length}</span>
+        {/* 僅電腦版顯示滑桿；當前頁碼對齊在滑桿拇指正上方；手機版不顯示拖曳區塊 */}
+        {hasMultiple && !isMobile ? (
+          <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0 w-full h-5">
+              <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0">1</span>
+              <div className="relative flex-1 min-w-0 flex flex-col">
+                <span
+                  className="absolute text-[9px] text-stone-400 font-display tracking-wider whitespace-nowrap -translate-x-1/2 -translate-y-[calc(100%+6px)] top-0 pointer-events-none"
+                  style={{ left: allPhotos.length > 1 ? `${(currentIndex / (allPhotos.length - 1)) * 100}%` : '50%' }}
+                  aria-hidden
+                >
+                  {currentIndex + 1}
+                </span>
+                <input
+                  type="range"
+                  min={1}
+                  max={allPhotos.length}
+                  value={currentIndex + 1}
+                  onChange={handleSliderChange}
+                  className="w-full h-1.5 appearance-none bg-stone-200/60 rounded-full cursor-pointer accent-[#b08d55] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#b08d55] [&::-webkit-slider-thumb]:shadow-[0_0_0_2px_#fdfbf7] [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#b08d55] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
+                  aria-label="跳至第幾張照片"
+                />
+              </div>
+              <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 text-right">{allPhotos.length}</span>
+            </div>
           </div>
         ) : (
           <div className="min-w-0 flex-1" aria-hidden />
@@ -274,10 +483,10 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
 
         {/* 電腦版：照片左側，橫向照佔更寬以發揮寬螢幕優勢；手機版：照片在上 */}
         <motion.div 
-          className={`relative w-full flex justify-center items-center pointer-events-auto max-h-[48vh] touch-pan-y shrink-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-h-[75vh] md:flex-[1_1_80%] md:min-w-0' : 'md:max-h-[70vh] md:flex-[1_1_55%] md:min-w-0') : 'md:max-h-[60vh]'} ${isMobile ? '' : 'perspective-[1500px]'}`}
+          className={`relative w-full flex justify-center items-center pointer-events-auto ${isMobile && photo.orientation === 'portrait' ? 'max-h-[60vh]' : 'max-h-[48vh]'} touch-pan-y shrink-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-h-[75vh] md:flex-[1_1_80%] md:min-w-0' : 'md:max-h-[70vh] md:flex-[1_1_55%] md:min-w-0') : 'md:max-h-[60vh]'} ${isMobile ? '' : 'perspective-[1500px]'}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          drag="x"
+          drag={isMobile && hasMultiple && !isImageZoomed ? "x" : false}
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.2}
           onDragEnd={(_, info) => {
@@ -292,6 +501,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
                 rotateX={rotateX} 
                 rotateY={rotateY} 
                 isMobile={isMobile}
+                onZoomChange={setIsImageZoomed}
             />
           </AnimatePresence>
         </motion.div>

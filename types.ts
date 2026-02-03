@@ -2,6 +2,8 @@
 export interface Photo {
   id: string;
   url: string;
+  /** 壓縮圖 URL（相簿網格、飛出照片用）；點進藝廊用 url 高清 */
+  compressedUrl?: string;
   alt: string;
   /** 精彩瞬間標題 */
   title?: string;

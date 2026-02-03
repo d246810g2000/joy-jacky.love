@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ScrollExperience } from './components/ScrollExperience';
 import { EnvelopeInvitation } from './components/EnvelopeInvitation';
@@ -79,6 +79,12 @@ function App() {
   
   const [guestBookRefresh, setGuestBookRefresh] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const [isHoveringFlyingPhoto, setIsHoveringFlyingPhoto] = useState(false);
+  const hoverCountRef = useRef(0);
+  const onPhotoHoverChange = useCallback((hovering: boolean) => {
+    hoverCountRef.current = Math.max(0, hoverCountRef.current + (hovering ? 1 : -1));
+    setIsHoveringFlyingPhoto(hoverCountRef.current > 0);
+  }, []);
   const isMobile = useIsMobile(768);
 
   // --- Auto Scroll Logic ---
@@ -149,7 +155,8 @@ function App() {
         !isInitialLoading && 
         !isGuestBookExpanded && 
         !isNavigatingRef.current &&
-        !selectedPhoto
+        !selectedPhoto &&
+        !isHoveringFlyingPhoto
       ) {
         startAutoScroll();
       }
@@ -160,32 +167,49 @@ function App() {
       clearInterval(inactivityInterval);
       stopAutoScroll();
     };
-  }, [isInitialLoading, isGuestBookExpanded, selectedPhoto]);
+  }, [isInitialLoading, isGuestBookExpanded, selectedPhoto, isHoveringFlyingPhoto]);
 
-  // --- Asset Preloading ---
+  // 滑鼠放在飛出相片上時停止自動捲動
   useEffect(() => {
-    const assetsToLoad = [BACKGROUND_IMAGE, ...WEDDING_PHOTOS.map(p => p.url), 'favicon.png'];
-    const totalAssets = assetsToLoad.length;
-    let loadedCount = 0;
+    if (isHoveringFlyingPhoto) stopAutoScroll();
+  }, [isHoveringFlyingPhoto]);
 
-    const updateProgress = () => {
-      loadedCount++;
-      const progress = (loadedCount / totalAssets) * 100;
-      setLoadingProgress(progress);
+  // --- Asset Preloading（只擋關鍵資源，其餘 lazy 載入）---
+  useEffect(() => {
+    const compressedUrls = WEDDING_PHOTOS.map(p => p.compressedUrl ?? p.url);
+    // 關鍵：背景 + 前 6 張（首屏/相簿封面可見），達成就可進入
+    const CRITICAL_COUNT = 1 + 6;
+    const criticalUrls = [BACKGROUND_IMAGE, ...compressedUrls.slice(0, 6)];
+    const allUrls = [BACKGROUND_IMAGE, ...compressedUrls];
+    let loadedCount = 0;
+    let criticalLoaded = 0;
+
+    const finishWhenReady = () => {
+      if (criticalLoaded >= CRITICAL_COUNT) setLoadingProgress(100);
     };
 
-    assetsToLoad.forEach(url => {
+    const updateProgress = (isCritical: boolean) => () => {
+      loadedCount++;
+      if (isCritical) criticalLoaded++;
+      const progress = Math.min(100, (loadedCount / allUrls.length) * 100);
+      setLoadingProgress(progress);
+      finishWhenReady();
+    };
+
+    criticalUrls.forEach((url, i) => {
       const img = new Image();
       img.src = url;
-      img.onload = updateProgress;
-      img.onerror = updateProgress; // Count as loaded even on error to avoid hanging
+      img.onload = updateProgress(true);
+      img.onerror = updateProgress(true);
+    });
+    allUrls.slice(CRITICAL_COUNT).forEach(url => {
+      const img = new Image();
+      img.src = url;
+      img.onload = updateProgress(false);
+      img.onerror = updateProgress(false);
     });
 
-    // Fallback timer to ensure it doesn't hang forever
-    const timer = setTimeout(() => {
-      setLoadingProgress(100);
-    }, 10000);
-
+    const timer = setTimeout(() => setLoadingProgress(100), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -337,6 +361,8 @@ function App() {
           selectedPhoto={selectedPhoto} 
           setSelectedPhoto={setSelectedPhoto} 
           isMobile={isMobile}
+          isHoveringFlyingPhoto={isHoveringFlyingPhoto}
+          onPhotoHoverChange={onPhotoHoverChange}
         />
       </div>
 
@@ -459,7 +485,10 @@ function App() {
 
       </div>
 
-      {/* --- REIMAGINED NAVIGATION DOCK (Collapsible Pill) --- */}
+      {/* --- REIMAGINED NAVIGATION DOCK：電腦版直接展開，手機版可收合為漢堡 --- */}
+      {(() => {
+        const navExpanded = !isMobile || isNavExpanded;
+        return (
       <div 
         className={`fixed bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out ${showNav && !isGuestBookExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
@@ -467,10 +496,9 @@ function App() {
             layout
             initial={false}
             animate={{ 
-                width: isNavExpanded ? "auto" : "var(--collapsed-width)",
+                width: navExpanded ? "auto" : "var(--collapsed-width)",
                 borderRadius: "9999px"
             }}
-            // Match the Audio Button dimensions exactly (w-12 h-12 or w-14 h-14)
             style={{ "--collapsed-width": typeof window !== 'undefined' && window.innerWidth >= 768 ? "3.5rem" : "3.2rem" } as any}
             className={`
                 bg-white/95 backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
@@ -478,7 +506,7 @@ function App() {
             `}
           >
              <AnimatePresence mode="wait">
-                {isNavExpanded ? (
+                {navExpanded ? (
                     <motion.div 
                         key="expanded"
                         initial={{ opacity: 0 }}
@@ -490,7 +518,7 @@ function App() {
                          <button 
                             onClick={() => {
                                 navigate('/rsvp');
-                                setIsNavExpanded(false);
+                                if (isMobile) setIsNavExpanded(false);
                             }}
                             className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#8E3535] hover:bg-stone-50 transition-colors duration-300 shrink-0"
                             aria-label="RSVP"
@@ -507,7 +535,7 @@ function App() {
                            return (
                               <button 
                                  key={item.id}
-                                 onClick={() => handleNavClick(item.id, item.targetId)}
+                                 onClick={() => { handleNavClick(item.id, item.targetId); if (isMobile) setIsNavExpanded(false); }}
                                  className="relative w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full z-10 transition-colors duration-200 group shrink-0"
                                  aria-label={item.label}
                               >
@@ -530,20 +558,22 @@ function App() {
 
                         {/* Home Button */}
                         <button 
-                            onClick={() => handleNavClick('home', 'home')}
+                            onClick={() => { handleNavClick('home', 'home'); if (isMobile) setIsNavExpanded(false); }}
                             className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#8E3535] hover:bg-stone-50 transition-colors duration-300 shrink-0"
                             aria-label="Back to Top"
                         >
                             <HeartSolidIcon />
                         </button>
                         
-                        {/* Close Button */}
+                        {/* 僅手機版顯示收合按鈕；電腦版導覽列常駐展開 */}
+                        {isMobile && (
                         <button 
                             onClick={() => setIsNavExpanded(false)}
                             className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-colors duration-300 shrink-0 ml-1"
                         >
                             <XIcon />
                         </button>
+                        )}
                     </motion.div>
                 ) : (
                     <motion.button 
@@ -561,6 +591,8 @@ function App() {
              </AnimatePresence>
           </motion.div>
       </div>
+        );
+      })()}
 
       {/* Standalone Audio Button（點選音樂不算觸碰螢幕，不影響 1 秒後自動捲動） */}
       <div 
@@ -572,7 +604,7 @@ function App() {
 
       {/* Floating RSVP Button (Bottom Left) */}
       <div 
-        className={`fixed bottom-8 left-8 z-50 transition-all duration-500 ease-out ${showRSVPButton && !isGuestBookExpanded && !isNavExpanded ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-8 left-8 z-50 transition-all duration-500 ease-out ${showRSVPButton && !isGuestBookExpanded && !showNav ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
         <Link 
           to="/rsvp"

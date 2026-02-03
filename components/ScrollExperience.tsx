@@ -10,12 +10,16 @@ interface ScrollExperienceProps {
   selectedPhoto: Photo | null;
   setSelectedPhoto: (photo: Photo | null) => void;
   isMobile: boolean;
+  isHoveringFlyingPhoto?: boolean;
+  onPhotoHoverChange?: (hovering: boolean) => void;
 }
 
 export const ScrollExperience: React.FC<ScrollExperienceProps> = ({ 
   selectedPhoto, 
   setSelectedPhoto,
-  isMobile
+  isMobile,
+  isHoveringFlyingPhoto = false,
+  onPhotoHoverChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -66,21 +70,27 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const photoWaves = useMemo(() => {
     return waves.map((wave, waveIdx) => (
       <React.Fragment key={`wave-${waveIdx}`}>
-        {wave.photos.map((photo, index) => (
-          <FloatingPhoto 
-            key={`photo-${photo.id}-${waveIdx}-${index}`}
-            photo={photo}
-            index={index}
-            totalInWave={wave.photos.length}
-            progress={scrollYProgress}
-            triggerStart={wave.trigger}
-            onSelect={setSelectedPhoto}
-            isMobile={isMobile}
-          />
-        ))}
+        {wave.photos.map((photo, index) => {
+          // 僅電腦版：翻頁後的 wave 讓部分照片從相簿左側（書脊）起飛；手機維持右側
+          const startFromSpine = !isMobile && waveIdx >= 1 && (waveIdx + index) % 2 === 0;
+          return (
+            <FloatingPhoto 
+              key={`photo-${photo.id}-${waveIdx}-${index}`}
+              photo={photo}
+              index={index}
+              totalInWave={wave.photos.length}
+              progress={scrollYProgress}
+              triggerStart={wave.trigger}
+              onSelect={setSelectedPhoto}
+              onHoverChange={onPhotoHoverChange}
+              startFromSpine={startFromSpine}
+              isMobile={isMobile}
+            />
+          );
+        })}
       </React.Fragment>
     ));
-  }, [waves, scrollYProgress, setSelectedPhoto, isMobile]);
+  }, [waves, scrollYProgress, setSelectedPhoto, onPhotoHoverChange, isMobile]);
 
   const hintOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.7, 0.8], [0, 1, 1, 0]);
   const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
@@ -96,14 +106,14 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
       
       <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
         
-        {/* Hint Text for Gallery */}
+        {/* Hint Text for Gallery - 不參與變暗，保持清晰 */}
         <motion.div
           style={{ 
             opacity: hintOpacity, 
             x: isMobile ? "-50%" : -hintOffset,
             y: isMobile ? hintOffset : "-50%",
           }}
-          className={`absolute z-[60] pointer-events-none ${isMobile ? 'left-1/2 bottom-[8%]' : 'left-8 md:left-12 top-1/2'}`}
+          className={`absolute z-[70] pointer-events-none ${isMobile ? 'left-1/2 bottom-[8%]' : 'left-8 md:left-12 top-1/2'}`}
         >
           <motion.div 
             animate={{ 
@@ -138,36 +148,39 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
           </motion.div>
         </motion.div>
 
-        {/* Ambient Background Effects - Optimized for mobile */}
-        <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
-           <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
-           <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
-        </div>
-
-        <motion.div 
-            style={{ 
-              scale: bgScale, 
-              y: bgY, 
-              opacity: bgOpacity,
-              willChange: isMobile ? 'transform, opacity' : 'auto'
-            }}
-            className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
+        {/* 電腦版：滑鼠在飛出相片上時，此區變暗以凸顯照片；左側提示不在此區內故不變暗 */}
+        <motion.div
+          className="absolute inset-0 z-[5] pointer-events-none"
+          initial={false}
+          animate={{ opacity: !isMobile && isHoveringFlyingPhoto ? 0.5 : 1 }}
+          transition={{ duration: 0.35 }}
         >
-            {/* 1. Base Image */}
-            <img 
-              src={BACKGROUND_IMAGE} 
-              alt="Background" 
-              className="w-full h-full object-cover object-center"
-            />
-            
-            {/* 2. Cinematic Top Fade - Adjusted colors to match transparent BG */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/40 to-transparent z-10 pointer-events-none h-[45%]" />
-            
-            {/* 3. Bottom Fade */}
-            <div className="absolute bottom-0 left-0 w-full h-[20%] bg-gradient-to-t from-white to-transparent z-10" />
+          {/* Ambient Background Effects */}
+          <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
+             <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
+             <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
+          </div>
+
+          <motion.div 
+              style={{ 
+                scale: bgScale, 
+                y: bgY, 
+                opacity: bgOpacity,
+                willChange: isMobile ? 'transform, opacity' : 'auto'
+              }}
+              className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
+          >
+              <img 
+                src={BACKGROUND_IMAGE} 
+                alt="Background" 
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/40 to-transparent z-10 pointer-events-none h-[45%]" />
+              <div className="absolute bottom-0 left-0 w-full h-[20%] bg-gradient-to-t from-white to-transparent z-10" />
+          </motion.div>
         </motion.div>
 
-        {/* Hero Text Content */}
+        {/* Hero Text Content - 在變暗 wrapper 外，滑鼠懸停飛出照片時保持完全可見 */}
         <motion.div 
           style={{ 
             opacity: textOpacity, 
@@ -175,7 +188,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
             filter: textBlur,
             willChange: isMobile ? 'transform, opacity' : 'auto'
           }}
-          className={`absolute top-[12%] md:top-[15%] z-30 flex flex-col items-center text-center px-6 pointer-events-none w-full max-w-4xl ${isMobile ? '' : 'transform-gpu'}`}
+          className={`absolute top-[12%] md:top-[15%] left-0 right-0 z-30 flex flex-col items-center justify-center text-center px-6 pointer-events-none w-full max-w-4xl mx-auto ${isMobile ? '' : 'transform-gpu'}`}
         >
           {/* Top Label */}
           <motion.div style={{ y: labelY }} className="flex items-center gap-4 mb-4 md:mb-6 opacity-80">
@@ -203,8 +216,6 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
                 <span>張家銘</span>
              </p>
           </motion.div>
-          
-          {/* Scroll Indicator removed */}
         </motion.div>
 
         <motion.div 
@@ -218,7 +229,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
             }}
             className={`absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 ${isMobile ? '' : 'transform-gpu'}`}
         >
-          {/* Photos Stream */}
+          {/* Photos Stream - 不變暗，維持清晰 */}
           <motion.div 
             style={{ x: "-12vw", transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
             className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-20" 
@@ -226,13 +237,20 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
              {photoWaves}
           </motion.div>
 
-          <div className="relative z-10" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
+          {/* 電腦版：滑鼠在飛出相片上時，相簿本體變暗 */}
+          <motion.div
+            className="relative z-10 transition-opacity duration-300"
+            style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
+            initial={false}
+            animate={{ opacity: !isMobile && isHoveringFlyingPhoto ? 0.5 : 1 }}
+            transition={{ duration: 0.35 }}
+          >
             <BookCover 
               progress={scrollYProgress} 
               onSelectPhoto={setSelectedPhoto}
               isMobile={isMobile}
             />
-          </div>
+          </motion.div>
         </motion.div>
         
       </div>

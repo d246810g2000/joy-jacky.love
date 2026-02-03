@@ -1,8 +1,11 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, useTransform } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { Photo } from '../types';
+
+/** 相簿書脊在 Photos Stream 座標下的約略 X（從左側飛出時的起點） */
+const SPINE_X_VW = -18;
 
 interface FloatingPhotoProps {
   photo: Photo;
@@ -11,10 +14,14 @@ interface FloatingPhotoProps {
   progress: MotionValue<number>;
   triggerStart: number; 
   onSelect: (photo: Photo) => void; 
+  onHoverChange?: (hovering: boolean) => void;
+  /** 若為 true，從相簿左側（書脊）位置起飛 */
+  startFromSpine?: boolean;
   isMobile: boolean;
 }
 
-export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect, isMobile }: FloatingPhotoProps) => {
+export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect, onHoverChange, startFromSpine = false, isMobile }: FloatingPhotoProps) => {
+  const [isHovered, setIsHovered] = useState(false);
   const isPortrait = photo.orientation === 'portrait';
   
   // Adjusted for 350vh total height:
@@ -46,7 +53,8 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   
   // Apply spreadFactor to pull items closer to center on wide screens
   const xEnd = `${side * finalDist * spreadFactor}vw`;
-  const x = useTransform(progress, [start, end], ["0vw", xEnd]);
+  const xStart = startFromSpine ? `${SPINE_X_VW}vw` : "0vw";
+  const x = useTransform(progress, [start, end], [xStart, xEnd]);
   
   // 4. Y Position
   const startY = (r2 * 10) - 5; 
@@ -64,6 +72,9 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   const widthClasses = isPortrait 
     ? "w-[32vw] max-w-[180px] md:w-[14vw] md:max-w-[180px]" 
     : "w-[40vw] max-w-[230px] md:w-[18vw] md:max-w-[240px]";
+
+  const titleText = photo.title || photo.alt || '';
+  const titleChars = useMemo(() => Array.from(titleText), [titleText]);
 
   return (
     <motion.div
@@ -86,17 +97,69 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
           e.stopPropagation();
           onSelect(photo);
         }}
+        onMouseEnter={() => {
+          setIsHovered(true);
+          onHoverChange?.(true);
+        }}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          onHoverChange?.(false);
+        }}
       >
         <div className={`relative overflow-hidden bg-stone-100 ${isPortrait ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
            <img 
-            src={photo.url} 
+            src={photo.compressedUrl ?? photo.url} 
             alt={photo.alt} 
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         </div>
         {/* Subtle reflective overlay */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 pointer-events-none" />
+        {/* 電腦版：滑鼠懸停時透明流光，高級優雅的珍珠光澤 */}
+        {!isMobile && isHovered && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-10 rounded-[1px] overflow-hidden"
+            initial={false}
+          >
+            <motion.div
+              className="absolute inset-0 w-[45%] bg-gradient-to-r from-transparent via-white/[0.18] to-transparent"
+              animate={{ x: ['-100%', '220%'] }}
+              transition={{ repeat: Infinity, duration: 2.8, ease: [0.4, 0, 0.2, 1], repeatDelay: 1.2 }}
+            />
+            <motion.div
+              className="absolute inset-0 w-[35%] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent"
+              animate={{ x: ['-100%', '250%'] }}
+              transition={{ repeat: Infinity, duration: 3.4, ease: [0.4, 0, 0.2, 1], repeatDelay: 1.6 }}
+            />
+          </motion.div>
+        )}
+        {/* 電腦版：滑鼠懸停時標題逐字浮現，婚紗藝廊樣式，底部漸層不擋照片 */}
+        {!isMobile && isHovered && titleText && (
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none overflow-hidden rounded-b-[1px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-6 pb-1.5 px-2.5 min-h-[2.25rem] flex items-end justify-center">
+              <p className="font-serif italic text-[11px] leading-tight text-white/95 text-center line-clamp-2 break-words drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] [text-shadow:0_0_12px_rgba(0,0,0,0.6)]">
+                {titleChars.map((char, i) => (
+                  <motion.span
+                    key={`${i}-${char}`}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="inline-block"
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </p>
+            </div>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
