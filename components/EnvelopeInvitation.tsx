@@ -157,18 +157,19 @@ export const EnvelopeInvitation: React.FC<EnvelopeInvitationProps> = ({ isMobile
 
   // --- Animation Phasing ---
   
-  // 1. Container/Envelope Movement
-  // Start slightly higher since we are overlapping sections now
-  const envelopeRotateX = useTransform(scrollYProgress, [0, 0.35], isMobile ? [0, 0] : [35, 0]); 
+  // 1. Container/Envelope Movement（電腦與手機一致：信封不傾斜、保留可見）
+  const envelopeRotateX = useTransform(scrollYProgress, [0, 0.35], [0, 0]); 
   const envelopeScale = useTransform(scrollYProgress, [0, 0.35, 0.9], [0.65, 1, 1.05]); // Starts slightly larger
   const envelopeY = useTransform(scrollYProgress, [0, 0.35, 1], ["50%", "18%", "80%"]);
 
-  // Envelope Ghost Opacity
-  const envelopeGhostOpacity = useTransform(scrollYProgress, [0.7, 0.95], [1, 0]);
+  // 手部淡出（信封本體已改為常駐 opacity: 1，與手機一致）
   const handOpacity = useTransform(scrollYProgress, [0.7, 0.95], [1, 0]);
 
-  // 2. Flap Mechanics
-  const flapRotate = useTransform(scrollYProgress, [0.35, 0.55], isMobile ? [0, 0] : [0, 180]);
+  // 邀請函跑出後信封淡化到下方，焦點留在邀請函上（約 0.45 透明度）
+  const envelopeFadeOpacity = useTransform(scrollYProgress, [0.55, 0.75], [1, 0.45]);
+
+  // 2. Flap Mechanics（電腦與手機一致：蓋子動畫）
+  const flapRotate = useTransform(scrollYProgress, [0.35, 0.55], [0, 180]);
   const flapZIndex = useTransform(scrollYProgress, [0.35, 0.36], [50, 1]); 
   const flapZ = useTransform(scrollYProgress, [0.35, 0.45], [6, 0]);
   
@@ -237,10 +238,10 @@ export const EnvelopeInvitation: React.FC<EnvelopeInvitationProps> = ({ isMobile
             </motion.div>
 
 
-            {/* 1. Envelope Back (Base) */}
+            {/* 1. Envelope Back (Base) - 邀請函跑出後淡化到下方 */}
             <motion.div 
               className="absolute inset-0 bg-[#E6E2D6] rounded-[4px] shadow-2xl border border-[#d6d2c4]" 
-              style={{ transform: isMobile ? 'none' : "translateZ(-1px)", opacity: isMobile ? 1 : envelopeGhostOpacity }}
+              style={{ transform: isMobile ? 'none' : "translateZ(-1px)", opacity: envelopeFadeOpacity }}
             >
                 <div className="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
             </motion.div>
@@ -368,10 +369,10 @@ export const EnvelopeInvitation: React.FC<EnvelopeInvitationProps> = ({ isMobile
             </motion.div>
 
 
-            {/* 3. Envelope Pocket (Front-Bottom & Sides) */}
+            {/* 3. Envelope Pocket (Front-Bottom & Sides) - 邀請函跑出後淡化 */}
             <motion.div 
                 className="absolute inset-0 z-20 pointer-events-none" 
-                style={{ transform: isMobile ? 'none' : "translateZ(2px)", opacity: envelopeGhostOpacity }}
+                style={{ transform: isMobile ? 'none' : "translateZ(2px)", opacity: envelopeFadeOpacity }}
             >
                  <div 
                     style={{ borderLeftWidth: ENVELOPE_CONFIG.FLAP_WIDTH_HALF }}
@@ -402,7 +403,7 @@ export const EnvelopeInvitation: React.FC<EnvelopeInvitationProps> = ({ isMobile
                  borderRightWidth: ENVELOPE_CONFIG.FLAP_WIDTH_HALF,
                  borderTopColor: flapColor, // Animated Lighting
                  z: isMobile ? 0 : flapZ,
-                 opacity: envelopeGhostOpacity
+                 opacity: envelopeFadeOpacity
                }}
                className="absolute top-0 left-0 right-0 h-0 border-l-transparent border-r-transparent drop-shadow-lg origin-top"
             >

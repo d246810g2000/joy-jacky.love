@@ -4,14 +4,21 @@ import { Photo } from './types';
 // ==========================================
 // ☁️ CLOUDINARY CONFIGURATION
 // ==========================================
+// 高清：https://res.cloudinary.com/djqnqxzha/image/upload/v1769804093/disney-v-01.jpg
+// 縮圖：publicId 前加 s-，https://res.cloudinary.com/djqnqxzha/image/upload/v1770141066/s-disney-v-01.jpg
+// folderPath 不使用，直接以 publicId 路徑為主。
 
-const CLOUD_NAME = "djqnqxzha"; 
-const FOLDER_NAME = ""; 
+const CLOUD_NAME = "djqnqxzha";
 
-const getCloudinaryUrl = (publicId: string) => {
-  const folderPath = FOLDER_NAME ? `${FOLDER_NAME}/` : "";
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto,w_1600/${folderPath}${publicId}`;
-};
+const withExt = (id: string) => (id.includes(".") ? id : `${id}.jpg`);
+
+/** 高清圖 URL（藝廊大圖、Lightbox） */
+const getCloudinaryUrl = (publicId: string) =>
+  `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${withExt(publicId)}`;
+
+/** 縮圖 URL（相簿網格、飛出照片）；publicId 前加 s-，加轉換參數縮小體積加快載入 */
+const getCompressedUrl = (publicId: string) =>
+  `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/w_600,q_auto,f_auto/${withExt(`s-${publicId}`)}`;
 
 // ==========================================
 // 📸 PHOTO MANIFEST — 婚紗藝廊（精彩瞬間標題、註解、地點）
@@ -65,6 +72,7 @@ const BASE_PHOTOS: Photo[] = GALLERY_DATA.map((entry, index) => {
   return {
     id: `photo-${index}`,
     url: getCloudinaryUrl(entry.publicId),
+    compressedUrl: getCompressedUrl(entry.publicId),
     alt: entry.title,
     title: entry.title,
     description: entry.description,
