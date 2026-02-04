@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Joy & Jacky 婚禮邀請函</title>
+    <script>
+      // GitHub Pages SPA 路由重定向處理
+      // 將所有 404 請求重定向到 index.html，保留完整路徑信息
+      var pathSegmentsToKeep = 1; // 保留 /joy-jacky.love/ 這個路徑段
+      var l = window.location;
+      var basePath = '/joy-jacky.love';
+      
+      // 獲取當前路徑（去掉 base path）
+      var currentPath = l.pathname;
+      if (currentPath.startsWith(basePath)) {
+        currentPath = currentPath.slice(basePath.length);
+      }
+      
+      // 如果路徑不是根路徑或 index.html，則重定向到 index.html 並保留路徑
+      if (currentPath !== '/' && currentPath !== '/index.html') {
+        // 使用 sessionStorage 保存原始路徑
+        sessionStorage.redirect = l.href;
+        // 重定向到 index.html
+        window.location.replace(basePath + '/index.html');
+      } else {
+        // 如果已經是 index.html，則重定向到根路徑
+        window.location.replace(basePath + '/');
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <p>請啟用 JavaScript 以正常瀏覽此網站。</p>
+      <p><a href="/joy-jacky.love/">返回首頁</a></p>
+    </noscript>
+  </body>
+</html>

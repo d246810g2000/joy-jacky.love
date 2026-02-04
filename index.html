@@ -122,6 +122,35 @@
     <div class="bg-grid-fixed"></div>
     <div class="bg-noise"></div>
     <div id="root"></div>
+    <script>
+      // GitHub Pages SPA 路由處理
+      // 處理從 404.html 重定向過來的路徑
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          // 從完整 URL 中提取路徑部分
+          try {
+            var url = new URL(redirect);
+            var basePath = '/joy-jacky.love';
+            var path = url.pathname;
+            
+            // 去掉 base path 前綴
+            if (path.startsWith(basePath)) {
+              path = path.slice(basePath.length);
+            }
+            
+            // 如果路徑存在且不是根路徑，則更新瀏覽器歷史記錄
+            if (path && path !== '/' && path !== '/index.html') {
+              var newPath = basePath + path + url.search + url.hash;
+              history.replaceState(null, null, newPath);
+            }
+          } catch (e) {
+            console.warn('無法處理重定向 URL:', redirect, e);
+          }
+        }
+      })();
+    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
