@@ -453,29 +453,95 @@ function App() {
                 您的蒞臨將是我們最大的榮幸。<br/> 請於 4月30日 前確認出席。
               </p>
               
-              <Link 
-                to="/rsvp"
-                className="relative group px-12 py-5 overflow-hidden rounded-[2px] 
-                           bg-gradient-to-b from-[#9E4242] to-[#752a2a]
-                           border border-[#b08d55]/30
-                           shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_10px_30px_-10px_rgba(142,53,53,0.6)]
-                           hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_20px_40px_-10px_rgba(142,53,53,0.8)]
-                           transform hover:scale-[1.03] hover:-translate-y-1
-                           transition-all duration-500 ease-out
-                           inline-block"
-              >
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-in-out z-0" />
-                <div className="relative z-10 flex items-center gap-3">
-                  <span className="font-serif text-white tracking-[0.3em] text-sm md:text-base font-medium">
-                    填寫出席回函
-                  </span>
-                  <span className="text-[#d4af37] group-hover:translate-x-1 transition-transform duration-300">
-                    →
-                  </span>
+                <div className="flex flex-col md:flex-row items-stretch justify-center gap-10 md:gap-16">
+                  {/* Vertical RSVP Button */}
+                  <motion.div
+                    whileHover={{ y: -5 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    className="flex flex-col w-auto self-center md:w-auto px-4 md:px-0"
+                  >
+                    <Link 
+                      to="/rsvp"
+                      className="relative group overflow-hidden rounded-[4px] 
+                                 bg-gradient-to-br from-[#8E3535] via-[#752a2a] to-[#5d2121]
+                                 border border-[#b08d55]/40
+                                 shadow-[0_10px_25px_-5px_rgba(142,53,53,0.3)]
+                                 hover:shadow-[0_20px_40px_-10px_rgba(142,53,53,0.4)]
+                                 transition-all duration-500 ease-out
+                                 flex flex-col items-center justify-center
+                                 /* Mobile: Balanced Horizontal, Desktop: Elegant Vertical */
+                                 px-8 py-5 md:px-10 md:py-0 md:h-full md:min-h-[320px]
+                                 min-w-[200px] md:min-w-0"
+                    >
+                      {/* Inner Decorative Border */}
+                      <div className="absolute inset-1.5 border border-[#b08d55]/20 rounded-[2px] pointer-events-none" />
+                      
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 ease-in-out z-0" />
+                      
+                      <div className="relative z-10 flex flex-col items-center">
+                        <div className="flex flex-row md:flex-col items-center gap-3 md:gap-0">
+                          <span 
+                            className="font-serif text-white tracking-[0.3em] text-base md:text-xl font-medium"
+                            style={{ writingMode: isMobile ? 'horizontal-tb' : 'vertical-rl' } as any}
+                          >
+                            填寫出席回函
+                          </span>
+                          
+                          <div className="h-px w-8 bg-[#d4af37]/30 my-2 hidden md:block" />
+                          
+                          <span className="text-[#d4af37] transition-transform duration-500 group-hover:translate-x-1 md:group-hover:translate-x-0 md:group-hover:translate-y-1">
+                            {isMobile ? '→' : '↓'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Corner Accents */}
+                      <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-[#d4af37]/40 m-2" />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-[#d4af37]/40 m-2" />
+                    </Link>
+                  </motion.div>
+
+                  {/* LINE Contact - Styled as a matching card */}
+                  <div className="flex flex-col items-center group relative px-4 md:px-0">
+                    <motion.div 
+                      whileHover={{ y: -5 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      className="relative h-full"
+                    >
+                      <div className="absolute -inset-4 bg-[#b08d55]/5 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      
+                      <div className="relative h-full rounded-xl overflow-hidden shadow-[0_10px_25px_-5px_rgba(0,0,0,0.12)] group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.18)] transition-all duration-500 border border-stone-100 bg-white">
+                        <img 
+                          src={APP_CONTENT.lineQrCode} 
+                          alt="LINE QR Code" 
+                          className="w-56 h-auto md:w-64 block mx-auto"
+                        />
+                        {/* Clickable Area Overlay */}
+                        <a 
+                          href={APP_CONTENT.lineLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="absolute z-10 hover:bg-black/[0.02] transition-all duration-300 flex items-center justify-center"
+                          style={{
+                            left: '14.12%',   // 240 / 1699
+                            top: '75.27%',    // 1620 / 2152
+                            width: '72.16%',  // (1466-240) / 1699
+                            height: '14.68%'  // (1936-1620) / 2152
+                          }}
+                          title="點擊加入 LINE 官方帳號"
+                        >
+                          <motion.span 
+                            animate={{ opacity: [0.6, 1, 0.6], y: [0, -1, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                            className="font-serif text-[#8E3535] text-[10px] md:text-[13px] tracking-[0.2em] font-medium"
+                          >
+                            點擊加入 LINE 好友
+                          </motion.span>
+                        </a>
+                      </div>
+                    </motion.div>
+                  </div>
                 </div>
-                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-white/20 pointer-events-none" />
-                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-white/20 pointer-events-none" />
-              </Link>
            </div>
            
            <div className="mt-32 pt-10 border-t border-stone-200/60 text-[9px] text-stone-400 uppercase tracking-[0.4em]">

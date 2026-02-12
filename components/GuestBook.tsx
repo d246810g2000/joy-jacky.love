@@ -267,6 +267,11 @@ export const GuestBook: React.FC<GuestBookProps> = ({ onExpandChange, refreshTri
   const [errorType, setErrorType] = useState<'fetch' | 'permission' | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [sortType, setSortType] = useState<'hot' | 'recent'>('hot');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   // Local state for the main couple's post
   const [mainPostLikes, setMainPostLikes] = useState(520);
@@ -512,17 +517,20 @@ export const GuestBook: React.FC<GuestBookProps> = ({ onExpandChange, refreshTri
 
 
         {/* === EXPANDED MODAL (PORTAL) === */}
-        {createPortal(
+        {isClient && typeof document !== 'undefined' && document.body && createPortal(
             <AnimatePresence>
                 {isExpanded && (
                     <motion.div 
-                        initial={{ y: "100%" }}
+                        key="expanded-guestbook-modal"
+                        // initial={false}: AnimatePresence + createPortal 已知問題會導致動畫不觸發，
+                        // 使 modal 卡在 y:100% 螢幕外。跳過 initial 確保 modal 能正確顯示。
+                        initial={false}
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
                         // Using Portal puts this at the root. Z-index ensures it covers everything.
                         // bg-white ensures no transparency leakage.
-                        className="fixed inset-0 z-[100000] bg-white flex flex-col h-[100dvh]"
+                        className="fixed inset-0 z-[99999] bg-white flex flex-col w-full h-full"
                     >
                         {/* Header */}
                         <div className="flex-none h-14 border-b border-stone-100 flex items-center justify-between px-4 sticky top-0 bg-white/95 backdrop-blur-sm z-50">
