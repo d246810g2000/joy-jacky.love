@@ -14,25 +14,25 @@ interface ScrollExperienceProps {
   onPhotoHoverChange?: (hovering: boolean) => void;
 }
 
-export const ScrollExperience: React.FC<ScrollExperienceProps> = ({ 
-  selectedPhoto, 
+export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
+  selectedPhoto,
   setSelectedPhoto,
   isMobile,
   isHoveringFlyingPhoto = false,
   onPhotoHoverChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"]
   });
 
-  const bgScale = useTransform(scrollYProgress, [0, 0.2, 1], [1, 1.08, 1.2]); 
+  const bgScale = useTransform(scrollYProgress, [0, 0.2, 1], [1, 1.08, 1.2]);
   const bgY = useTransform(scrollYProgress, [0, 0.2, 1], ["0%", "-3%", "-12%"]);
   // Modified opacity to fade out fully at the end so the global pink/blue gradient is revealed
   // for the overlapped Invitation section
-  const bgOpacity = useTransform(scrollYProgress, [0, 0.6, 0.85, 1], [1, 0.8, 0.8, 0]); 
+  const bgOpacity = useTransform(scrollYProgress, [0, 0.6, 0.85, 1], [1, 0.8, 0.8, 0]);
 
   // --- Text Parallax Configuration ---
   // Speed up text fade out since scroll is shorter
@@ -73,8 +73,9 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
         {wave.photos.map((photo, index) => {
           // 僅電腦版：翻頁後的 wave 讓部分照片從相簿左側（書脊）起飛；手機維持右側
           const startFromSpine = !isMobile && waveIdx >= 1 && (waveIdx + index) % 2 === 0;
+          const globalIndex = WEDDING_PHOTOS.findIndex(p => p.id === photo.id);
           return (
-            <FloatingPhoto 
+            <FloatingPhoto
               key={`photo-${photo.id}-${waveIdx}-${index}`}
               photo={photo}
               index={index}
@@ -85,6 +86,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
               onHoverChange={onPhotoHoverChange}
               startFromSpine={startFromSpine}
               isMobile={isMobile}
+              zIndex={100 + globalIndex}
             />
           );
         })}
@@ -97,48 +99,49 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
 
   // 電腦版捲動慢約 0.5 倍；照片越多飛出區段越高，總飛出時間越長
   const photoCount = WEDDING_PHOTOS.length;
-  const baseVh = isMobile ? 280 : 420;
-  const extraVhPerPhoto = Math.max(0, (photoCount - 24) * 10);
+  // 大幅增加基礎高度與每張照片的額外高度，讓各種動畫（翻頁、飛出）分佈更稀疏、持續時間更長
+  const baseVh = isMobile ? 450 : 650;
+  const extraVhPerPhoto = Math.max(0, (photoCount - 20) * 22);
   const scrollHeight = `${baseVh + extraVhPerPhoto}vh`;
 
   return (
     <div ref={containerRef} className="relative w-full bg-transparent" style={{ height: scrollHeight }}>
-      
+
       <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
-        
+
         {/* Hint Text for Gallery - 不參與變暗，保持清晰 */}
         <motion.div
-          style={{ 
-            opacity: hintOpacity, 
+          style={{
+            opacity: hintOpacity,
             x: isMobile ? "-50%" : -hintOffset,
             y: isMobile ? hintOffset : "-50%",
           }}
           className={`absolute z-[70] pointer-events-none ${isMobile ? 'left-1/2 bottom-[8%]' : 'left-8 md:left-12 top-1/2'}`}
         >
-          <motion.div 
-            animate={{ 
+          <motion.div
+            animate={{
               y: isMobile ? [0, -3, 0] : [0, -5, 0],
             }}
-            transition={{ 
-              duration: 3, 
-              repeat: Infinity, 
-              ease: "easeInOut" 
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
             }}
             className="bg-white/50 backdrop-blur-xl px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4"
           >
-            <motion.span 
+            <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 2, repeat: Infinity }}
               className="text-[#8a6a3d] text-[10px] md:text-sm font-serif leading-none"
             >
               ✦
             </motion.span>
-            
+
             <span className="text-[#8a6a3d] text-[11px] md:text-[15px] tracking-[0.2em] md:tracking-[0.4em] font-serif md:[writing-mode:vertical-rl] whitespace-nowrap font-medium opacity-90">
               點擊照片開啟婚紗藝廊
             </span>
-            
-            <motion.span 
+
+            <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 2, repeat: Infinity, delay: 1 }}
               className="text-[#8a6a3d] text-[10px] md:text-sm font-serif leading-none"
@@ -157,34 +160,34 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
         >
           {/* Ambient Background Effects */}
           <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
-             <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
-             <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
+            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
           </div>
 
-          <motion.div 
-              style={{ 
-                scale: bgScale, 
-                y: bgY, 
-                opacity: bgOpacity,
-                willChange: isMobile ? 'transform, opacity' : 'auto'
-              }}
-              className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
+          <motion.div
+            style={{
+              scale: bgScale,
+              y: bgY,
+              opacity: bgOpacity,
+              willChange: isMobile ? 'transform, opacity' : 'auto'
+            }}
+            className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
           >
-              <img 
-                src={BACKGROUND_IMAGE} 
-                alt="Background" 
-                className="w-full h-full object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/40 to-transparent z-10 pointer-events-none h-[45%]" />
-              <div className="absolute bottom-0 left-0 w-full h-[20%] bg-gradient-to-t from-white to-transparent z-10" />
+            <img
+              src={BACKGROUND_IMAGE}
+              alt="Background"
+              className="w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/40 to-transparent z-10 pointer-events-none h-[45%]" />
+            <div className="absolute bottom-0 left-0 w-full h-[20%] bg-gradient-to-t from-white to-transparent z-10" />
           </motion.div>
         </motion.div>
 
         {/* Hero Text Content - 在變暗 wrapper 外，滑鼠懸停飛出照片時保持完全可見 */}
-        <motion.div 
-          style={{ 
-            opacity: textOpacity, 
-            scale: textScale, 
+        <motion.div
+          style={{
+            opacity: textOpacity,
+            scale: textScale,
             filter: textBlur,
             willChange: isMobile ? 'transform, opacity' : 'auto'
           }}
@@ -192,49 +195,49 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
         >
           {/* Top Label */}
           <motion.div style={{ y: labelY }} className="flex items-center gap-4 mb-4 md:mb-6 opacity-80">
-             <div className="h-[0.5px] w-8 md:w-12 bg-[#2c3e50]" />
-             <p className="font-display tracking-[0.3em] text-[9px] md:text-[10px] text-[#2c3e50] uppercase font-semibold">The Wedding</p>
-             <div className="h-[0.5px] w-8 md:w-12 bg-[#2c3e50]" />
+            <div className="h-[0.5px] w-8 md:w-12 bg-[#2c3e50]" />
+            <p className="font-display tracking-[0.3em] text-[9px] md:text-[10px] text-[#2c3e50] uppercase font-semibold">The Wedding</p>
+            <div className="h-[0.5px] w-8 md:w-12 bg-[#2c3e50]" />
           </motion.div>
 
           {/* Main Title */}
-          <motion.h1 
+          <motion.h1
             style={{ y: titleY }}
             className="relative font-script text-[4rem] md:text-[6rem] lg:text-[7.5rem] text-[#8a6a3d] leading-none drop-shadow-md z-10 mix-blend-multiply"
           >
             {APP_CONTENT.coupleName}
           </motion.h1>
-          
+
           {/* Chinese Names */}
-          <motion.div 
+          <motion.div
             style={{ y: chineseY }}
             className="relative mt-4 md:mt-6 z-10"
           >
-             <p className="font-serif text-2xl md:text-4xl text-[#1a202c] tracking-[0.2em] font-bold flex items-center justify-center gap-4 drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
-                <span>李謦伊</span>
-                <span className="text-red-600 text-xl md:text-3xl animate-pulse">❤</span>
-                <span>張家銘</span>
-             </p>
+            <p className="font-serif text-2xl md:text-4xl text-[#1a202c] tracking-[0.2em] font-bold flex items-center justify-center gap-4 drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)]">
+              <span>李謦伊</span>
+              <span className="text-red-600 text-xl md:text-3xl animate-pulse">❤</span>
+              <span>張家銘</span>
+            </p>
           </motion.div>
         </motion.div>
 
-        <motion.div 
-            style={{ 
-              opacity: bookContainerOpacity, 
-              scale: bookScale, 
-              y: bookYOffset,
-              x: bookXOffset,
-              perspective: isMobile ? 'none' : '2500px',
-              willChange: isMobile ? 'transform, opacity' : 'auto'
-            }}
-            className={`absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 ${isMobile ? '' : 'transform-gpu'}`}
+        <motion.div
+          style={{
+            opacity: bookContainerOpacity,
+            scale: bookScale,
+            y: bookYOffset,
+            x: bookXOffset,
+            perspective: isMobile ? 'none' : '2500px',
+            willChange: isMobile ? 'transform, opacity' : 'auto'
+          }}
+          className={`absolute top-[45%] md:top-[50%] w-full flex items-center justify-center z-20 ${isMobile ? '' : 'transform-gpu'}`}
         >
           {/* Photos Stream - 不變暗，維持清晰 */}
-          <motion.div 
+          <motion.div
             style={{ x: "-12vw", transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
-            className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-20" 
+            className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-20"
           >
-             {photoWaves}
+            {photoWaves}
           </motion.div>
 
           {/* 電腦版：滑鼠在飛出相片上時，相簿本體變暗 */}
@@ -245,14 +248,14 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
             animate={{ opacity: !isMobile && isHoveringFlyingPhoto ? 0.5 : 1 }}
             transition={{ duration: 0.35 }}
           >
-            <BookCover 
-              progress={scrollYProgress} 
+            <BookCover
+              progress={scrollYProgress}
               onSelectPhoto={setSelectedPhoto}
               isMobile={isMobile}
             />
           </motion.div>
         </motion.div>
-        
+
       </div>
     </div>
   );

@@ -9,68 +9,70 @@ const SPINE_X_VW = -18;
 
 interface FloatingPhotoProps {
   photo: Photo;
-  index: number;      
-  totalInWave: number; 
+  index: number;
+  totalInWave: number;
   progress: MotionValue<number>;
-  triggerStart: number; 
-  onSelect: (photo: Photo) => void; 
+  triggerStart: number;
+  onSelect: (photo: Photo) => void;
   onHoverChange?: (hovering: boolean) => void;
   /** 若為 true，從相簿左側（書脊）位置起飛 */
   startFromSpine?: boolean;
   isMobile: boolean;
+  zIndex: number;
 }
 
-export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect, onHoverChange, startFromSpine = false, isMobile }: FloatingPhotoProps) => {
+export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, triggerStart, onSelect, onHoverChange, startFromSpine = false, isMobile, zIndex }: FloatingPhotoProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const isPortrait = photo.orientation === 'portrait';
-  
+
   // Adjusted for 350vh total height:
   // Reduced delay spacing to ensure group stays together
-  const delay = index * 0.03; 
+  const delay = index * 0.03;
   const start = triggerStart + delay;
   // 單張飛出動畫佔用的 scroll 區間（較大 = 飛出較慢）
-  const duration = 0.34; 
+  const duration = 0.34;
   const end = start + duration;
 
   // 1. Scale
   const endScale = isMobile ? 3.0 : 5.0;
-  const scale = useTransform(progress, [start, end], [0.1, endScale]); 
-  
+  const scale = useTransform(progress, [start, end], [0.1, endScale]);
+
   // 2. Opacity
   const opacity = useTransform(progress, [start, start + 0.05, end - 0.01, end], [0, 1, 1, 0]);
-  
+
   // 3. X Transform
   // Increase horizontal spread to allow photos to fly further left and right
-  const spreadFactor = isMobile ? 0.8 : 0.9;
+  const spreadFactor = isMobile ? 1.3 : 0.9;
 
-  const side = index % 2 === 0 ? 1 : -1; 
-  const tier = index % 3; 
-  const r1 = ((index * 137.5) % 100) / 100; 
+  const side = index % 2 === 0 ? 1 : -1;
+  const tier = index % 3;
+  const r1 = ((index * 137.5) % 100) / 100;
   const r2 = ((index * 293.3) % 100) / 100;
-  const baseDist = 30 + (tier * 30); 
+  const baseDist = 30 + (tier * 30);
   const variance = r1 * 20;
   const finalDist = baseDist + variance;
-  
+
   // Apply spreadFactor to pull items closer to center on wide screens
   const xEnd = `${side * finalDist * spreadFactor}vw`;
   const xStart = startFromSpine ? `${SPINE_X_VW}vw` : "0vw";
   const x = useTransform(progress, [start, end], [xStart, xEnd]);
-  
-  // 4. Y Position
-  const startY = (r2 * 10) - 5; 
-  const endY = -180 - (r1 * 50); 
-  const y = useTransform(progress, [start, end], [`${startY}vh`, `${endY}vh`]);
-  
-  // 5. Z Depth
-  const z = useTransform(progress, [start, end], isMobile ? [0, 0] : [0, 1000]);
 
-  // 6. Rotation（電腦版最多 ±10 度，手機不旋轉）
+  // 4. Y Position
+  const startY = (r2 * 10) - 5;
+  const endY = -180 - (r1 * 50);
+  const y = useTransform(progress, [start, end], [`${startY}vh`, `${endY}vh`]);
+
+  // 5. Z Depth
+  // Disable Z movement to allow z-index to control stacking order (later photos on top)
+  const z = 0;
+
+  // 6. Rotation（電腦版與手機版都啟用旋轉，增加動態感）
   const rotationDir = index % 2 === 0 ? 1 : -1;
-  const rotateZ = useTransform(progress, [start, end], isMobile ? [0, 0] : [rotationDir * -10, rotationDir * 10]);
+  const rotateZ = useTransform(progress, [start, end], [rotationDir * -10, rotationDir * 10]);
 
   // Width adjustments - 放大飛出照片的寬度
-  const widthClasses = isPortrait 
-    ? "w-[32vw] max-w-[180px] md:w-[14vw] md:max-w-[180px]" 
+  const widthClasses = isPortrait
+    ? "w-[32vw] max-w-[180px] md:w-[14vw] md:max-w-[180px]"
     : "w-[40vw] max-w-[230px] md:w-[18vw] md:max-w-[240px]";
 
   const titleText = photo.title || photo.alt || '';
@@ -85,12 +87,12 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
         y,
         z,
         rotateZ,
-        zIndex: 100 + index, 
+        zIndex,
         willChange: isMobile ? 'transform, opacity' : 'auto'
       }}
       className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}
     >
-      <div 
+      <div
         className={`relative p-[1.5px] bg-white shadow-xl rounded-[1px] ${isMobile ? '' : 'transform-gpu backface-hidden'} border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500`}
         style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         onClick={(e) => {
@@ -107,9 +109,9 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
         }}
       >
         <div className={`relative overflow-hidden bg-stone-100 ${isPortrait ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}>
-           <img 
-            src={photo.compressedUrl ?? photo.url} 
-            alt={photo.alt} 
+          <img
+            src={photo.compressedUrl ?? photo.url}
+            alt={photo.alt}
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
