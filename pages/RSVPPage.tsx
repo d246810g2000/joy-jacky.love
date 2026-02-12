@@ -111,6 +111,13 @@ const RSVPPage: React.FC = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && currentStepName !== 'message' && canProceed() && !isSubmitting) {
+      e.preventDefault();
+      handleNext();
+    }
+  };
+
   const canProceed = () => {
     switch (currentStepName) {
       case 'name': return formData.name.trim().length > 0;
@@ -121,8 +128,9 @@ const RSVPPage: React.FC = () => {
       case 'paperInvite': return !!formData.needPaperInvite;
       case 'address': return formData.zipCode.trim().length > 0 && formData.address.trim().length > 0;
       case 'email': {
+        if (formData.email.trim().length === 0) return true;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return formData.email.trim().length > 0 && emailRegex.test(formData.email.trim());
+        return emailRegex.test(formData.email.trim());
       }
       case 'message': return true;
       default: return true;
@@ -155,9 +163,7 @@ const RSVPPage: React.FC = () => {
     setTimeout(() => {
         setIsSubmitting(false);
         setCurrentStepName('success');
-        setTimeout(() => {
-            navigate('/');
-        }, 3500);
+        // Removed auto-navigation to allow guest to see LINE info
     }, 800);
   };
 
@@ -412,15 +418,15 @@ const RSVPPage: React.FC = () => {
           <div className="space-y-6">
              <div className="space-y-2">
                 <label className="block text-xl md:text-2xl font-serif text-[#2c3e50]">
-                   您的 Email <span className="text-[#8E3535]">*</span>
+                   您的 Email <span className="text-stone-400 text-lg md:text-xl font-normal">(選填)</span>
                 </label>
-                <p className="text-sm text-stone-400">方便我們寄送電子喜帖與婚禮通知</p>
+                <p className="text-sm text-stone-400">方便我們寄送電子喜帖與婚禮通知，如不需要可略過</p>
              </div>
              <input 
                 type="email" 
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                placeholder="example@email.com"
+                placeholder="example@email.com (可留空)"
                 className="w-full text-lg border border-stone-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#8E3535] focus:ring-1 focus:ring-[#8E3535] transition-all bg-stone-50"
                 autoFocus
              />
@@ -435,37 +441,39 @@ const RSVPPage: React.FC = () => {
           <div className="space-y-6">
              <div className="space-y-2">
                 <label className="block text-xl md:text-2xl font-serif text-[#2c3e50]">
-                   有什麼想對我們說的話嗎？
+                   有什麼想對我們說的話嗎？ <span className="text-stone-400 text-lg md:text-xl font-normal">(選填)</span>
                 </label>
-                <p className="text-sm text-stone-400">您的祝福是我們最大的動力</p>
+                <p className="text-sm text-stone-400">您的祝福是我們最大的動力，不需留言也可直接提交回覆</p>
              </div>
              
              <textarea 
                 value={formData.message}
                 onChange={(e) => setFormData({...formData, message: e.target.value})}
-                placeholder="請留下您想跟我們說的話..."
+                placeholder="想對我們說的話..."
                 className="w-full min-h-[120px] text-lg border border-stone-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#8E3535] focus:ring-1 focus:ring-[#8E3535] transition-all bg-stone-50 resize-none"
              />
 
-             <label className="flex items-start gap-3 cursor-pointer group">
-                <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
-                    {formData.publishToGuestbook && (
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                    )}
-                </div>
-                <input 
-                    type="checkbox" 
-                    className="hidden"
-                    checked={formData.publishToGuestbook}
-                    onChange={(e) => setFormData({...formData, publishToGuestbook: e.target.checked})}
-                />
-                <div className="flex-1">
-                    <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
-                    <p className="text-xs text-stone-400 mt-0.5">勾選後，您的留言將會顯示在網站的「祝福留言」區塊</p>
-                </div>
-             </label>
+             {formData.message.trim() && (
+                <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
+                        {formData.publishToGuestbook && (
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={formData.publishToGuestbook}
+                        onChange={(e) => setFormData({...formData, publishToGuestbook: e.target.checked})}
+                    />
+                    <div className="flex-1">
+                        <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
+                        <p className="text-xs text-stone-400 mt-0.5">勾選後，您的留言將會顯示在網站的「祝福留言」區塊</p>
+                    </div>
+                </label>
+             )}
           </div>
         );
     }
@@ -474,16 +482,69 @@ const RSVPPage: React.FC = () => {
    if (currentStepName === 'success') {
       return (
          <div className="min-h-screen bg-gradient-to-r from-[#fff0f5] to-[#f0f9ff] flex items-center justify-center p-6">
-             <div className="text-center space-y-4">
-                 <div className="w-20 h-20 bg-[#8E3535]/10 rounded-full flex items-center justify-center mx-auto mb-6 text-[#8E3535]">
-                     <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 md:p-10 text-center space-y-6 md:space-y-8"
+             >
+                 <div className="w-12 h-12 md:w-16 md:h-16 bg-[#8E3535]/5 rounded-full flex items-center justify-center mx-auto text-[#8E3535]">
+                     <svg className="w-6 h-6 md:w-8 md:h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                      </svg>
                  </div>
-                 <h2 className="text-2xl font-serif text-[#2c3e50] font-bold">感謝您的回覆！</h2>
-                 <p className="text-stone-500">我們已收到您的出席資訊，期待與您相見。</p>
-                 <p className="text-sm text-stone-400 mt-4">即將返回首頁...</p>
-             </div>
+                 
+                 <div className="space-y-1">
+                    <h2 className="text-xl md:text-2xl font-serif text-[#2c3e50] font-bold">感謝您的回覆！</h2>
+                    <p className="text-stone-500 text-sm md:text-base">我們已收到您的出席資訊，期待相見。</p>
+                 </div>
+
+                 <div className="w-full h-px bg-stone-50" />
+
+                 {/* LINE Section */}
+                 <div className="pt-2">
+                    <motion.div 
+                        whileHover={{ scale: 1.02 }}
+                        className="inline-block relative rounded-2xl overflow-hidden shadow-sm border border-stone-100"
+                    >
+                        <img 
+                            src={APP_CONTENT.lineQrCode} 
+                            alt="LINE QR Code" 
+                            className="w-64 h-auto md:w-72 mx-auto block"
+                        />
+                        {/* Clickable Area Overlay */}
+                        <a 
+                            href={APP_CONTENT.lineLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="absolute z-10 hover:bg-black/5 transition-all duration-300 flex items-center justify-center"
+                            style={{
+                                left: '14.12%',
+                                top: '75.27%',
+                                width: '72.16%',
+                                height: '14.68%'
+                            } as any}
+                        >
+                            <motion.span 
+                                animate={{ opacity: [0.6, 1, 0.6] }}
+                                transition={{ duration: 2.5, repeat: Infinity }}
+                                className="font-serif text-[#8E3535] text-xs md:text-sm tracking-[0.2em] font-medium"
+                            >
+                                點擊加入 LINE 好友
+                            </motion.span>
+                        </a>
+                    </motion.div>
+                 </div>
+
+                 <div className="pt-2">
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="text-stone-400 hover:text-[#8E3535] transition-colors font-serif text-sm tracking-widest flex items-center gap-2 mx-auto group px-4 py-2"
+                    >
+                        <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
+                        <span>返回婚禮邀請函</span>
+                    </button>
+                 </div>
+             </motion.div>
          </div>
       );
    }
@@ -544,8 +605,12 @@ const RSVPPage: React.FC = () => {
                          </div>
                      </div>
  
-                     <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
-                         <AnimatePresence mode="wait" custom={direction}>
+                     <div 
+                        className="flex-1 p-6 md:p-8 flex flex-col justify-center focus:outline-none"
+                        onKeyDown={handleKeyDown}
+                        tabIndex={0}
+                    >
+                        <AnimatePresence mode="wait" custom={direction}>
                              <motion.div
                                  key={currentStepName}
                                  custom={direction}
@@ -561,40 +626,40 @@ const RSVPPage: React.FC = () => {
  
                      {/* Buttons */}
                      <div className="p-6 md:p-8 pt-0 flex justify-between items-center mt-auto">
-                         <button 
-                             onClick={handlePrev}
-                             disabled={currentStepName === 'name' || isSubmitting}
-                             className={`group flex items-center gap-1.5 text-stone-400 hover:text-[#8E3535] transition-colors font-serif text-sm md:text-[15px] tracking-wide ${currentStepName === 'name' ? 'opacity-0 pointer-events-none' : ''}`}
-                         >
-                             <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
-                             <span>上一題</span>
-                         </button>
- 
-                         <button 
-                             onClick={handleNext}
-                             disabled={!canProceed() || isSubmitting}
-                             className={`
-                                 relative overflow-hidden group px-6 md:px-8 py-2.5 md:py-3 bg-[#8E3535] text-white font-serif tracking-[0.15em] text-sm md:text-[15px]
-                                 rounded-[2px] shadow-[0_4px_14px_rgba(142,53,53,0.25)] transition-all duration-300
-                                 flex items-center gap-2 md:gap-3
-                                 ${(!canProceed() || isSubmitting) ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_6px_20px_rgba(142,53,53,0.4)] hover:-translate-y-[1px]'}
-                             `}
-                         >
-                             <span className="relative z-10 flex items-center gap-2">
-                                 {isSubmitting ? (
-                                     <>
-                                         <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                         </svg>
-                                         傳送中...
-                                     </>
-                                 ) : (
-                                     <>
-                                         {currentStepName === 'message' ? '提交回覆' : '下一題'}
-                                     </>
-                                 )}
-                             </span>
+                        <button 
+                            onClick={handlePrev}
+                            disabled={currentStepName === 'name' || isSubmitting}
+                            className={`group flex items-center gap-1.5 text-stone-400 hover:text-[#8E3535] transition-colors font-serif text-sm md:text-[15px] tracking-wide ${currentStepName === 'name' ? 'opacity-0 pointer-events-none' : ''}`}
+                        >
+                            <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
+                            <span>返回</span>
+                        </button>
+
+                        <button 
+                            onClick={handleNext}
+                            disabled={!canProceed() || isSubmitting}
+                            className={`
+                                relative overflow-hidden group px-6 md:px-8 py-2.5 md:py-3 bg-[#8E3535] text-white font-serif tracking-[0.15em] text-sm md:text-[15px]
+                                rounded-[2px] shadow-[0_4px_14px_rgba(142,53,53,0.25)] transition-all duration-300
+                                flex items-center gap-2 md:gap-3
+                                ${(!canProceed() || isSubmitting) ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_6px_20px_rgba(142,53,53,0.4)] hover:-translate-y-[1px]'}
+                            `}
+                        >
+                            <span className="relative z-10 flex items-center gap-2">
+                                {isSubmitting ? (
+                                    <>
+                                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        傳送中...
+                                    </>
+                                ) : (
+                                    <>
+                                        {currentStepName === 'message' ? '提交回覆' : '下一步'}
+                                    </>
+                                )}
+                            </span>
                              {currentStepName !== 'message' && !isSubmitting && (
                                   <span className="relative z-10 text-[10px] transform group-hover:translate-x-1 transition-transform">→</span>
                              )}
