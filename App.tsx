@@ -450,7 +450,7 @@ function App() {
 
         {/* 導覽列顯示觸發點（當 Marquee 頂到畫面頂部時） */}
         <div id="nav-sentinel" className="absolute w-full h-px -mt-px z-50 pointer-events-none opacity-0" />
-        <div id="sticky-marquee" className={`sticky top-0 z-40 bg-white/60 backdrop-blur-md border-y border-white/40 shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>
+        <div id="sticky-marquee" className={`sticky top-0 z-40 ${isMobile ? 'bg-white/95 border-b border-stone-100' : 'bg-white/60 backdrop-blur-md border-y border-white/40'} shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>
           <motion.div
             className="flex flex-nowrap min-w-max"
             animate={{ x: "-50%" }}
@@ -470,7 +470,7 @@ function App() {
           <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none mix-blend-overlay" />
         </div>
 
-        <section id="timeline" className="py-20 px-6 bg-white/20 backdrop-blur-sm">
+        <section id="timeline" className={`py-20 px-6 ${isMobile ? 'bg-white' : 'bg-white/20 backdrop-blur-sm'}`}>
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 border-b border-[#2c3e50]/10 pb-10 gap-6">
               <div className="space-y-2">
@@ -485,7 +485,7 @@ function App() {
           </div>
         </section>
 
-        <section id="location" className="py-32 px-6 border-t border-white/40 bg-white/10 backdrop-blur-sm">
+        <section id="location" className={`py-32 px-6 border-t border-white/40 ${isMobile ? 'bg-stone-50' : 'bg-white/10 backdrop-blur-sm'}`}>
           <div className="max-w-5xl mx-auto">
             <div className="mb-20">
               <p className="font-display text-[10px] text-[#b08d55] uppercase tracking-[0.4em] mb-3">02 / Venue</p>
@@ -495,7 +495,7 @@ function App() {
           </div>
         </section>
 
-        <section id="guestbook" className="py-32 px-6 border-t border-white/40 bg-white/20 backdrop-blur-sm">
+        <section id="guestbook" className={`py-32 px-6 border-t border-white/40 ${isMobile ? 'bg-white' : 'bg-white/20 backdrop-blur-sm'}`}>
           <div className="max-w-5xl mx-auto mb-16">
             <p className="font-display text-[10px] text-[#b08d55] uppercase tracking-[0.4em] mb-3">03 / Memories</p>
             <h2 className="font-serif text-3xl md:text-4xl text-[#1a1a1a]">祝福留言</h2>
@@ -630,7 +630,8 @@ function App() {
               }}
               style={{ "--collapsed-width": typeof window !== 'undefined' && window.innerWidth >= 768 ? "3.5rem" : "3.2rem" } as any}
               className={`
-                bg-white/95 backdrop-blur-md md:backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
+                ${isMobile ? 'bg-white/95 border-stone-200' : 'bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-white/80'} 
+                border shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
                 flex items-center overflow-hidden h-12 md:h-14
             `}
             >
@@ -737,7 +738,7 @@ function App() {
       >
         <Link
           to="/rsvp"
-          className={`flex items-center justify-center rounded-full bg-white/95 backdrop-blur-md md:backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300 ${showNav ? 'w-12 h-12 p-0' : 'px-6 py-3 gap-2.5'}`}
+          className={`flex items-center justify-center rounded-full ${isMobile ? 'bg-white/95 border-stone-200/50' : 'bg-white/95 backdrop-blur-md md:backdrop-blur-xl border-[#8E3535]/20'} border shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300 ${showNav ? 'w-12 h-12 p-0' : 'px-6 py-3 gap-2.5'}`}
         >
           <span className="text-[#8E3535] group-hover:scale-110 transition-transform duration-300">
             <InvitationIcon />

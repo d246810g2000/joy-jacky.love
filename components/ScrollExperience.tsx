@@ -38,7 +38,8 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   // Speed up text fade out since scroll is shorter
   const textOpacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
   const textScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
-  const textBlur = useTransform(scrollYProgress, [0, 0.15], ["blur(0px)", "blur(4px)"]);
+  // Disable blur on mobile for performance
+  const textBlur = useTransform(scrollYProgress, [0, 0.15], isMobile ? ["blur(0px)", "blur(0px)"] : ["blur(0px)", "blur(4px)"]);
 
   // Differential Y movement for depth perception
   const labelY = useTransform(scrollYProgress, [0, 0.3], ["0%", "-50%"]);
@@ -127,7 +128,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="bg-white/50 backdrop-blur-md md:backdrop-blur-xl px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4"
+            className={`px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4 ${isMobile ? 'bg-white/90' : 'bg-white/50 backdrop-blur-md md:backdrop-blur-xl'}`}
           >
             <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
@@ -160,7 +161,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
         >
           {/* Ambient Background Effects */}
           <div className={`absolute inset-0 z-0 pointer-events-none transform-gpu`}>
-            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[30px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
+            <div className={`absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[30px] md:blur-[120px] rounded-full mix-blend-multiply ${isMobile ? '' : 'animate-pulse'}`} />
             <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[30px] md:blur-[100px] rounded-full mix-blend-multiply" />
           </div>
 
