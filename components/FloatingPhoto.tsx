@@ -5,7 +5,7 @@ import type { MotionValue } from 'framer-motion';
 import { Photo } from '../types';
 
 /** 相簿書脊在 Photos Stream 座標下的約略 X（從左側飛出時的起點） */
-const SPINE_X_VW = -18;
+const SPINE_X_VW = -2;
 
 interface FloatingPhotoProps {
   photo: Photo;
@@ -15,7 +15,7 @@ interface FloatingPhotoProps {
   triggerStart: number;
   onSelect: (photo: Photo) => void;
   onHoverChange?: (hovering: boolean) => void;
-  /** 若為 true，從相簿左側（書脊）位置起飛 */
+  /** 若為 true，從相簿左側（書點）位置起飛 */
   startFromSpine?: boolean;
   isMobile: boolean;
   zIndex: number;
@@ -25,59 +25,104 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   const [isHovered, setIsHovered] = useState(false);
   const isPortrait = photo.orientation === 'portrait';
 
-  // Adjusted for 350vh total height:
-  // Reduced delay spacing to ensure group stays together
-  const delay = index * 0.03;
-  const start = triggerStart + delay;
-  // 單張飛出動畫佔用的 scroll 區間（較大 = 飛出較慢）
-  const duration = 0.34;
-  const end = start + duration;
+  // --- 1. Stable Pseudo-random Seeds (Fixed per component instance) ---
+  const { r1, r2, r3, r4, flightParams, startOffset } = useMemo(() => {
+    const s1 = ((index * 137.5) % 100) / 100;
+    const s2 = ((index * 293.3) % 100) / 100;
+    const s3 = ((index * 457.1) % 100) / 100;
+    const s4 = ((index * 563.9) % 100) / 100;
 
-  // 1. Scale
-  const endScale = isMobile ? 3.0 : 5.0;
-  const scale = useTransform(progress, [start, end], [0.1, endScale]);
+    // Flight Timing
+    const baseDelay = index * 0.025; // 稍微調緊間隔
+    const randomDelay = s1 * 0.02;
+    const baseDuration = isMobile ? 0.34 : 0.32; // 調快飛出速度 (0.4 -> 0.32)
+    const randomDuration = isMobile ? 0 : (s2 * 0.08);
 
-  // 2. Opacity
-  const opacity = useTransform(progress, [start, start + 0.05, end - 0.01, end], [0, 1, 1, 0]);
+    // Initial Position (Offsets from album center in vw)
+    const options = [-13, -7, -2, 2, 8, 14];
+    const initialX = startFromSpine ? SPINE_X_VW : options[index % options.length];
 
-  // 3. X Transform
-  // Increase horizontal spread to allow photos to fly further left and right
-  const spreadFactor = isMobile ? 1.3 : 0.9;
+    // Side: 1=right, -1=left, 小數=微傾斜向上 (依要求：第二波向上偏左，第三波向上偏右)
+    const sides = [1, -1, -0.18, 1, -1, 1, -1, 0.18, 0, 1];
+    const side = sides[index % sides.length];
 
-  const side = index % 2 === 0 ? 1 : -1;
-  const tier = index % 3;
-  const r1 = ((index * 137.5) % 100) / 100;
-  const r2 = ((index * 293.3) % 100) / 100;
-  const baseDist = 30 + (tier * 30);
-  const variance = r1 * 20;
-  const finalDist = baseDist + variance;
+    return {
+      r1: s1, r2: s2, r3: s3, r4: s4,
+      flightParams: { delay: baseDelay + randomDelay, duration: baseDuration + randomDuration, side },
+      startOffset: initialX
+    };
+  }, [index, isMobile, startFromSpine]);
 
-  // Apply spreadFactor to pull items closer to center on wide screens
-  const xEnd = `${side * finalDist * spreadFactor}vw`;
-  const xStart = startFromSpine ? `${SPINE_X_VW}vw` : "0vw";
-  const x = useTransform(progress, [start, end], [xStart, xEnd]);
+  const start = triggerStart + flightParams.delay;
+  const end = start + flightParams.duration;
 
-  // 4. Y Position
-  const startY = (r2 * 10) - 5;
-  const endY = -180 - (r1 * 50);
-  const y = useTransform(progress, [start, end], [`${startY}vh`, `${endY}vh`]);
+  // --- 2. Motion Transforms ---
 
-  // 5. Z Depth
-  // Disable Z movement to allow z-index to control stacking order (later photos on top)
-  const z = 0;
+  // Scale: Extremely small to large
+  const endScale = isMobile ? 3.0 : (3.5 + r3 * 1.5);
+  const scale = useTransform(progress, [start, end], [0.01, endScale]);
 
-  // 6. Visibility Optimization (Smart Culling)
-  // Hide element completely when opacity is 0 to remove it from GPU layer tree
-  const display = useTransform(progress, (v) => (v >= start && v <= end ? 'block' : 'none'));
+  // Opacity: Fade in quickly, hold, fade out at end
+  const opacity = useTransform(progress, [start, start + 0.04, end - 0.02, end], [0, 1, 1, 0]);
 
-  // 7. Rotation（電腦版與手機版都啟用旋轉，增加動態感）
+  // X Transform: Starting from album page, spreading out horizontally
+  const spreadFactor = isMobile ? 1.3 : (1.1 + r1 * 0.4);
+  const tier = index % 4;
+  const baseDist = isMobile ? (35 + (tier * 25)) : (45 + (tier * 35));
+  const finalDist = (baseDist + (r2 * 30)) * spreadFactor;
+  const xTarget = flightParams.side * finalDist;
+
+  // 手機版使用極簡線性路徑以節省效能；電腦版保留靈動擺盪 (Flutter)
+  const x = useTransform(
+    progress,
+    isMobile ? [start, end] : [start, start + flightParams.duration * 0.3, start + flightParams.duration * 0.65, end],
+    isMobile ? [`${startOffset}vw`, `${xTarget}vw`] : [
+      `${startOffset}vw`,
+      `${(startOffset + xTarget * 0.3) + (r4 * 5 - 2.5)}vw`,
+      `${(startOffset + xTarget * 0.7) - (r4 * 4 - 2)}vw`,
+      `${xTarget}vw`
+    ]
+  );
+
+  // Y Position: Parabolic Trajectory
+  const startY = isMobile ? ((r2 * 10) - 5) : ((r4 * 12) - 6);
+  const peakY = isMobile ? -50 : (-80 - (r1 * 40));
+  const endY = isMobile ? (-180 - (r1 * 50)) : (-200 - (r2 * 120));
+
+  const y = useTransform(
+    progress,
+    isMobile ? [start, end] : [start, start + flightParams.duration * 0.45, end],
+    isMobile ? [`${startY}vh`, `${endY}vh`] : [`${startY}vh`, `${peakY}vh`, `${endY}vh`]
+  );
+
+  // Rotation: 手機版回歸單調旋轉以節省運算；電腦版保留靈動回彈
   const rotationDir = index % 2 === 0 ? 1 : -1;
-  const rotateZ = useTransform(progress, [start, end], [rotationDir * -10, rotationDir * 10]);
+  const baseRot = 6 + (r1 * 4); // 限制在 +-10 度內
+  const rotateZ = useTransform(
+    progress,
+    isMobile ? [start, end] : [start, start + flightParams.duration * 0.35, start + flightParams.duration * 0.75, end],
+    isMobile ? [rotationDir * -3, rotationDir * baseRot] : [
+      rotationDir * -3,
+      rotationDir * (baseRot * 0.7),
+      rotationDir * (baseRot * 0.4),
+      rotationDir * baseRot
+    ]
+  );
 
-  // Width adjustments - 放大飛出照片的寬度
+  const display = useTransform(progress, v => (v >= start && v <= end ? 'block' : 'none'));
+
+  // 動態柔和陰影：手機版使用固定陰影減少渲染負擔
+  const shadowValue = isMobile
+    ? "0px 10px 25px rgba(0,0,0,0.15)"
+    : useTransform(progress, [start, end], [
+      "0px 4px 12px rgba(0,0,0,0.1)",
+      `${12 + r1 * 10}px ${25 + r2 * 15}px ${40 + r3 * 20}px rgba(0,0,0,0.06)`
+    ]);
+
+  // --- 3. UI Helpers ---
   const widthClasses = isPortrait
-    ? "w-[32vw] max-w-[180px] md:w-[14vw] md:max-w-[180px]"
-    : "w-[40vw] max-w-[230px] md:w-[18vw] md:max-w-[240px]";
+    ? "w-[32vw] max-w-[180px] md:w-[14.5vw] md:max-w-[190px]"
+    : "w-[40vw] max-w-[230px] md:w-[19vw] md:max-w-[260px]";
 
   const titleText = photo.title || photo.alt || '';
   const titleChars = useMemo(() => Array.from(titleText), [titleText]);
@@ -90,16 +135,19 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
         display,
         x,
         y,
-        z,
         rotateZ,
         zIndex,
         willChange: isMobile ? 'transform, opacity' : 'auto'
       }}
       className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${widthClasses} origin-center pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}
     >
-      <div
-        className={`relative p-[1.5px] bg-white shadow-xl rounded-[1px] ${isMobile ? '' : 'transform-gpu backface-hidden'} border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500`}
-        style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+      <motion.div
+        className={`relative p-[1.5px] bg-white rounded-[1px] ${isMobile ? '' : 'transform-gpu backface-hidden'} border-[0.5px] border-white/40 cursor-pointer pointer-events-auto hover:scale-105 transition-transform duration-500`}
+        style={{
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          boxShadow: shadowValue
+        }}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(photo);
@@ -168,7 +216,7 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
             </div>
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </motion.div>
   );
 });

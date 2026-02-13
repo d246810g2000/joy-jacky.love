@@ -46,19 +46,27 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   const titleY = useTransform(scrollYProgress, [0, 0.3], ["0%", "-35%"]);
   const chineseY = useTransform(scrollYProgress, [0, 0.3], ["0%", "-20%"]);
 
-  const bookContainerOpacity = useTransform(scrollYProgress, [0.1, 0.2, 0.9, 1], [0, 1, 1, 0]);
-  const bookScale = useTransform(scrollYProgress, [0, 0.25, 0.7], isMobile ? [1.2, 1.2, 0.7] : [1.4, 1.4, 0.65]);
-  const bookYOffset = useTransform(scrollYProgress, [0, 0.25, 0.7], isMobile ? ["0%", "0%", "5%"] : ["-5%", "-5%", "15%"]);
-  const bookXOffset = useTransform(scrollYProgress, [0.25, 0.7], isMobile ? ["0vw", "8vw"] : ["0vw", "22vw"]);
+  const bookContainerOpacity = useTransform(scrollYProgress, [0.03, 0.08, 0.9, 1], [0, 1, 1, 0]);
+  const bookScale = useTransform(scrollYProgress, [0, 0.10, 0.7], isMobile ? [1.2, 1.2, 0.7] : [1.4, 1.4, 0.65]);
+  const bookYOffset = useTransform(scrollYProgress, [0, 0.10, 0.7], isMobile ? ["0%", "0%", "5%"] : ["-5%", "-5%", "15%"]);
+  const bookXOffset = useTransform(scrollYProgress, [0.10, 0.7], isMobile ? ["0vw", "8vw"] : ["0vw", "22vw"]);
 
   // 依照片數量動態產生 waves，照片越多飛出總時間越長（scroll 區間越大）
   const waves = useMemo(() => {
     const total = WEDDING_PHOTOS.length;
-    const photosPerWave = Math.max(3, Math.min(5, Math.ceil(total / 8)));
+    // 電腦版更稀疏：每波張數減少，總波數增加
+    const photosPerWave = isMobile
+      ? Math.max(3, Math.min(5, Math.ceil(total / 8)))
+      : Math.max(2, Math.min(4, Math.ceil(total / 12)));
+
     const numWaves = Math.ceil(total / photosPerWave);
-    const flyOutStart = 0.35;
-    const flyOutRange = Math.min(0.62, 0.12 * numWaves + 0.38);
-    const flyOutEnd = Math.min(0.98, flyOutStart + flyOutRange);
+    const flyOutStart = isMobile ? 0.35 : 0.20;
+    // 配合相簿減速，將照片飛出的區段稍微拉長，使兩者結束時間更接近
+    const flyOutRange = isMobile
+      ? Math.min(0.62, 0.12 * numWaves + 0.38)
+      : Math.min(0.62, 0.08 * numWaves + 0.42);
+
+    const flyOutEnd = Math.min(0.95, flyOutStart + flyOutRange);
     const triggers = numWaves <= 1
       ? [flyOutStart]
       : Array.from({ length: numWaves }, (_, i) => flyOutStart + (flyOutEnd - flyOutStart) * (i / (numWaves - 1)));
@@ -66,7 +74,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
       photos: WEDDING_PHOTOS.slice(i * photosPerWave, Math.min((i + 1) * photosPerWave, total)),
       trigger: triggers[i] ?? flyOutStart,
     })).filter(w => w.photos.length > 0);
-  }, []);
+  }, [isMobile]);
 
   const photoWaves = useMemo(() => {
     return waves.map((wave, waveIdx) => (
@@ -95,14 +103,14 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
     ));
   }, [waves, scrollYProgress, setSelectedPhoto, onPhotoHoverChange, isMobile]);
 
-  const hintOpacity = useTransform(scrollYProgress, [0.35, 0.45, 0.7, 0.8], [0, 1, 1, 0]);
-  const hintOffset = useTransform(scrollYProgress, [0.35, 0.45], [20, 0]);
+  const hintOpacity = useTransform(scrollYProgress, [0.20, 0.28, 0.7, 0.82], [0, 1, 1, 0]);
+  const hintOffset = useTransform(scrollYProgress, [0.20, 0.28], [20, 0]);
 
   // 電腦版捲動慢約 0.5 倍；照片越多飛出區段越高，總飛出時間越長
   const photoCount = WEDDING_PHOTOS.length;
   // 大幅增加基礎高度與每張照片的額外高度，讓各種動畫（翻頁、飛出）分佈更稀疏、持續時間更長
-  const baseVh = isMobile ? 320 : 650;
-  const extraVhPerPhoto = Math.max(0, (photoCount - 20) * 15);
+  const baseVh = isMobile ? 320 : 800;
+  const extraVhPerPhoto = isMobile ? Math.max(0, (photoCount - 20) * 15) : Math.max(0, (photoCount - 20) * 28);
   const scrollHeight = `${baseVh + extraVhPerPhoto}vh`;
 
   return (
@@ -235,7 +243,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
         >
           {/* Photos Stream - 不變暗，維持清晰 */}
           <motion.div
-            style={{ x: "-12vw", transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
+            style={{ x: "0vw", transformStyle: isMobile ? 'flat' : 'preserve-3d' }}
             className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none z-20"
           >
             {photoWaves}
