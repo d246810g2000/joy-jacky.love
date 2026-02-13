@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { APP_CONTENT } from '../constants';
 import { GuestBookEntry } from '../types';
+import { ANIME_CHARACTERS } from '../data/animeCharacters';
 
 type Step = 'name' | 'side' | 'relation' | 'attendance' | 'guests' | 'paperInvite' | 'address' | 'email' | 'message' | 'success';
 
@@ -31,8 +32,12 @@ const RSVPPage: React.FC = () => {
         // Email
         email: '',
         // Message
+        // Message
         message: '',
-        publishToGuestbook: true
+        publishToGuestbook: true,
+        nickname: '',
+        useAnonymous: false,
+        animeSource: '' // New field to store the anime source title for display (not sent to submission)
     });
 
     // Calculate progress based on logical path
@@ -141,9 +146,12 @@ const RSVPPage: React.FC = () => {
         setIsSubmitting(true);
 
         // Ensure we don't publish empty messages
+        // Ensure we don't publish empty messages
         const finalFormData = {
             ...formData,
-            publishToGuestbook: formData.message.trim().length > 0 ? formData.publishToGuestbook : false
+            publishToGuestbook: formData.message.trim().length > 0 ? formData.publishToGuestbook : false,
+            // If publishing to guestbook, decide which name to use
+            guestbookName: (formData.publishToGuestbook && formData.useAnonymous) ? formData.nickname : formData.name
         };
 
         if (APP_CONTENT.googleScriptUrl && APP_CONTENT.googleScriptUrl.startsWith('http')) {
@@ -178,6 +186,23 @@ const RSVPPage: React.FC = () => {
             <option key={i} value={i}>{i} {unit}</option>
         ));
     };
+
+    const handleRandomName = () => {
+        const randomIndex = Math.floor(Math.random() * ANIME_CHARACTERS.length);
+        const character = ANIME_CHARACTERS[randomIndex];
+        setFormData(prev => ({ ...prev, name: character.name }));
+    };
+
+    const DiceIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+            <path d="M16 8h.01" />
+            <path d="M16 16h.01" />
+            <path d="M8 8h.01" />
+            <path d="M8 16h.01" />
+            <path d="M12 12h.01" />
+        </svg>
+    );
 
     const renderStepContent = () => {
         switch (currentStepName) {
@@ -460,25 +485,115 @@ const RSVPPage: React.FC = () => {
                         />
 
                         {formData.message.trim() && (
-                            <label className="flex items-start gap-3 cursor-pointer group">
-                                <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
-                                    {formData.publishToGuestbook && (
-                                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    )}
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    className="hidden"
-                                    checked={formData.publishToGuestbook}
-                                    onChange={(e) => setFormData({ ...formData, publishToGuestbook: e.target.checked })}
-                                />
-                                <div className="flex-1">
-                                    <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
-                                    <p className="text-xs text-stone-400 mt-0.5">勾選後，您的留言將會顯示在網站的「祝福留言」區塊</p>
-                                </div>
-                            </label>
+                            <div className="space-y-4 pt-2 border-t border-stone-100">
+                                <label className="flex items-start gap-3 cursor-pointer group">
+                                    <div className={`mt-0.5 w-5 h-5 border rounded flex items-center justify-center transition-colors ${formData.publishToGuestbook ? 'bg-[#8E3535] border-[#8E3535]' : 'border-stone-300 group-hover:border-[#8E3535]'}`}>
+                                        {formData.publishToGuestbook && (
+                                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="checkbox"
+                                        className="hidden"
+                                        checked={formData.publishToGuestbook}
+                                        onChange={(e) => setFormData({ ...formData, publishToGuestbook: e.target.checked })}
+                                    />
+                                    <div className="flex-1">
+                                        <span className="text-base text-[#2c3e50]">同步發佈到祝福留言板</span>
+                                    </div>
+                                </label>
+
+                                {/* Name Display Options */}
+                                {formData.publishToGuestbook && (
+                                    <div className="pl-8 space-y-3">
+                                        <p className="text-sm text-stone-500 mb-2">您希望留言顯示的名字是：</p>
+
+                                        {/* Real Name Option */}
+                                        <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${!formData.useAnonymous ? 'border-[#8E3535] bg-[#8E3535]/5' : 'border-stone-200 hover:bg-stone-50'}`}>
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${!formData.useAnonymous ? 'border-[#8E3535]' : 'border-stone-300'}`}>
+                                                {!formData.useAnonymous && <div className="w-2 h-2 rounded-full bg-[#8E3535]" />}
+                                            </div>
+                                            <input
+                                                type="radio"
+                                                name="nameDisplay"
+                                                className="hidden"
+                                                checked={!formData.useAnonymous}
+                                                onChange={() => setFormData({ ...formData, useAnonymous: false })}
+                                            />
+                                            <span className="text-base text-[#2c3e50]">{formData.name} (本名)</span>
+                                        </label>
+
+                                        {/* Anonymous Option */}
+                                        <div className={`p-3 rounded-lg border transition-all ${formData.useAnonymous ? 'border-[#8E3535] bg-[#8E3535]/5' : 'border-stone-200 hover:bg-stone-50'}`}>
+                                            <label className="flex items-center gap-3 cursor-pointer">
+                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${formData.useAnonymous ? 'border-[#8E3535]' : 'border-stone-300'}`}>
+                                                    {formData.useAnonymous && <div className="w-2 h-2 rounded-full bg-[#8E3535]" />}
+                                                </div>
+                                                <input
+                                                    type="radio"
+                                                    name="nameDisplay"
+                                                    className="hidden"
+                                                    checked={formData.useAnonymous}
+                                                    onChange={() => {
+                                                        // Ensure nickname is set if empty
+                                                        if (!formData.nickname) {
+                                                            const randomIndex = Math.floor(Math.random() * ANIME_CHARACTERS.length);
+                                                            const character = ANIME_CHARACTERS[randomIndex];
+                                                            setFormData({
+                                                                ...formData,
+                                                                useAnonymous: true,
+                                                                nickname: character.name,
+                                                                animeSource: character.source
+                                                            });
+                                                        } else {
+                                                            setFormData({ ...formData, useAnonymous: true });
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="text-base text-[#2c3e50]">使用匿名</span>
+                                            </label>
+
+                                            {/* Nested Generator */}
+                                            {formData.useAnonymous && (
+                                                <div className="mt-3 ml-7 flex flex-col gap-1">
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={formData.nickname}
+                                                            onChange={(e) => setFormData({ ...formData, nickname: e.target.value, animeSource: '' })}
+                                                            className="flex-1 text-base border border-stone-200 rounded px-3 py-2 focus:outline-none focus:border-[#8E3535] bg-white"
+                                                            placeholder="匿名 ID"
+                                                        />
+                                                        <button
+                                                            onClick={() => {
+                                                                const randomIndex = Math.floor(Math.random() * ANIME_CHARACTERS.length);
+                                                                const character = ANIME_CHARACTERS[randomIndex];
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    nickname: character.name,
+                                                                    animeSource: character.source
+                                                                });
+                                                            }}
+                                                            className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded border border-stone-200 transition-colors"
+                                                            title="隨機生成動漫角色名"
+                                                        >
+                                                            <DiceIcon />
+                                                        </button>
+                                                    </div>
+                                                    {/* Display Anime Source */}
+                                                    {formData.animeSource && (
+                                                        <span className="text-xs text-stone-400 text-right pr-1">
+                                                            來自：{formData.animeSource}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 );
