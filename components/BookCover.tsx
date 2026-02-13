@@ -16,14 +16,17 @@ interface BookCoverProps {
 export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, isMobile }) => {
   // 手機和電腦端都使用靜態 PNG 封面圖片
   // 封面不淡化，始終顯示
-  const contentOpacity = useTransform(progress, [0.25, 0.35], [0, 1]);
+  // 嚴格分離手機與電腦版的進度區間，確保手機版維持原樣 (0.25-0.35)，電腦版維持加速過的區間 (0.1-0.2)
+  const introRange: [number, number] = isMobile ? [0.25, 0.35] : [0.10, 0.20];
+
+  const contentOpacity = useTransform(progress, introRange, [0, 1]);
 
   // 封面翻轉動畫（手機和電腦端共用）
-  const coverRotateY = useTransform(progress, [0.25, 0.35], [0, -180]);
+  const coverRotateY = useTransform(progress, introRange, [0, -180]);
 
   // 手機端：封面翻轉後向右平移，讓相簿內容置中
   // 平移距離約為相簿寬度的 25-30%，確保翻轉後相簿內容置中
-  const mobileCoverTranslateX = useTransform(progress, [0.25, 0.35], [0, 80]);
+  const mobileCoverTranslateX = useTransform(progress, introRange, [0, 80]);
 
   if (isMobile) {
     return (
@@ -107,19 +110,23 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
 
   // 桌面端：使用靜態 PNG 封面 + 3D 翻書效果（內頁）
   // Enhanced rotation physics for a heavier, more realistic book feel
-  const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]);
-  const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
-  const bookRotateY = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 0, 15]);
+  const bookRotateX = useTransform(progress, [0, introRange[0], 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]);
+  const bookRotateZ = useTransform(progress, [0, introRange[0], 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
+  const bookRotateY = useTransform(progress, [0, introRange[0], 0.7], isMobile ? [0, 0, 0] : [0, 0, 15]);
 
   // Cover opens faster to avoid overlapping with first page
-  // 封面需要在第一頁開始翻轉之前完成，避免超過內頁
-  // coverRotateY 已在函數開頭定義（手機和電腦端共用）
-  const coverScaleX = useTransform(progress, [0.25, 0.35], [1, 1]);
-  const coverSkewY = useTransform(progress, [0.25, 0.35], [0, 0]);
-  // 封面不淡化，始終顯示（opacity 固定為 1）
+  const coverScaleX = useTransform(progress, introRange, [1, 1]);
+  const coverSkewY = useTransform(progress, introRange, [0, 0]);
 
-  // Staggered page turns with more organic, non-uniform variation
-  // Mobile: Sequential Fade-to-Zero. Each page disappears to reveal the one beneath.
+  // 內頁翻轉進度：手機版維持原有的固定間隔，電腦版採用變速加速
+  const p1Range: [number, number] = isMobile ? [0.35, 0.43] : [0.20, 0.28];
+  const p2Range: [number, number] = isMobile ? [0.43, 0.51] : [0.28, 0.36];
+  const p3Range: [number, number] = isMobile ? [0.51, 0.59] : [0.36, 0.44];
+  const p4Range: [number, number] = isMobile ? [0.59, 0.67] : [0.44, 0.52];
+  const p5Range: [number, number] = isMobile ? [0.67, 0.75] : [0.52, 0.60];
+  const p6Range: [number, number] = isMobile ? [0.75, 0.83] : [0.60, 0.68];
+  const p7Range: [number, number] = isMobile ? [0.83, 0.91] : [0.68, 0.76];
+
   const getPageScaleX = (start: number, end: number) =>
     useTransform(progress, [start, end], [1, 1]);
   const getPageSkewY = (start: number, end: number) =>
@@ -130,42 +137,42 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
     return useTransform(progress, [start, end], [1, 0]);
   }
 
-  const page1RotateY = useTransform(progress, [0.35, 0.43], isMobile ? [0, 0] : [0, -179]);
-  const page1ScaleX = getPageScaleX(0.35, 0.43);
-  const page1SkewY = getPageSkewY(0.35, 0.43);
-  const page1Opacity = getPageOpacity(0.35, 0.43);
+  const page1RotateY = useTransform(progress, p1Range, isMobile ? [0, 0] : [0, -179]);
+  const page1ScaleX = getPageScaleX(p1Range[0], p1Range[1]);
+  const page1SkewY = getPageSkewY(p1Range[0], p1Range[1]);
+  const page1Opacity = getPageOpacity(p1Range[0], p1Range[1]);
 
-  const page2RotateY = useTransform(progress, [0.43, 0.51], isMobile ? [0, 0] : [0, -177]);
-  const page2ScaleX = getPageScaleX(0.43, 0.51);
-  const page2SkewY = getPageSkewY(0.43, 0.51);
-  const page2Opacity = getPageOpacity(0.43, 0.51);
+  const page2RotateY = useTransform(progress, p2Range, isMobile ? [0, 0] : [0, -177]);
+  const page2ScaleX = getPageScaleX(p2Range[0], p2Range[1]);
+  const page2SkewY = getPageSkewY(p2Range[0], p2Range[1]);
+  const page2Opacity = getPageOpacity(p2Range[0], p2Range[1]);
 
-  const page3RotateY = useTransform(progress, [0.51, 0.59], isMobile ? [0, 0] : [0, -174]);
-  const page3ScaleX = getPageScaleX(0.51, 0.59);
-  const page3SkewY = getPageSkewY(0.51, 0.59);
-  const page3Opacity = getPageOpacity(0.51, 0.59);
+  const page3RotateY = useTransform(progress, p3Range, isMobile ? [0, 0] : [0, -174]);
+  const page3ScaleX = getPageScaleX(p3Range[0], p3Range[1]);
+  const page3SkewY = getPageSkewY(p3Range[0], p3Range[1]);
+  const page3Opacity = getPageOpacity(p3Range[0], p3Range[1]);
 
-  const page4RotateY = useTransform(progress, [0.59, 0.67], isMobile ? [0, 0] : [0, -170]);
-  const page4ScaleX = getPageScaleX(0.59, 0.67);
-  const page4SkewY = getPageSkewY(0.59, 0.67);
-  const page4Opacity = getPageOpacity(0.59, 0.67);
+  const page4RotateY = useTransform(progress, p4Range, isMobile ? [0, 0] : [0, -170]);
+  const page4ScaleX = getPageScaleX(p4Range[0], p4Range[1]);
+  const page4SkewY = getPageSkewY(p4Range[0], p4Range[1]);
+  const page4Opacity = getPageOpacity(p4Range[0], p4Range[1]);
 
-  const page5RotateY = useTransform(progress, [0.67, 0.75], isMobile ? [0, 0] : [0, -165]);
-  const page5ScaleX = getPageScaleX(0.67, 0.75);
-  const page5SkewY = getPageSkewY(0.67, 0.75);
-  const page5Opacity = getPageOpacity(0.67, 0.75);
+  const page5RotateY = useTransform(progress, p5Range, isMobile ? [0, 0] : [0, -165]);
+  const page5ScaleX = getPageScaleX(p5Range[0], p5Range[1]);
+  const page5SkewY = getPageSkewY(p5Range[0], p5Range[1]);
+  const page5Opacity = getPageOpacity(p5Range[0], p5Range[1]);
 
-  const page6RotateY = useTransform(progress, [0.75, 0.83], isMobile ? [0, 0] : [0, -159]);
-  const page6ScaleX = getPageScaleX(0.75, 0.83);
-  const page6SkewY = getPageSkewY(0.75, 0.83);
-  const page6Opacity = getPageOpacity(0.75, 0.83);
+  const page6RotateY = useTransform(progress, p6Range, isMobile ? [0, 0] : [0, -159]);
+  const page6ScaleX = getPageScaleX(p6Range[0], p6Range[1]);
+  const page6SkewY = getPageSkewY(p6Range[0], p6Range[1]);
+  const page6Opacity = getPageOpacity(p6Range[0], p6Range[1]);
 
-  const page7RotateY = useTransform(progress, [0.83, 0.91], isMobile ? [0, 0] : [0, -152]);
-  const page7ScaleX = getPageScaleX(0.83, 0.91);
-  const page7SkewY = getPageSkewY(0.83, 0.91);
-  const page7Opacity = getPageOpacity(0.83, 0.91);
+  const page7RotateY = useTransform(progress, p7Range, isMobile ? [0, 0] : [0, -152]);
+  const page7ScaleX = getPageScaleX(p7Range[0], p7Range[1]);
+  const page7SkewY = getPageSkewY(p7Range[0], p7Range[1]);
+  const page7Opacity = getPageOpacity(p7Range[0], p7Range[1]);
 
-  const shadowOpacity = useTransform(progress, [0.25, 0.6], [0, 0.3]);
+  const shadowOpacity = useTransform(progress, isMobile ? [0.25, 0.6] : [0.10, 0.5], [0, 0.3]);
 
   // 四種版面隨機穿插：1 張直式 / 2 張橫式上下 / 上 1 橫下 2 直左右 / 4 張直式格狀
   const slices = useMemo(() => {
