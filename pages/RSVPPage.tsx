@@ -507,7 +507,7 @@ const RSVPPage: React.FC = () => {
 
                                 {/* Name Display Options */}
                                 {formData.publishToGuestbook && (
-                                    <div className="pl-8 space-y-3">
+                                    <div className="pl-4 md:pl-8 space-y-3">
                                         <p className="text-sm text-stone-500 mb-2">您希望留言顯示的名字是：</p>
 
                                         {/* Real Name Option */}
@@ -526,7 +526,7 @@ const RSVPPage: React.FC = () => {
                                         </label>
 
                                         {/* Anonymous Option */}
-                                        <div className={`p-3 rounded-lg border transition-all ${formData.useAnonymous ? 'border-[#8E3535] bg-[#8E3535]/5' : 'border-stone-200 hover:bg-stone-50'}`}>
+                                        <div className={`p-2 md:p-3 rounded-lg border transition-all ${formData.useAnonymous ? 'border-[#8E3535] bg-[#8E3535]/5' : 'border-stone-200 hover:bg-stone-50'}`}>
                                             <label className="flex items-center gap-3 cursor-pointer">
                                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${formData.useAnonymous ? 'border-[#8E3535]' : 'border-stone-300'}`}>
                                                     {formData.useAnonymous && <div className="w-2 h-2 rounded-full bg-[#8E3535]" />}
@@ -557,13 +557,13 @@ const RSVPPage: React.FC = () => {
 
                                             {/* Nested Generator */}
                                             {formData.useAnonymous && (
-                                                <div className="mt-3 ml-7 flex flex-col gap-1">
-                                                    <div className="flex gap-2">
+                                                <div className="mt-3 ml-4 md:ml-7 flex flex-col gap-1">
+                                                    <div className="flex gap-1.5 md:gap-2">
                                                         <input
                                                             type="text"
                                                             value={formData.nickname}
                                                             onChange={(e) => setFormData({ ...formData, nickname: e.target.value, animeSource: '' })}
-                                                            className="flex-1 text-base border border-stone-200 rounded px-3 py-2 focus:outline-none focus:border-[#8E3535] bg-white"
+                                                            className="flex-1 min-w-0 text-base border border-stone-200 rounded px-3 py-2 focus:outline-none focus:border-[#8E3535] bg-white"
                                                             placeholder="匿名 ID"
                                                         />
                                                         <button
@@ -584,8 +584,8 @@ const RSVPPage: React.FC = () => {
                                                     </div>
                                                     {/* Display Anime Source */}
                                                     {formData.animeSource && (
-                                                        <span className="text-xs text-stone-400 text-right pr-1">
-                                                            來自：{formData.animeSource}
+                                                        <span className="text-xs text-stone-400 text-right pr-1 break-words">
+                                                            {formData.animeSource}
                                                         </span>
                                                     )}
                                                 </div>
