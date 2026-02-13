@@ -41,6 +41,11 @@
         scrollbar-width: none;
         /* Hide scrollbar for IE and Edge */
         -ms-overflow-style: none;
+        
+        /* Mobile Optimizations */
+        overscroll-behavior-y: none; /* Prevent Android glow / bounce */
+        touch-action: pan-y; /* Improve scroll performance */
+        -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
       }
 
       body {

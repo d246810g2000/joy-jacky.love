@@ -286,53 +286,61 @@ function App() {
   }, []);
 
   // --- Scroll Detection & Spy ---
+  // --- 捲動事件偵測與監控 (IntersectionObserver 優化版) ---
   useEffect(() => {
-    const handleScroll = () => {
-      // 1. Show/Hide Nav based on Marquee Position
-      // Nav items appear when marquee sticks to top
-      const marquee = document.getElementById('sticky-marquee');
-      if (marquee) {
-        const rect = marquee.getBoundingClientRect();
-        // We use 2px tolerance
-        setShowNav(rect.top <= 2);
-      }
-
-      // 2. Show RSVP Button when invitation section starts appearing
-      const invitation = document.getElementById('invitation-section');
-      if (invitation) {
-        const rect = invitation.getBoundingClientRect();
-        // 出現時機：當信封完全消失時 (約在 invitation 區塊捲動 0.45 進度時)
-        // 區塊高度為 150vh，0.45 進度即捲動 45vh (150vh - 100vh = 50vh 總捲動量)
-        setShowRSVPButton(rect.top <= -window.innerHeight * 0.45);
-      }
-
-      // 3. Active Section Spy (Only if not manually navigating)
-      if (!isNavigatingRef.current) {
-        const viewportCenter = window.scrollY + (window.innerHeight / 2);
-
-        const timeline = document.getElementById('timeline');
-        const location = document.getElementById('location');
-        const guestbook = document.getElementById('guestbook');
-
-        // Default to timeline if we are past the marquee
-        let current = 'timeline';
-
-        if (guestbook && viewportCenter >= guestbook.offsetTop) {
-          current = 'guestbook';
-        } else if (location && viewportCenter >= location.offsetTop) {
-          current = 'location';
-        } else if (timeline && viewportCenter >= timeline.offsetTop) {
-          current = 'timeline';
-        }
-
-        setActiveSection(current);
-      }
+    // 1. 設定觀察者
+    const observerOptions = {
+      root: null,
+      rootMargin: '-50% 0px -50% 0px', // 視窗中心點
+      threshold: 0
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !isNavigatingRef.current) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    }, observerOptions);
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    // 觀察主要區塊
+    const sections = ['timeline', 'location', 'guestbook'];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) sectionObserver.observe(el);
+    });
+
+    // 2. 導覽列顯示控制 - 觀察 Sticky Marquee 上方的哨兵元素
+    const navSentinelObserver = new IntersectionObserver(([entry]) => {
+      // 若哨兵元素（位於 Marquee 上方）離開畫面頂部，代表 Marquee 已固定 -> 顯示導覽列
+      if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+        setShowNav(true);
+      } else if (entry.isIntersecting) {
+        setShowNav(false);
+      }
+    }, { rootMargin: "0px 0px 0px 0px", threshold: 0 });
+
+    const navSentinel = document.getElementById('nav-sentinel');
+    if (navSentinel) navSentinelObserver.observe(navSentinel);
+
+    // 3. RSVP 按鈕顯示控制 - 觀察 Invitation 區塊內的哨兵元素
+    const rsvpSentinelObserver = new IntersectionObserver(([entry]) => {
+      // 若哨兵元素（位於約 45vh 處）離開畫面頂部，代表已捲動至足夠深處 -> 顯示 RSVP 按鈕
+      if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+        setShowRSVPButton(true);
+      } else if (entry.isIntersecting) {
+        setShowRSVPButton(false);
+      }
+    }, { root: null, threshold: 0 });
+
+    const rsvpSentinel = document.getElementById('rsvp-sentinel');
+    if (rsvpSentinel) rsvpSentinelObserver.observe(rsvpSentinel);
+
+    return () => {
+      sectionObserver.disconnect();
+      navSentinelObserver.disconnect();
+      rsvpSentinelObserver.disconnect();
+    };
   }, []);
 
   // Navigation Items Config
@@ -430,14 +438,18 @@ function App() {
       </AnimatePresence>
 
       <div className="relative z-20 -mt-[100vh]">
-        <section id="invitation-section" className="bg-transparent">
+        <section id="invitation-section" className="bg-transparent relative">
           <EnvelopeInvitation isMobile={isMobile} />
+          {/* RSVP 按鈕顯示觸發點（約捲動至 45% 時） */}
+          <div id="rsvp-sentinel" className="absolute top-[45vh] left-0 w-full h-px pointer-events-none opacity-0" />
         </section>
 
         <section id="calendar-section" className="bg-transparent relative z-30">
           <CalendarRevealSection isMobile={isMobile} />
         </section>
 
+        {/* 導覽列顯示觸發點（當 Marquee 頂到畫面頂部時） */}
+        <div id="nav-sentinel" className="absolute w-full h-px -mt-px z-50 pointer-events-none opacity-0" />
         <div id="sticky-marquee" className={`sticky top-0 z-40 bg-white/60 backdrop-blur-md border-y border-white/40 shadow-sm overflow-hidden h-[48px] flex items-center transition-opacity duration-300 ${isGuestBookExpanded ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100'}`}>
           <motion.div
             className="flex flex-nowrap min-w-max"
@@ -618,7 +630,7 @@ function App() {
               }}
               style={{ "--collapsed-width": typeof window !== 'undefined' && window.innerWidth >= 768 ? "3.5rem" : "3.2rem" } as any}
               className={`
-                bg-white/95 backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
+                bg-white/95 backdrop-blur-md md:backdrop-blur-xl border border-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.12)] 
                 flex items-center overflow-hidden h-12 md:h-14
             `}
             >
@@ -725,7 +737,7 @@ function App() {
       >
         <Link
           to="/rsvp"
-          className={`flex items-center justify-center rounded-full bg-white/95 backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300 ${showNav ? 'w-12 h-12 p-0' : 'px-6 py-3 gap-2.5'}`}
+          className={`flex items-center justify-center rounded-full bg-white/95 backdrop-blur-md md:backdrop-blur-xl border border-[#8E3535]/20 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group hover:scale-105 transition-all duration-300 ${showNav ? 'w-12 h-12 p-0' : 'px-6 py-3 gap-2.5'}`}
         >
           <span className="text-[#8E3535] group-hover:scale-110 transition-transform duration-300">
             <InvitationIcon />
