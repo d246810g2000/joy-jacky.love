@@ -17,20 +17,20 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
   // 手機和電腦端都使用靜態 PNG 封面圖片
   // 封面不淡化，始終顯示
   const contentOpacity = useTransform(progress, [0.25, 0.35], [0, 1]);
-  
+
   // 封面翻轉動畫（手機和電腦端共用）
   const coverRotateY = useTransform(progress, [0.25, 0.35], [0, -180]);
-  
+
   // 手機端：封面翻轉後向右平移，讓相簿內容置中
   // 平移距離約為相簿寬度的 25-30%，確保翻轉後相簿內容置中
   const mobileCoverTranslateX = useTransform(progress, [0.25, 0.35], [0, 80]);
-  
+
   if (isMobile) {
     return (
       <motion.div className="relative w-[50vw] h-[70vw] max-w-[320px] max-h-[440px]">
         {/* 相簿內容（在封面下方顯示，跟著封面一起平移） */}
         <motion.div
-          style={{ 
+          style={{
             opacity: contentOpacity,
             x: mobileCoverTranslateX
           }}
@@ -38,10 +38,10 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
         >
           <MobileAlbumGrid progress={progress} onSelectPhoto={onSelectPhoto} />
         </motion.div>
-        
+
         {/* 靜態 PNG 封面 - 翻轉到左邊並向右平移，讓相簿置中 */}
         <motion.div
-          style={{ 
+          style={{
             rotateY: coverRotateY,
             x: mobileCoverTranslateX,
             transformStyle: 'preserve-3d',
@@ -62,13 +62,13 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
               }}
             />
           </div>
-          
+
           {/* 封面背面（翻轉後顯示） */}
-          <div 
-            className="absolute inset-0 bg-[#F9F7F2] rounded-r-[2px] overflow-hidden border-r border-stone-200 shadow-inner" 
-            style={{ 
-              transform: 'rotateY(180deg) translateZ(1px)', 
-              backfaceVisibility: 'hidden' 
+          <div
+            className="absolute inset-0 bg-[#F9F7F2] rounded-r-[2px] overflow-hidden border-r border-stone-200 shadow-inner"
+            style={{
+              transform: 'rotateY(180deg) translateZ(1px)',
+              backfaceVisibility: 'hidden'
             }}
           >
             {/* 透出封面正面顏色 - 半透明封面圖片作為背景層，添加輕微模糊效果 */}
@@ -80,19 +80,19 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
                 style={{ pointerEvents: 'none', transform: 'scaleX(-1)' }}
               />
             </div>
-            
+
             {/* Paper Texture */}
             <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
-            
+
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center z-10">
-              <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br/>從這裡開始"</p>
+              <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br />從這裡開始"</p>
               <div className="w-8 md:w-12 h-[1px] bg-[#C5A065] opacity-50 mb-3 md:mb-4" />
               <p className="font-display text-[8px] md:text-[9px] text-[#888] tracking-widest uppercase leading-relaxed px-4">
-                記錄我們<br/>
+                記錄我們<br />
                 最美好的瞬間
               </p>
             </div>
-            
+
             {/* Bookplate */}
             <div className="absolute bottom-4 md:bottom-6 left-0 right-0 flex justify-center opacity-60">
               <div className="border border-[#dcdcdc] px-3 md:px-4 py-1">
@@ -107,22 +107,22 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
 
   // 桌面端：使用靜態 PNG 封面 + 3D 翻書效果（內頁）
   // Enhanced rotation physics for a heavier, more realistic book feel
-  const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]); 
+  const bookRotateX = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 10, 55]);
   const bookRotateZ = useTransform(progress, [0, 0.25, 0.9], isMobile ? [0, 0, 0] : [0, 2, 25]);
   const bookRotateY = useTransform(progress, [0, 0.25, 0.7], isMobile ? [0, 0, 0] : [0, 0, 15]);
-  
+
   // Cover opens faster to avoid overlapping with first page
   // 封面需要在第一頁開始翻轉之前完成，避免超過內頁
   // coverRotateY 已在函數開頭定義（手機和電腦端共用）
   const coverScaleX = useTransform(progress, [0.25, 0.35], [1, 1]);
   const coverSkewY = useTransform(progress, [0.25, 0.35], [0, 0]);
   // 封面不淡化，始終顯示（opacity 固定為 1）
-  
+
   // Staggered page turns with more organic, non-uniform variation
   // Mobile: Sequential Fade-to-Zero. Each page disappears to reveal the one beneath.
-  const getPageScaleX = (start: number, end: number) => 
+  const getPageScaleX = (start: number, end: number) =>
     useTransform(progress, [start, end], [1, 1]);
-  const getPageSkewY = (start: number, end: number) => 
+  const getPageSkewY = (start: number, end: number) =>
     useTransform(progress, [start, end], [0, 0]);
   const getPageOpacity = (start: number, end: number) => {
     if (!isMobile) return useTransform(progress, [start, end], [1, 1]);
@@ -193,10 +193,10 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
   // Elegant paper texture (Warm Linen)
   const paperBg = "bg-[#F9F7F2]"; // Warm cream/off-white
   const paperTexture = "repeating-linear-gradient(90deg, #F9F7F2, #F9F7F2 2px, #EBE8E0 3px, #EBE8E0 3px)";
-  
+
   return (
     <motion.div
-      style={{ 
+      style={{
         rotateX: bookRotateX,
         rotateZ: bookRotateZ,
         rotateY: bookRotateY,
@@ -208,24 +208,24 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
       <div className="absolute inset-0" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
         {/* Book Spine / Back Cover Base */}
         <div className="absolute inset-0 bg-[#1e293b] rounded-[2px] shadow-2xl" style={{ transform: isMobile ? 'none' : 'translateZ(-16px)', backfaceVisibility: 'hidden' }} />
-        
-      {/* Pages Block */}
-      <div className="absolute inset-0" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
-         {/* Page Thickness Effect (Hidden on mobile) */}
-         {!isMobile && (
+
+        {/* Pages Block */}
+        <div className="absolute inset-0" style={{ transformStyle: isMobile ? 'flat' : 'preserve-3d' }}>
+          {/* Page Thickness Effect (Hidden on mobile) */}
+          {!isMobile && (
             <>
               <div className="absolute top-[2px] right-0 bottom-[2px] w-[16px] origin-right" style={{ background: paperTexture, transform: 'rotateY(-90deg)' }} />
               <div className="absolute bottom-0 left-[2px] right-0 h-[16px] origin-bottom" style={{ background: "#EBE8E0", transform: 'rotateX(-90deg)' }} />
               <div className="absolute top-0 left-[2px] right-0 h-[16px] origin-top" style={{ background: "#EBE8E0", transform: 'rotateX(90deg)' }} />
             </>
-         )}
-         
-         {/* Static Base Page (Always visible on mobile to show content after cover slides) */}
-         <div className={`absolute inset-0 ${paperBg} border border-stone-200/50`} style={{ transform: isMobile ? 'none' : 'translateZ(0px)' }}>
+          )}
+
+          {/* Static Base Page (Always visible on mobile to show content after cover slides) */}
+          <div className={`absolute inset-0 ${paperBg} border border-stone-200/50`} style={{ transform: isMobile ? 'none' : 'translateZ(0px)' }}>
             <PhotoGrid layout={slices.base.layout} photos={slices.base.photos} progress={progress} onSelect={onSelectPhoto} pageNum={1} />
-         </div>
+          </div>
+        </div>
       </div>
-    </div>
 
       {!isMobile && (
         <>
@@ -253,14 +253,14 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
 
       {/* --- FRONT COVER DESIGN (Static PNG) --- */}
       <motion.div
-        style={{ 
-          rotateY: coverRotateY, 
+        style={{
+          rotateY: coverRotateY,
           scaleX: coverScaleX,
           skewY: coverSkewY,
           opacity: 1, // 封面不淡化，始終顯示
-          transformStyle: 'preserve-3d', 
-          transformOrigin: 'left', 
-          zIndex: 50 
+          transformStyle: 'preserve-3d',
+          transformOrigin: 'left',
+          zIndex: 50
         }}
         className="absolute inset-0"
       >
@@ -279,34 +279,34 @@ export const BookCover: React.FC<BookCoverProps> = ({ progress, onSelectPhoto, i
 
         {/* Inner Left Cover (Inside of the hard cover) */}
         <div className="absolute inset-0 bg-[#F9F7F2] rounded-r-[2px] overflow-hidden border-r border-stone-200 shadow-inner" style={{ transform: 'rotateY(180deg) translateZ(1px)', backfaceVisibility: 'hidden' }}>
-           {/* 透出封面正面顏色 - 半透明封面圖片作為背景層，添加輕微模糊效果 */}
-           <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply blur-sm">
-             <img
-               src={`${import.meta.env.BASE_URL}book-cover.png`}
-               alt=""
-               className="w-full h-full object-cover"
-               style={{ pointerEvents: 'none', transform: 'scaleX(-1)' }}
-             />
-           </div>
-           
-           {/* Paper Texture */}
-           <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
-           
-           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center z-10">
-              <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br/>從這裡開始"</p>
-              <div className="w-8 md:w-12 h-[1px] bg-[#C5A065] opacity-50 mb-3 md:mb-4" />
-              <p className="font-display text-[8px] md:text-[9px] text-[#888] tracking-widest uppercase leading-relaxed px-4">
-                記錄我們<br/>
-                最美好的瞬間
-              </p>
-           </div>
-           
-           {/* Bookplate */}
-           <div className="absolute bottom-6 left-0 right-0 flex justify-center opacity-60">
-             <div className="border border-[#dcdcdc] px-4 py-1">
-               <span className="font-mono text-[8px] text-[#aaa] uppercase tracking-widest">Ex Libris</span>
-             </div>
-           </div>
+          {/* 透出封面正面顏色 - 半透明封面圖片作為背景層，添加輕微模糊效果 */}
+          <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply blur-sm">
+            <img
+              src={`${import.meta.env.BASE_URL}book-cover.png`}
+              alt=""
+              className="w-full h-full object-cover"
+              style={{ pointerEvents: 'none', transform: 'scaleX(-1)' }}
+            />
+          </div>
+
+          {/* Paper Texture */}
+          <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')]" />
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12 text-center z-10">
+            <p className="font-serif italic text-lg md:text-2xl lg:text-3xl text-[#1a1d23]/80 mb-3 md:mb-4 leading-relaxed px-4">"我們的愛情故事，<br />從這裡開始"</p>
+            <div className="w-8 md:w-12 h-[1px] bg-[#C5A065] opacity-50 mb-3 md:mb-4" />
+            <p className="font-display text-[8px] md:text-[9px] text-[#888] tracking-widest uppercase leading-relaxed px-4">
+              記錄我們<br />
+              最美好的瞬間
+            </p>
+          </div>
+
+          {/* Bookplate */}
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center opacity-60">
+            <div className="border border-[#dcdcdc] px-4 py-1">
+              <span className="font-mono text-[8px] text-[#aaa] uppercase tracking-widest">Ex Libris</span>
+            </div>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -341,16 +341,16 @@ const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opaci
     <motion.div
       drag={dragEnabled ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
-      style={{ 
-        rotateY: isMobile ? 0 : combinedRotateY, 
+      style={{
+        rotateY: isMobile ? 0 : combinedRotateY,
         scaleX: isMobile && scaleX ? scaleX : 1,
         skewY: isMobile && skewY ? skewY : 0,
         opacity: isMobile && opacityValue ? opacityValue : 1,
-        x, 
-        transformStyle: isMobile ? 'flat' : 'preserve-3d', 
-        transformOrigin: 'left', 
-        zIndex: index, 
-        cursor: dragEnabled ? 'grab' : 'default' 
+        x,
+        transformStyle: isMobile ? 'flat' : 'preserve-3d',
+        transformOrigin: 'left',
+        zIndex: index,
+        cursor: dragEnabled ? 'grab' : 'default'
       }}
       className={`absolute inset-y-[1px] left-0 right-[1px] origin-left ${isMobile ? '' : 'transform-gpu'}`}
     >
@@ -362,10 +362,10 @@ const FanPage = React.memo(({ rotateY, scaleX, skewY, opacityValue, index, opaci
       </div>
 
       <div className={`absolute inset-0 ${paperClass} border-y border-l border-stone-200/60 rounded-l-[1px] overflow-hidden shadow-sm`} style={{ transform: 'rotateY(180deg) translateZ(1px)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-         <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
-         <PhotoGrid layout={backPage.layout} photos={backPage.photos} progress={progress} isBackPage={true} onSelect={onSelect} pageNum={pageNum + 1} />
-         <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-black/5 to-transparent pointer-events-none" />
-         <div className="absolute inset-0 bg-black/2 pointer-events-none" />
+        <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
+        <PhotoGrid layout={backPage.layout} photos={backPage.photos} progress={progress} isBackPage={true} onSelect={onSelect} pageNum={pageNum + 1} />
+        <div className="absolute top-0 bottom-0 right-0 w-8 bg-gradient-to-l from-black/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-black/2 pointer-events-none" />
       </div>
     </motion.div>
   );
@@ -445,7 +445,7 @@ interface PhotoItemProps {
 
 const PhotoItem = React.memo(({ photo, index, progress, isBackPage = false, onSelect }: PhotoItemProps) => {
   const direction = index % 2 === 0 ? 1 : -1;
-  const range = photo.orientation === 'portrait' ? 8 : 4; 
+  const range = photo.orientation === 'portrait' ? 8 : 4;
   const parallaxY = useTransform(progress, [0, 1], [`${-range * direction}%`, `${range * direction}%`]);
   const isPortrait = photo.orientation === 'portrait';
   const objectClass = isPortrait
@@ -453,28 +453,28 @@ const PhotoItem = React.memo(({ photo, index, progress, isBackPage = false, onSe
     : "object-cover object-center";
 
   return (
-    <motion.div 
+    <motion.div
       onClick={() => onSelect(photo)}
       whileHover={{ scale: 1.01 }}
       className="relative w-full h-full bg-white p-[3px] md:p-[4px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(197,160,101,0.15)] cursor-pointer transition-all duration-500 ease-out group"
       style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
     >
       <div className="relative w-full h-full overflow-hidden bg-stone-100">
-          <motion.img 
-            src={photo.compressedUrl ?? photo.url} 
-            style={{ y: parallaxY }} 
-            className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
-            alt={photo.alt}
-            loading="lazy"
-            decoding="async"
-          />
-          {/* Grain Overlay on Photo */}
-          <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none mix-blend-overlay" />
+        <motion.img
+          src={photo.compressedUrl ?? photo.url}
+          style={{ y: parallaxY }}
+          className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`}
+          alt={photo.alt}
+          loading="lazy"
+          decoding="async"
+        />
+        {/* Grain Overlay on Photo */}
+        <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none mix-blend-overlay" />
       </div>
 
       {/* Gold Accent Dot (Interactive Hint) */}
       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-         <div className="w-1 h-1 rounded-full bg-[#C5A065]" />
+        <div className="w-1 h-1 rounded-full bg-[#C5A065]" />
       </div>
     </motion.div>
   );

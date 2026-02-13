@@ -215,7 +215,7 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, 
           >
             {imgContent}
           </div>
-          {scale > 1 ? (
+          {scale > 1 && (
             <button
               type="button"
               onClick={resetZoom}
@@ -224,10 +224,6 @@ const LightboxImage: React.FC<LightboxImageProps> = ({ photo, rotateX, rotateY, 
             >
               還原縮放 · 或雙擊畫面
             </button>
-          ) : (
-            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 text-[10px] text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] pointer-events-none">
-              雙擊放大
-            </span>
           )}
         </div>
       ) : (
@@ -317,14 +313,14 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
   // 手機端跳過鼠標事件處理，減少計算開銷
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isMobile) return;
-    
+
     const rect = e.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
-    
+
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     const xPct = (mouseX / width) - 0.5;
     const yPct = (mouseY / height) - 0.5;
 
@@ -346,22 +342,22 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#fdfbf7]/85 p-0 md:py-6 md:px-4 overflow-hidden"
     >
       {/* Background Sparkles & Glow */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.3 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" 
+        className="absolute inset-0 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"
       />
-      
-      <motion.div 
+
+      <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 0.5 }}
         exit={{ scale: 1.2, opacity: 0 }}
-        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.9)_0%,transparent_70%)]" 
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.9)_0%,transparent_70%)]"
       />
 
       {/* 頂部固定區：單一列 = 上一張／下一張(手機) + 提示(手機) + 滑桿 + 關閉，節省空間 */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
@@ -397,42 +393,58 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
           )}
         </div>
         {/* 手機版：中央提示「左右滑動切換照片」；電腦版留空 */}
-        {hasMultiple && isMobile && (
-          <div className="flex items-center justify-center text-[#b08d55] opacity-70 pointer-events-none shrink-0">
-            <span className="text-[11px] tracking-[0.2em] font-serif whitespace-nowrap">左右滑動切換照片</span>
-          </div>
-        )}
-        {hasMultiple && !isMobile && <div className="w-0 min-w-0 shrink" aria-hidden />}
-        {/* 僅電腦版顯示滑桿；當前頁碼對齊在滑桿拇指正上方；手機版不顯示拖曳區塊 */}
-        {hasMultiple && !isMobile ? (
-          <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-2 min-w-0 w-full h-5">
-              <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0">1</span>
-              <div className="relative flex-1 min-w-0 flex flex-col">
-                <span
-                  className="absolute text-[9px] text-stone-400 font-display tracking-wider whitespace-nowrap -translate-x-1/2 -translate-y-[calc(100%+6px)] top-0 pointer-events-none"
-                  style={{ left: allPhotos.length > 1 ? `${(currentIndex / (allPhotos.length - 1)) * 100}%` : '50%' }}
-                  aria-hidden
-                >
-                  {currentIndex + 1}
-                </span>
+        {/* 中央功能區：包含滑動提示（手機）與 進度滑桿（手機、電腦） */}
+        <div className="flex-1 flex items-center gap-3 min-w-0">
+          {hasMultiple && isMobile && (
+            <div className="hidden sm:flex items-center justify-center text-[#b08d55] opacity-50 pointer-events-none shrink-0">
+              <span className="text-[10px] tracking-[0.1em] font-serif whitespace-nowrap">左右滑動切換</span>
+            </div>
+          )}
+
+          {hasMultiple && (
+            <div className="relative flex-1 min-w-0 flex items-center h-8">
+              {!isMobile && (
+                <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 mr-2">1</span>
+              )}
+              <div className="relative flex-1 group">
+                {!isMobile && (
+                  <span
+                    className="absolute text-[9px] text-stone-400 font-display tracking-wider whitespace-nowrap -translate-x-1/2 -translate-y-[calc(100%+6px)] top-0 pointer-events-none"
+                    style={{ left: allPhotos.length > 1 ? `${(currentIndex / (allPhotos.length - 1)) * 100}%` : '50%' }}
+                  >
+                    {currentIndex + 1}
+                  </span>
+                )}
                 <input
                   type="range"
                   min={1}
                   max={allPhotos.length}
                   value={currentIndex + 1}
                   onChange={handleSliderChange}
-                  className="w-full h-1.5 appearance-none bg-stone-200/60 rounded-full cursor-pointer accent-[#b08d55] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#b08d55] [&::-webkit-slider-thumb]:shadow-[0_0_0_2px_#fdfbf7] [&::-webkit-slider-thumb]:cursor-grab [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#b08d55] [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-grab"
-                  aria-label="跳至第幾張照片"
+                  className={`w-full appearance-none bg-stone-200/40 rounded-full cursor-pointer accent-[#b08d55] 
+                    ${isMobile ? 'h-1.5' : 'h-1.5'} 
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#b08d55] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#fdfbf7]
+                    ${isMobile ? '[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4' : '[&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4'}
+                    [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#b08d55] [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#fdfbf7]
+                    ${isMobile ? '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4' : '[&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4'}
+                  `}
+                  aria-label="快速導覽照片"
                 />
               </div>
-              <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 text-right">{allPhotos.length}</span>
+              {!isMobile && (
+                <span className="text-[9px] text-stone-400 font-mono w-4 shrink-0 text-right ml-2">{allPhotos.length}</span>
+              )}
             </div>
+          )}
+        </div>
+
+        {/* 頁碼顯示（僅手機版顯示在關閉按鈕左側，電腦版已在滑桿上方） */}
+        {isMobile && hasMultiple && (
+          <div className="text-[12px] font-mono text-[#b08d55] font-medium tracking-tighter tabular-nums shrink-0 bg-white/50 px-2 py-0.5 rounded-full border border-[#b08d55]/10">
+            {currentIndex + 1}<span className="opacity-40 mx-0.5">/</span>{allPhotos.length}
           </div>
-        ) : (
-          <div className="min-w-0 flex-1" aria-hidden />
         )}
-        <motion.button 
+        <motion.button
           initial={{ opacity: 0, rotate: -90 }}
           animate={{ opacity: 1, rotate: 0 }}
           exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
@@ -474,7 +486,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
         </>
       )}
 
-      <motion.div 
+      <motion.div
         initial={{ y: 20, opacity: 0, scale: 0.98 }}
         animate={{ y: 0, opacity: 1, scale: 1 }}
         exit={{ y: -20, opacity: 0, scale: 0.95, filter: "blur(10px)", transition: { duration: 0.3, ease: "easeIn" } }}
@@ -482,7 +494,7 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
       >
 
         {/* 電腦版：照片左側，橫向照佔更寬以發揮寬螢幕優勢；手機版：照片在上 */}
-        <motion.div 
+        <motion.div
           className={`relative w-full flex justify-center items-center pointer-events-auto ${isMobile && photo.orientation === 'portrait' ? 'max-h-[60vh]' : 'max-h-[48vh]'} touch-pan-y shrink-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-h-[75vh] md:flex-[1_1_80%] md:min-w-0' : 'md:max-h-[70vh] md:flex-[1_1_55%] md:min-w-0') : 'md:max-h-[60vh]'} ${isMobile ? '' : 'perspective-[1500px]'}`}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
@@ -495,57 +507,57 @@ export const Lightbox: React.FC<LightboxProps & { isMobile: boolean }> = ({ phot
           }}
         >
           <AnimatePresence mode="wait">
-            <LightboxImage 
-                key={photo.id} 
-                photo={photo} 
-                rotateX={rotateX} 
-                rotateY={rotateY} 
-                isMobile={isMobile}
-                onZoomChange={setIsImageZoomed}
+            <LightboxImage
+              key={photo.id}
+              photo={photo}
+              rotateX={rotateX}
+              rotateY={rotateY}
+              isMobile={isMobile}
+              onZoomChange={setIsImageZoomed}
             />
           </AnimatePresence>
         </motion.div>
 
         {/* 電腦版：標題與文字右側垂直置中，橫向照時右側較窄以讓照片更寬；手機版：照片下方 */}
         <div className={`w-full max-w-2xl flex-shrink-0 text-left pointer-events-auto bg-white/30 md:bg-transparent p-3 md:px-0 md:pl-4 pb-5 md:pb-0 rounded-sm md:rounded-none backdrop-blur-md md:backdrop-blur-none z-50 flex flex-col justify-center min-h-0 ${!isMobile ? (photo.orientation === 'landscape' ? 'md:max-w-none md:flex-[0_1_18%] md:pt-0' : 'md:max-w-none md:flex-[0_1_38%] md:pt-0') : 'md:pt-2'}`}>
-            {/* Animated Content */}
-            <AnimatePresence mode="wait">
-                <motion.div 
-                    key={photo.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-                    className="space-y-3 md:space-y-6"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div>
-                        <h2 className="font-serif text-2xl md:text-3xl text-[#b08d55] italic leading-tight min-h-0 md:min-h-[4rem] flex items-center">
-                            {photo.title || photo.alt}
-                        </h2>
-                    </div>
+          {/* Animated Content */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={photo.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+              className="space-y-3 md:space-y-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <h2 className="font-serif text-2xl md:text-3xl text-[#b08d55] italic leading-tight min-h-0 md:min-h-[4rem] flex items-center">
+                  {photo.title || photo.alt}
+                </h2>
+              </div>
 
-                    <div>
-                      <p className="text-[#7f8c8d] text-sm md:text-base leading-relaxed font-light italic opacity-75 line-clamp-3 md:line-clamp-none">
-                        {photo.description ?? "每一個眼神，都是我們永恆故事的開始。"}
-                      </p>
-                    </div>
-                </motion.div>
-            </AnimatePresence>
-            
-            {/* Persistent Metadata：國家／地點（拖曳滑桿已移至頂部） */}
-            <div className="mt-4 md:mt-8 pt-4 md:pt-6 border-t border-[#b08d55]/20" onClick={(e) => e.stopPropagation()}>
-                <div className="grid grid-cols-2 gap-3 md:gap-4 text-[10px] text-stone-500 font-mono">
-                    <div>
-                        <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">國家／地區</p>
-                        <p className="text-[#2c3e50] font-medium">{photo.country ?? "—"}</p>
-                    </div>
-                    <div>
-                        <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">地點</p>
-                        <p className="text-[#2c3e50] font-medium">{photo.location ?? "—"}</p>
-                    </div>
-                </div>
+              <div>
+                <p className="text-[#7f8c8d] text-sm md:text-base leading-relaxed font-light italic opacity-75 line-clamp-3 md:line-clamp-none">
+                  {photo.description ?? "每一個眼神，都是我們永恆故事的開始。"}
+                </p>
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
+          {/* Persistent Metadata：國家／地點（拖曳滑桿已移至頂部） */}
+          <div className="mt-4 md:mt-8 pt-4 md:pt-6 border-t border-[#b08d55]/20" onClick={(e) => e.stopPropagation()}>
+            <div className="grid grid-cols-2 gap-3 md:gap-4 text-[10px] text-stone-500 font-mono">
+              <div>
+                <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">國家／地區</p>
+                <p className="text-[#2c3e50] font-medium">{photo.country ?? "—"}</p>
+              </div>
+              <div>
+                <p className="uppercase tracking-widest text-[#7f8c8d] mb-1">地點</p>
+                <p className="text-[#2c3e50] font-medium">{photo.location ?? "—"}</p>
+              </div>
             </div>
+
+          </div>
         </div>
 
       </motion.div>

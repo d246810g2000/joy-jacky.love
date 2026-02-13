@@ -69,10 +69,12 @@ interface PageLayerProps {
 
 const PageLayer = React.memo(({ page, progress, start, end, onSelect, pageNum, paperBg, paperTextureClass }: PageLayerProps) => {
   const opacity = useTransform(progress, [start - 0.02, start, end, end + 0.02], [0, 1, 1, 0]);
+  // 關鍵修正：當圖層透明時，將其 pointer-events 設為 none，避免擋住下層
+  const pointerEvents = useTransform(progress, (v) => (v >= start - 0.02 && v <= end + 0.02 ? 'auto' : 'none'));
 
   return (
     <motion.div
-      style={{ opacity }}
+      style={{ opacity, pointerEvents }}
       className={`absolute inset-0 ${paperBg} border border-stone-200/50 rounded-r-[2px] overflow-hidden`}
     >
       <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
@@ -158,16 +160,16 @@ const PhotoItem = React.memo(({ photo, index, progress, onSelect }: PhotoItemPro
     : "object-cover object-center";
 
   return (
-    <motion.div 
+    <motion.div
       onClick={() => onSelect(photo)}
       whileHover={{ scale: 1.01 }}
       className="relative w-full h-full bg-white p-[3px] md:p-[4px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(197,160,101,0.15)] cursor-pointer transition-all duration-500 ease-out group"
     >
       <div className="relative w-full h-full overflow-hidden bg-stone-100">
-        <motion.img 
-          src={photo.compressedUrl ?? photo.url} 
-          style={{ y: parallaxY }} 
-          className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`} 
+        <motion.img
+          src={photo.compressedUrl ?? photo.url}
+          style={{ y: parallaxY }}
+          className={`absolute inset-0 w-full h-[115%] -top-[7.5%] ${objectClass} opacity-[0.93] hover:opacity-100 transition-opacity duration-500 filter sepia-[0.05] contrast-[1.02]`}
           alt={photo.alt}
           loading="lazy"
           decoding="async"
