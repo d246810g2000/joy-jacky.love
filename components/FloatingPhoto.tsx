@@ -66,7 +66,11 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
   // Disable Z movement to allow z-index to control stacking order (later photos on top)
   const z = 0;
 
-  // 6. Rotation（電腦版與手機版都啟用旋轉，增加動態感）
+  // 6. Visibility Optimization (Smart Culling)
+  // Hide element completely when opacity is 0 to remove it from GPU layer tree
+  const display = useTransform(progress, (v) => (v >= start && v <= end ? 'block' : 'none'));
+
+  // 7. Rotation（電腦版與手機版都啟用旋轉，增加動態感）
   const rotationDir = index % 2 === 0 ? 1 : -1;
   const rotateZ = useTransform(progress, [start, end], [rotationDir * -10, rotationDir * 10]);
 
@@ -83,6 +87,7 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
       style={{
         scale,
         opacity,
+        display,
         x,
         y,
         z,

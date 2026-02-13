@@ -100,14 +100,14 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
   // 電腦版捲動慢約 0.5 倍；照片越多飛出區段越高，總飛出時間越長
   const photoCount = WEDDING_PHOTOS.length;
   // 大幅增加基礎高度與每張照片的額外高度，讓各種動畫（翻頁、飛出）分佈更稀疏、持續時間更長
-  const baseVh = isMobile ? 450 : 650;
-  const extraVhPerPhoto = Math.max(0, (photoCount - 20) * 22);
+  const baseVh = isMobile ? 320 : 650;
+  const extraVhPerPhoto = Math.max(0, (photoCount - 20) * 15);
   const scrollHeight = `${baseVh + extraVhPerPhoto}vh`;
 
   return (
     <div ref={containerRef} className="relative w-full bg-transparent" style={{ height: scrollHeight }}>
 
-      <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center ${isMobile ? '' : 'transform-gpu'}`}>
+      <div className={`sticky top-0 h-[100vh] w-full overflow-hidden flex flex-col items-center justify-center transform-gpu`}>
 
         {/* Hint Text for Gallery - 不參與變暗，保持清晰 */}
         <motion.div
@@ -127,7 +127,7 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="bg-white/50 backdrop-blur-xl px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4"
+            className="bg-white/50 backdrop-blur-md md:backdrop-blur-xl px-4 py-2.5 md:px-3 md:py-8 rounded-full border border-[#8a6a3d]/30 shadow-[0_8px_32px_rgba(138,106,61,0.15)] flex flex-row md:flex-col items-center gap-2 md:gap-4"
           >
             <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
@@ -159,9 +159,9 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
           transition={{ duration: 0.35 }}
         >
           {/* Ambient Background Effects */}
-          <div className={`absolute inset-0 z-0 pointer-events-none ${isMobile ? '' : 'transform-gpu'}`}>
-            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[60px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[50px] md:blur-[100px] rounded-full mix-blend-multiply" />
+          <div className={`absolute inset-0 z-0 pointer-events-none transform-gpu`}>
+            <div className="absolute top-[-20%] left-[-20%] w-[80vw] h-[80vw] bg-rose-100/30 blur-[30px] md:blur-[120px] rounded-full mix-blend-multiply animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-sky-100/30 blur-[30px] md:blur-[100px] rounded-full mix-blend-multiply" />
           </div>
 
           <motion.div
@@ -169,9 +169,9 @@ export const ScrollExperience: React.FC<ScrollExperienceProps> = ({
               scale: bgScale,
               y: bgY,
               opacity: bgOpacity,
-              willChange: isMobile ? 'transform, opacity' : 'auto'
+              willChange: 'transform, opacity'
             }}
-            className={`absolute inset-0 z-0 overflow-hidden ${isMobile ? '' : 'transform-gpu'}`}
+            className={`absolute inset-0 z-0 overflow-hidden transform-gpu`}
           >
             <img
               src={BACKGROUND_IMAGE}

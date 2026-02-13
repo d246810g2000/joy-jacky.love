@@ -12,16 +12,18 @@ interface MobileAlbumGridProps {
 }
 
 // 手機端 8 頁：1 基底 + 7 動態分頁，與滾動淡入淡出同步
-const MOBILE_PAGE_COUNT = 8;
-const MOBILE_PAGE_TIMING = [
-  { start: 0.38, end: 0.48 },
-  { start: 0.46, end: 0.56 },
-  { start: 0.54, end: 0.64 },
-  { start: 0.62, end: 0.72 },
-  { start: 0.70, end: 0.80 },
-  { start: 0.78, end: 0.88 },
-  { start: 0.86, end: 0.96 },
-];
+// 手機端 12 頁：1 基底 + 11 動態分頁，涵蓋所有 28 張照片
+const MOBILE_PAGE_COUNT = 12;
+
+// 動態生成時間軸：從 0.38 開始，每頁間隔 0.05，淡入淡出持續 0.10
+const PAGE_START_BASE = 0.38;
+const PAGE_STEP = 0.05;
+const PAGE_DURATION = 0.10;
+
+const MOBILE_PAGE_TIMING = Array.from({ length: MOBILE_PAGE_COUNT - 1 }, (_, i) => ({
+  start: PAGE_START_BASE + i * PAGE_STEP,
+  end: PAGE_START_BASE + i * PAGE_STEP + PAGE_DURATION,
+}));
 
 export const MobileAlbumGrid: React.FC<MobileAlbumGridProps> = ({ progress, onSelectPhoto }) => {
   const albumPages = useMemo(() => {
@@ -70,11 +72,13 @@ interface PageLayerProps {
 const PageLayer = React.memo(({ page, progress, start, end, onSelect, pageNum, paperBg, paperTextureClass }: PageLayerProps) => {
   const opacity = useTransform(progress, [start - 0.02, start, end, end + 0.02], [0, 1, 1, 0]);
   // 關鍵修正：當圖層透明時，將其 pointer-events 設為 none，避免擋住下層
+  // 效能優化：當圖層不可見時，設為 display: none 移除圖層
   const pointerEvents = useTransform(progress, (v) => (v >= start - 0.02 && v <= end + 0.02 ? 'auto' : 'none'));
+  const display = useTransform(progress, (v) => (v >= start - 0.02 && v <= end + 0.02 ? 'block' : 'none'));
 
   return (
     <motion.div
-      style={{ opacity, pointerEvents }}
+      style={{ opacity, pointerEvents, display }}
       className={`absolute inset-0 ${paperBg} border border-stone-200/50 rounded-r-[2px] overflow-hidden`}
     >
       <div className={`absolute inset-0 ${paperTextureClass} pointer-events-none`} />
