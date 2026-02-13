@@ -123,7 +123,8 @@ export const FloatingPhoto = React.memo(({ photo, index, totalInWave, progress, 
           />
         </div>
         {/* Subtle reflective overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 pointer-events-none" />
+        {/* Subtle reflective overlay - Disable on mobile */}
+        {!isMobile && <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 pointer-events-none" />}
         {/* 電腦版：滑鼠懸停時透明流光，高級優雅的珍珠光澤 */}
         {!isMobile && isHovered && (
           <motion.div

@@ -179,7 +179,8 @@ const PhotoItem = React.memo(({ photo, index, progress, onSelect }: PhotoItemPro
           decoding="async"
         />
         {/* 顆粒覆蓋 */}
-        <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none mix-blend-overlay" />
+        {/* 顆粒覆蓋 - Disable on mobile or simplify */}
+        <div className="absolute inset-0 bg-noise opacity-[0.03] pointer-events-none mix-blend-overlay hidden md:block" />
       </div>
 
       {/* 金色提示點 */}
