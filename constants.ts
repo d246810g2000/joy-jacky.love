@@ -33,7 +33,7 @@ interface GalleryEntry {
 }
 
 const GALLERY_DATA: GalleryEntry[] = [
-  { publicId: "disney-h-01", title: "幸福拼圖", description: "地板上的字母拼出了 \"Will You Marry Me\"，這不僅是一個問句，更是我們未來的序章。", location: "香港迪士尼樂園酒店", country: "香港" },
+  { publicId: "disney-h-01", title: "幸福拼圖", description: "地板上的字母拼出了 \"Will You Marry Me?\"，這不僅是一個問句，更是我們未來的序章。", location: "香港迪士尼樂園酒店", country: "香港" },
   { publicId: "disney-v-01", title: "童話成真", description: "抱著妳喜歡的史黛拉，在城堡前單膝下跪，這一刻，王子與公主的故事有了真實的體溫。", location: "香港迪士尼·奇妙夢想城堡", country: "香港" },
   { publicId: "disney-v-02", title: "甜蜜依偎", description: "在夢幻小鎮的街角，不需要華麗的魔法，只要並肩坐著緊握雙手，就是最踏實的幸福。", location: "香港迪士尼·美國小鎮大街", country: "香港" },
   { publicId: "disney-v-03", title: "冰雪奇緣", description: "在城堡的噴泉前，陽光正好，我們的愛情像永不融化的冰雪魔法，晶瑩剔透。", location: "香港迪士尼·魔雪奇緣世界", country: "香港" },
@@ -41,7 +41,7 @@ const GALLERY_DATA: GalleryEntry[] = [
   { publicId: "antique-v-02", title: "九曲良緣", description: "輕搖團扇，笑意盈盈，身後的飛簷樓閣是風景，而眼前的你是我的專屬劇情。", location: "上海豫園·九曲橋", country: "上海" },
   { publicId: "phuquoc-v-02", title: "海島漫遊", description: "穿上休閒的花襯衫與白洋裝，牽手漫步在異國的階梯上，連空氣都充滿了甜甜的度假香氣。", location: "富國島·日落小鎮", country: "越南" },
   { publicId: "phuquoc-v-03", title: "轉角遇到愛", description: "我在階梯下守候，看著妳緩緩走來，歐風建築的暖黃色調，映襯著我們最自然的笑容。", location: "富國島·地中海小鎮", country: "越南" },
-  { publicId: "phuquoc-v-01", title: "愛的托舉", description: "把你高高舉起，妳手中的捧花指向天際，這份重量不是負擔，是我生命中最甜蜜的責任。", location: "富國島·歐風街區", country: "越南" },
+  { publicId: "phuquoc-v-01", title: "愛的托舉", description: "把妳高高舉起，妳手中的捧花指向天際，這份依賴不是負擔，是我生命中最甜蜜的責任。", location: "富國島·歐風街區", country: "越南" },
   { publicId: "phuquoc-v-04", title: "金黃吻痕", description: "夕陽染紅了天際與海面，海風輕拂髮絲，這一刻我們融化在金色的溫柔裡，眼中只有彼此。", location: "富國島·日落海灘", country: "越南" },
   { publicId: "jinghua-v-01", title: "光影之間", description: "窗邊的自然光灑落，純白的禮服與妳溫柔的眼神，交織成一幅看不膩的畫。", location: "京華婚紗·韓系光影棚", country: "台灣" },
   { publicId: "jinghua-v-02", title: "心動瞬間", description: "額頭輕靠，閉上雙眼，世界安靜得只剩下我們的心跳聲，如此契合，如此安心。", location: "京華婚紗·唯美窗邊", country: "台灣" },
