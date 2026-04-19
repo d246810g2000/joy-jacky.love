@@ -115,19 +115,19 @@ export const APP_CONTENT = {
 
 export const TIMELINE_EVENTS = [
   {
-    time: "12:00",
+    time: "11:30",
     title: "Guest Arrival",
     chineseTitle: "賓客入席",
     description: "老朋友們可以聚一聚，用拍拍印與朋友們留下美好回憶"
   },
   {
-    time: "12:30",
+    time: "12:00",
     title: "Grand Opening",
     chineseTitle: "幸福開席",
     description: "婚禮正式開始，敬備佳餚，共饗盛宴"
   },
   {
-    time: "15:30",
+    time: "15:00",
     title: "Farewell",
     chineseTitle: "送客合影",
     description: "感謝您的參與，與新人留下美好回憶"
