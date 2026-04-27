@@ -193,6 +193,7 @@ const InvitationCardPage: React.FC = () => {
 
   // ── 觸控事件 ──
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
     const t = e.touches[0];
     lastTouch.current = { x: t.clientX, y: t.clientY };
     updateInteraction();
@@ -200,6 +201,8 @@ const InvitationCardPage: React.FC = () => {
   }, [updateInteraction]);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    if (e.cancelable) e.preventDefault(); // 防止手機網頁捲動
     const t = e.touches[0];
     updateInteraction();
     const dx = t.clientX - lastTouch.current.x;
@@ -211,6 +214,7 @@ const InvitationCardPage: React.FC = () => {
   }, [updateInteraction]);
 
   const onTouchEnd = useCallback(() => {
+    isDragging.current = false;
     updateInteraction();
     resetIdleTimer();
   }, [resetIdleTimer, updateInteraction]);
@@ -330,7 +334,7 @@ const InvitationCardPage: React.FC = () => {
       {/* 卡片容器 */}
       <div
         className="relative z-10 cursor-grab active:cursor-grabbing mt-8"
-        style={{ width: 'min(85vw, 360px)', aspectRatio: '9/16' }}
+        style={{ width: 'min(85vw, 360px)', aspectRatio: '9/16', touchAction: 'none' }}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
