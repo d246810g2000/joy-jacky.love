@@ -74,7 +74,7 @@ const InvitationCardPage: React.FC = () => {
   // 基本旋轉角度 (0, 180, 360...)
   const [baseRotY, setBaseRotY] = useState(0);
   
-  // 目標偏移角度（拖曳 / 陀螺儀驅動）
+  // 目標偏移角度（拖曳驅動）
   const targetOffsetX = useRef(0);
   const targetOffsetY = useRef(0);
   
@@ -90,10 +90,6 @@ const InvitationCardPage: React.FC = () => {
   const lastTouch  = useRef({ x: 0, y: 0 });
   const rafId      = useRef<number | null>(null);
   
-  // 陀螺儀狀態
-  const [gyroAvailable, setGyroAvailable] = useState(false);
-  const gyroBaseRef = useRef<{ beta: number; gamma: number } | null>(null);
-
   // 最後互動時間與自動旋轉量
   const lastInteractionRef = useRef(Date.now());
   const autoRotY = useRef(0);
@@ -219,44 +215,6 @@ const InvitationCardPage: React.FC = () => {
     resetIdleTimer();
   }, [resetIdleTimer, updateInteraction]);
 
-  // ── 陀螺儀事件 ──
-  useEffect(() => {
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta === null || e.gamma === null) return;
-      if (!gyroAvailable) setGyroAvailable(true);
-
-      if (!gyroBaseRef.current) {
-        gyroBaseRef.current = { beta: e.beta, gamma: e.gamma };
-        return;
-      }
-
-      const deltaBeta  = (e.beta  - gyroBaseRef.current.beta)  * GYRO_SENSITIVITY * 0.1;
-      const deltaGamma = (e.gamma - gyroBaseRef.current.gamma) * GYRO_SENSITIVITY * 0.1;
-
-      if (!isDragging.current) {
-        targetOffsetX.current = clamp(-deltaBeta,  -MAX_TILT * 0.6, MAX_TILT * 0.6);
-        targetOffsetY.current = clamp( deltaGamma, -MAX_TILT * 0.6, MAX_TILT * 0.6);
-      }
-    };
-
-    window.addEventListener('deviceorientation', handleOrientation, true);
-    return () => window.removeEventListener('deviceorientation', handleOrientation, true);
-  }, [gyroAvailable]);
-
-  // iOS 13+ 需要請求陀螺儀權限
-  const requestGyroPermission = async () => {
-    const DOE = (DeviceOrientationEvent as any);
-    if (typeof DOE.requestPermission === 'function') {
-      try {
-        const res = await DOE.requestPermission();
-        if (res === 'granted') {
-          gyroBaseRef.current = null;
-          setGyroAvailable(true);
-        }
-      } catch (_) {}
-    }
-  };
-
   // 點擊翻面（不是拖曳才算點擊）
   const clickStartPos = useRef<{ x: number; y: number } | null>(null);
   const onCardPointerDown = (e: React.PointerEvent) => {
@@ -341,7 +299,6 @@ const InvitationCardPage: React.FC = () => {
         onTouchEnd={onTouchEnd}
         onPointerDown={(e) => {
             onCardPointerDown(e);
-            requestGyroPermission();
         }}
         onPointerUp={onCardPointerUp}
       >
