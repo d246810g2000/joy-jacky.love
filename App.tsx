@@ -512,6 +512,19 @@ function App() {
           <div className="relative z-10 max-w-lg mx-auto">
             <span className="font-display text-[10px] tracking-[0.5em] uppercase text-[#b08d55] mb-8 block">Joy & Jacky Wedding</span>
             <h2 className="font-script text-7xl text-[#2c3e50] mb-8">RSVP</h2>
+
+            {/* 電子喜帖連結 */}
+            <div className="mb-6">
+              <Link
+                to="/invitation"
+                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+                查看電子喜帖
+              </Link>
+            </div>
             <p className="text-stone-500 mb-12 text-sm tracking-wide leading-relaxed font-light">
               您的蒞臨將是我們最大的榮幸。<br /> 請於 4月30日 前確認出席。
             </p>
