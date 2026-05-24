@@ -175,6 +175,9 @@ function App() {
   };
 
   useEffect(() => {
+    // 剛載入或從其他頁面返回首頁時，提供 4 秒緩衝防抖，防止一進來就立刻自動滾動
+    lastInteractionRef.current = Date.now() + 4000;
+
     const updateInteraction = (e: Event) => {
       const target = e.target as HTMLElement;
       // 點選音樂開啟不算觸碰螢幕，不重置計時
@@ -513,16 +516,25 @@ function App() {
             <span className="font-display text-[10px] tracking-[0.5em] uppercase text-[#b08d55] mb-8 block">Joy & Jacky Wedding</span>
             <h2 className="font-script text-7xl text-[#2c3e50] mb-8">RSVP</h2>
 
-            {/* 電子喜帖連結 */}
-            <div className="mb-6">
+            {/* 連結按鈕組 */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
                 to="/invitation"
-                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group"
+                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
                 查看電子喜帖
+              </Link>
+              <Link
+                to="/bingo"
+                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5H3M21 7.5V18a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V7.5m18 0V4.5A2.25 2.25 0 0018.75 2.25H5.25A2.25 2.25 0 003 4.5v3m18 0H3M12 2.25v18M12 7.5a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" />
+                </svg>
+                賓果抽獎遊戲
               </Link>
             </div>
             <p className="text-stone-500 mb-12 text-sm tracking-wide leading-relaxed font-light">

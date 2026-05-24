@@ -154,3 +154,19 @@ export const TRANSPORT_INFO = [
     description: "於【高鐵新竹站】下車，轉乘計程車至公道五路與忠孝路口 TFC ONE 大樓，約 8 公里 (車資約 $250-300)。"
   }
 ];
+
+// ==========================================
+// 🎲 BINGO SUPPORT CARDS — 10張直式應援小卡正面
+// ==========================================
+export const BINGO_SUPPORT_CARDS = [
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-01.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-02.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-03.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-04.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-05.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-06.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-07.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-08.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-09.jpg",
+  "https://res.cloudinary.com/djqnqxzha/image/upload/card-10.jpg"
+];
