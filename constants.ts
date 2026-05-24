@@ -95,6 +95,9 @@ export const WEDDING_PHOTOS: Photo[] = [
   ...BASE_PHOTOS
 ];
 
+/** localStorage key：是否在主頁顯示賓果入口（由賓果頁設定面板切換） */
+export const BINGO_SHOW_ON_HOME_KEY = 'bingo_show_on_home';
+
 export const APP_CONTENT = {
   coupleName: "Joy & Jacky",
   chineseNames: "李謦伊 ❤️ 張家銘",

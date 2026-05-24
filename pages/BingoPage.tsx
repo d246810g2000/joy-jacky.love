@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WEDDING_PHOTOS, BINGO_SUPPORT_CARDS } from '../constants';
+import { WEDDING_PHOTOS, BINGO_SUPPORT_CARDS, BINGO_SHOW_ON_HOME_KEY } from '../constants';
 
 // ── Web Audio API 音效合成器 ─────────────────────────────────
 class SoundSynthesizer {
@@ -101,6 +101,29 @@ class SoundSynthesizer {
 
 const sounds = new SoundSynthesizer();
 
+/**
+ * 連續幾次未抽到彩蛋後，下次強制從剩餘彩蛋號碼中抽取。
+ * 賓客只需 1 條連線即可得獎，整場往往只抽 30～45 個號碼就結束，
+ * 因此保底設較緊（4），確保短場次內 20 個彩蛋也能穩定出現。
+ */
+const EASTER_EGG_FORCE_AFTER_DRAWS = 4;
+
+const getAllEasterEggNumbers = (cardNums: number[], bannerNums: number[]) =>
+  new Set([...cardNums, ...bannerNums]);
+
+/** 從已抽出紀錄往回算，連續幾次未出現彩蛋 */
+const countDrawsSinceLastEgg = (
+  drawn: number[],
+  eggSet: Set<number>,
+): number => {
+  let count = 0;
+  for (let i = drawn.length - 1; i >= 0; i--) {
+    if (eggSet.has(drawn[i])) return count;
+    count++;
+  }
+  return count;
+};
+
 // ── 應援小卡正面 10 張網址 (來自 constants.ts 中的 BINGO_SUPPORT_CARDS) ─────
 const VERTICAL_CARD_FRONT_IMAGES = BINGO_SUPPORT_CARDS;
 
@@ -111,6 +134,57 @@ const CARD_BACK_BLUE = `${import.meta.env.BASE_URL}support_card_back_blue.png`;
 // ── 應援手幅圖片 2 張 (粉、藍) ───────────────────────────────────
 const SLOGAN_BANNER_PINK = `${import.meta.env.BASE_URL}support_pink.png`;
 const SLOGAN_BANNER_BLUE = `${import.meta.env.BASE_URL}support_blue.png`;
+
+// TWICE 九位成員代表色（手幅飛機展示隨機邊框底色）
+const TWICE_MEMBER_COLORS = [
+  { name: 'Nayeon', hex: '#49C0EC' },
+  { name: 'Jeongyeon', hex: '#A3CC54' },
+  { name: 'Momo', hex: '#E67EA3' },
+  { name: 'Sana', hex: '#8C79B4' },
+  { name: 'Jihyo', hex: '#F9CC85' },
+  { name: 'Mina', hex: '#71C7D4' },
+  { name: 'Dahyun', hex: '#FEFEFE' },
+  { name: 'Chaeyoung', hex: '#E62722' },
+  { name: 'Tzuyu', hex: '#2253A3' },
+] as const;
+
+const pickRandomTwiceColor = () =>
+  TWICE_MEMBER_COLORS[Math.floor(Math.random() * TWICE_MEMBER_COLORS.length)];
+
+const shuffleInPlace = <T,>(arr: T[]) => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+};
+
+/** 洗牌抽取：一輪內不重複，用完後重新洗牌 */
+const createNonRepeatingPicker = <T,>(items: readonly T[]) => {
+  let pool: T[] = [];
+  return (): T => {
+    if (pool.length === 0) {
+      pool = [...items];
+      shuffleInPlace(pool);
+    }
+    return pool.pop() as T;
+  };
+};
+
+/** 依成員色產生照片外框與飛機配色（淺色／白色成員加強對比） */
+const getTwiceFrameStyle = (hex: string) => {
+  const upper = hex.toUpperCase();
+  const isWhite = upper === '#FEFEFE';
+  const isLight = isWhite || upper === '#F9CC85' || upper === '#A3CC54';
+
+  return {
+    outerBg: hex,
+    innerBg: isWhite ? '#eceff1' : `color-mix(in srgb, ${hex} 82%, #1a1a1a)`,
+    border: isWhite ? 'rgba(0, 0, 0, 0.12)' : hex,
+    innerBorder: isWhite ? 'rgba(0, 0, 0, 0.08)' : `color-mix(in srgb, ${hex} 70%, #fff)`,
+    airplane: isWhite ? hex : isLight ? `color-mix(in srgb, ${hex} 55%, #333)` : hex,
+    rope: isWhite ? 'rgba(0, 0, 0, 0.18)' : `color-mix(in srgb, ${hex} 65%, transparent)`,
+  };
+};
 
 // ── 珠光紙光澤 (Pearlescent Shine) ───────────────────────────
 const Shine: React.FC<{ rotX: number; rotY: number }> = ({ rotX, rotY }) => {
@@ -767,12 +841,26 @@ const ThreeDCard: React.FC<ThreeDCardProps> = ({ frontImg, backImg, title, descr
   );
 };
 
-const AirplaneIcon = () => (
-  <svg viewBox="0 0 64 64" className="w-16 h-16 md:w-20 md:h-20 text-amber-400 fill-current drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] shrink-0 select-none">
-    <path d="M54,26 L42,26 L30,10 L26,10 L32,26 L14,26 L8,18 L4,18 L8,29 L8,35 L4,46 L8,46 L14,38 L32,38 L26,54 L30,54 L42,38 L54,38 C58.4,38 62,34.4 62,30 C62,25.6 58.4,26 54,26 Z" />
-    <line x1="60" y1="18" x2="60" y2="42" stroke="#b08d55" strokeWidth="3" strokeLinecap="round" />
-  </svg>
-);
+const AirplaneIcon: React.FC<{ color: string }> = ({ color }) => {
+  const isWhite = color.toUpperCase() === '#FEFEFE';
+
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      className={`w-16 h-16 md:w-20 md:h-20 shrink-0 select-none ${isWhite
+          ? 'drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]'
+          : 'drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)]'
+        }`}
+    >
+      <path
+        d="M54,26 L42,26 L30,10 L26,10 L32,26 L14,26 L8,18 L4,18 L8,29 L8,35 L4,46 L8,46 L14,38 L32,38 L26,54 L30,54 L42,38 L54,38 C58.4,38 62,34.4 62,30 C62,25.6 58.4,26 54,26 Z"
+        fill={color}
+        stroke={isWhite ? 'rgba(0, 0, 0, 0.15)' : undefined}
+        strokeWidth={isWhite ? 1.2 : 0}
+      />
+    </svg>
+  );
+};
 
 // ── 3. 橫式手幅飄浮展示組件 (SloganBannerReveal) ────────────────────────
 interface SloganBannerRevealProps {
@@ -786,6 +874,8 @@ interface SloganBannerRevealProps {
 const SloganBannerReveal: React.FC<SloganBannerRevealProps> = ({ bannerImg, photoImg, title, description, onClose }) => {
   // 隨機產生 15vh 到 50vh 的飛行高度
   const [randomY] = useState(() => Math.floor(Math.random() * 35) + 15);
+  const [twiceMember] = useState(pickRandomTwiceColor);
+  const frameStyle = getTwiceFrameStyle(twiceMember.hex);
 
   // ── 自動飄走關閉機制 ──
   useEffect(() => {
@@ -821,22 +911,35 @@ const SloganBannerReveal: React.FC<SloganBannerRevealProps> = ({ bannerImg, phot
         className="absolute flex flex-row items-center pointer-events-none"
       >
         {/* 手幅與婚紗照組合 (被飛機拖曳在後面) */}
-        <div className="flex flex-col items-center max-w-md w-full shrink-0 shadow-2xl">
-          {/* 手幅 */}
-          <div className="z-20 relative w-full aspect-[3/1] rounded-t-xl overflow-hidden border-x border-t border-amber-400/30">
+        <div
+          className="flex flex-col items-center max-w-md w-full shrink-0 rounded-xl overflow-hidden border-2"
+          style={{
+            backgroundColor: frameStyle.outerBg,
+            borderColor: frameStyle.border,
+            boxShadow: `0 20px 50px -12px color-mix(in srgb, ${twiceMember.hex} 45%, transparent)`,
+          }}
+        >
+          {/* 手幅：圖片本身加 rounded-t-xl（動畫 transform 會讓外層 overflow-hidden 裁切失效） */}
+          <div className="relative z-20 w-full aspect-[3/1] overflow-hidden">
             <img
               src={bannerImg}
               alt="手幅圖片"
-              className="w-full h-full object-cover"
+              className="block w-full h-full object-cover rounded-t-xl"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 mix-blend-overlay" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 mix-blend-overlay pointer-events-none" />
           </div>
 
-          {/* 橫式婚紗照 (掛載在手幅下方) */}
-          <div className="bg-stone-900 border-x border-b border-amber-400/30 rounded-b-xl p-4 pt-6 w-full flex flex-col items-center">
+          {/* 橫式婚紗照 (掛載在手幅下方，邊框底色為 TWICE 成員色) */}
+          <div className="p-4 pt-6 w-full flex flex-col items-center">
             {/* 照片 */}
-            <div className="w-full aspect-[16/10] bg-stone-950 rounded-lg p-1.5 border border-amber-500/20 shadow-inner">
+            <div
+              className="w-full aspect-[16/10] rounded-lg p-1.5 border shadow-inner"
+              style={{
+                backgroundColor: frameStyle.innerBg,
+                borderColor: frameStyle.innerBorder,
+              }}
+            >
               <img
                 src={photoImg}
                 alt="精選橫式婚紗照"
@@ -848,10 +951,13 @@ const SloganBannerReveal: React.FC<SloganBannerRevealProps> = ({ bannerImg, phot
         </div>
 
         {/* 牽引繩 (連結手幅與飛機) */}
-        <div className="w-16 border-t-2 border-dashed border-amber-400/50 self-center shrink-0" />
+        <div
+          className="w-16 border-t-2 border-dashed self-center shrink-0"
+          style={{ borderColor: frameStyle.rope }}
+        />
 
         {/* 小飛機 */}
-        <AirplaneIcon />
+        <AirplaneIcon color={frameStyle.airplane} />
       </motion.div>
     </motion.div>
   );
@@ -872,6 +978,13 @@ const BingoPage: React.FC = () => {
 
   const [isRolling, setIsRolling] = useState(false);
   const rollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cardFrontIndexPickerRef = useRef(
+    createNonRepeatingPicker(VERTICAL_CARD_FRONT_IMAGES.map((_, i) => i)),
+  );
+  const bannerFrontPickerRef = useRef(
+    createNonRepeatingPicker([SLOGAN_BANNER_PINK, SLOGAN_BANNER_BLUE]),
+  );
+  const landscapePhotoIndexPickerRef = useRef<ReturnType<typeof createNonRepeatingPicker<number>> | null>(null);
 
   // ── 特效與 Modal 狀態 ──
   const [activeEffect, setActiveEffect] = useState<'heart' | 'gold' | 'rose' | 'star' | 'balloon' | 'bubble' | 'sakura' | 'dandelion' | null>(null);
@@ -895,6 +1008,28 @@ const BingoPage: React.FC = () => {
 
   // ── 設定面板 ──
   const [showSettings, setShowSettings] = useState(false);
+
+  const [showBingoOnHome, setShowBingoOnHome] = useState(
+    () => localStorage.getItem(BINGO_SHOW_ON_HOME_KEY) === 'true',
+  );
+
+  const updateShowBingoOnHome = (enabled: boolean) => {
+    setShowBingoOnHome(enabled);
+    localStorage.setItem(BINGO_SHOW_ON_HOME_KEY, enabled ? 'true' : 'false');
+    window.dispatchEvent(new Event('bingo-show-on-home-change'));
+  };
+
+  const clampDisplayScale = (value: number) => Math.min(150, Math.max(70, value));
+
+  const [numberDisplayScale, setNumberDisplayScale] = useState(() => {
+    const saved = localStorage.getItem('bingo_number_scale');
+    return saved ? clampDisplayScale(parseInt(saved, 10)) : 100;
+  });
+
+  const [gridDisplayScale, setGridDisplayScale] = useState(() => {
+    const saved = localStorage.getItem('bingo_grid_scale');
+    return saved ? clampDisplayScale(parseInt(saved, 10)) : 100;
+  });
 
   // 10 個直式小卡幸運數字（可自訂）
   const [cardLuckyNumbers, setCardLuckyNumbers] = useState<number[]>(() => {
@@ -947,6 +1082,14 @@ const BingoPage: React.FC = () => {
     localStorage.setItem('bingo_banner_lucky_nums', JSON.stringify(bannerLuckyNumbers));
   }, [bannerLuckyNumbers]);
 
+  useEffect(() => {
+    localStorage.setItem('bingo_number_scale', String(numberDisplayScale));
+  }, [numberDisplayScale]);
+
+  useEffect(() => {
+    localStorage.setItem('bingo_grid_scale', String(gridDisplayScale));
+  }, [gridDisplayScale]);
+
   // 保存抽獎進度
   useEffect(() => {
     localStorage.setItem('bingo_drawn_numbers', JSON.stringify(drawnNumbers));
@@ -973,6 +1116,28 @@ const BingoPage: React.FC = () => {
   const allPhotos = WEDDING_PHOTOS;
   const landscapePhotos = allPhotos.filter(p => p.orientation === 'landscape');
   const portraitPhotos = allPhotos.filter(p => p.orientation === 'portrait');
+
+  const resetFrontImagePickers = useCallback(() => {
+    cardFrontIndexPickerRef.current = createNonRepeatingPicker(
+      VERTICAL_CARD_FRONT_IMAGES.map((_, i) => i),
+    );
+    bannerFrontPickerRef.current = createNonRepeatingPicker([
+      SLOGAN_BANNER_PINK,
+      SLOGAN_BANNER_BLUE,
+    ]);
+    landscapePhotoIndexPickerRef.current =
+      landscapePhotos.length > 0
+        ? createNonRepeatingPicker(landscapePhotos.map((_, i) => i))
+        : null;
+  }, [landscapePhotos.length]);
+
+  useEffect(() => {
+    if (landscapePhotos.length > 0 && !landscapePhotoIndexPickerRef.current) {
+      landscapePhotoIndexPickerRef.current = createNonRepeatingPicker(
+        landscapePhotos.map((_, i) => i),
+      );
+    }
+  }, [landscapePhotos]);
 
   // ── 預載入所有卡片、手幅與婚紗相片 ──
   const [preloadingProgress, setPreloadingProgress] = useState(0);
@@ -1022,12 +1187,11 @@ const BingoPage: React.FC = () => {
     const cardIndex = cardLuckyNumbers.indexOf(num);
     if (cardIndex !== -1) {
       sounds.playLucky();
-      const photoIndex = cardIndex % VERTICAL_CARD_FRONT_IMAGES.length;
-      // 找對應的直式婚紗照說明
-      const pPhoto = portraitPhotos[photoIndex % portraitPhotos.length];
+      const frontIndex = cardFrontIndexPickerRef.current();
+      const pPhoto = portraitPhotos[frontIndex % portraitPhotos.length];
 
       setLuckyCardData({
-        frontImg: VERTICAL_CARD_FRONT_IMAGES[photoIndex],
+        frontImg: VERTICAL_CARD_FRONT_IMAGES[frontIndex],
         backImg: Math.random() < 0.5 ? CARD_BACK_PINK : CARD_BACK_BLUE,
         title: pPhoto?.title ?? "浪漫放閃瞬間",
         description: pPhoto?.description ?? "我們即將用愛，畫上最燦爛的一筆。誠邀您來見證我們的永恆。",
@@ -1040,11 +1204,14 @@ const BingoPage: React.FC = () => {
     const bannerIndex = bannerLuckyNumbers.indexOf(num);
     if (bannerIndex !== -1) {
       sounds.playLucky();
-      const photoIndex = bannerIndex % landscapePhotos.length;
+      const landscapePicker = landscapePhotoIndexPickerRef.current;
+      const photoIndex = landscapePicker
+        ? landscapePicker()
+        : bannerIndex % Math.max(landscapePhotos.length, 1);
       const lPhoto = landscapePhotos[photoIndex];
 
       setSloganBannerData({
-        bannerImg: Math.random() < 0.5 ? SLOGAN_BANNER_PINK : SLOGAN_BANNER_BLUE,
+        bannerImg: bannerFrontPickerRef.current(),
         photoImg: lPhoto?.url ?? 'https://res.cloudinary.com/djqnqxzha/image/upload/abroad-h-01.jpg',
         title: lPhoto?.title ?? "幸福應援瞬間",
         description: lPhoto?.description ?? "手拉手並肩坐著緊握雙手，就是最踏實的幸福。",
@@ -1056,6 +1223,10 @@ const BingoPage: React.FC = () => {
     // 一般數字
     sounds.playSuccess();
   };
+
+  const eggNumberSet = getAllEasterEggNumbers(cardLuckyNumbers, bannerLuckyNumbers);
+  const numberScale = numberDisplayScale / 100;
+  const gridScale = gridDisplayScale / 100;
 
   // ── 核心抽獎函式 ──
   const drawNumber = () => {
@@ -1075,9 +1246,15 @@ const BingoPage: React.FC = () => {
     const availableNumbers = Array.from({ length: 75 }, (_, i) => i + 1)
       .filter(n => !drawnNumbers.includes(n));
 
+    const availableEggNumbers = availableNumbers.filter(n => eggNumberSet.has(n));
+    const streak = countDrawsSinceLastEgg(drawnNumbers, eggNumberSet);
+    const shouldForceEgg =
+      streak >= EASTER_EGG_FORCE_AFTER_DRAWS && availableEggNumbers.length > 0;
+    const finalPool = shouldForceEgg ? availableEggNumbers : availableNumbers;
+
     // 滾動效果
     rollingInterval.current = setInterval(() => {
-      // 隨機在尚未抽出的數字中跳動，增加真實感
+      // 滾動時仍從全部候選號碼跳動；保底時最後會落在彩蛋池
       const randomIndex = Math.floor(Math.random() * availableNumbers.length);
       tempNum = availableNumbers[randomIndex];
       setCurrentNum(tempNum);
@@ -1088,8 +1265,9 @@ const BingoPage: React.FC = () => {
       if (rollCount >= 25 && rollingInterval.current) {
         clearInterval(rollingInterval.current);
 
-        // 最終抽出號碼
-        const finalNum = tempNum;
+        const finalNum =
+          finalPool[Math.floor(Math.random() * finalPool.length)];
+
         setCurrentNum(finalNum);
         setDrawnNumbers(prev => [...prev, finalNum]);
         setIsRolling(false);
@@ -1109,6 +1287,7 @@ const BingoPage: React.FC = () => {
       setShowEffect(false);
       setLuckyCardData(null);
       setSloganBannerData(null);
+      resetFrontImagePickers();
       localStorage.removeItem('bingo_drawn_numbers');
       localStorage.removeItem('bingo_current_num');
     }
@@ -1157,16 +1336,56 @@ const BingoPage: React.FC = () => {
       <main className="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-center justify-center my-6 z-20">
         {/* 左側：抽獎看板與抽獎按鈕 */}
         <div className="w-full lg:w-[45%] flex flex-col items-center space-y-6">
-          <div className="bg-white/70 backdrop-blur-lg border-2 border-[#b08d55]/30 rounded-3xl p-8 w-full shadow-[0_15px_40px_-15px_rgba(142,53,53,0.15)] relative overflow-hidden flex flex-col items-center">
+          {/* 整塊看板（外框 + 圓圈 + 數字）依設定等比縮放 */}
+          <div
+            className="bg-white/70 backdrop-blur-lg border-[#b08d55]/30 w-full shadow-[0_15px_40px_-15px_rgba(142,53,53,0.15)] relative overflow-hidden flex flex-col items-center transition-[padding,border-radius] duration-200"
+            style={{
+              padding: `${2 * numberScale}rem`,
+              borderRadius: `${1.5 * numberScale}rem`,
+              borderWidth: `${2 * numberScale}px`,
+              borderStyle: 'solid',
+            }}
+          >
             {/* 角飾 */}
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#b08d55]/40 m-4 rounded-tl-lg" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#b08d55]/40 m-4 rounded-br-lg" />
+            <div
+              className="absolute top-0 left-0 border-t-2 border-l-2 border-[#b08d55]/40 rounded-tl-lg"
+              style={{
+                width: `${2 * numberScale}rem`,
+                height: `${2 * numberScale}rem`,
+                margin: `${1 * numberScale}rem`,
+              }}
+            />
+            <div
+              className="absolute bottom-0 right-0 border-b-2 border-r-2 border-[#b08d55]/40 rounded-br-lg"
+              style={{
+                width: `${2 * numberScale}rem`,
+                height: `${2 * numberScale}rem`,
+                margin: `${1 * numberScale}rem`,
+              }}
+            />
 
-            <span className="font-serif text-xs text-[#b08d55] tracking-[0.4em] uppercase mb-4">LUCKY NUMBER</span>
+            <span
+              className="font-serif text-[#b08d55] tracking-[0.4em] uppercase"
+              style={{
+                fontSize: `${0.75 * numberScale}rem`,
+                marginBottom: `${1 * numberScale}rem`,
+              }}
+            >
+              LUCKY NUMBER
+            </span>
 
-            {/* 大數字呈現 */}
-            <div className="w-56 h-56 rounded-full bg-gradient-to-br from-[#8E3535]/5 to-[#8E3535]/15 border border-[#8E3535]/20 flex items-center justify-center relative shadow-inner">
-              <span className={`font-serif text-8xl md:text-9xl text-[#8E3535] tabular-nums font-bold drop-shadow-sm select-none ${isRolling ? 'animate-pulse scale-95' : ''}`}>
+            {/* 大數字圓圈（與外框同一比例） */}
+            <div
+              className="rounded-full bg-gradient-to-br from-[#8E3535]/5 to-[#8E3535]/15 border border-[#8E3535]/20 flex items-center justify-center relative shadow-inner"
+              style={{
+                width: `${14 * numberScale}rem`,
+                height: `${14 * numberScale}rem`,
+              }}
+            >
+              <span
+                className={`font-serif text-[#8E3535] tabular-nums font-bold drop-shadow-sm select-none ${isRolling ? 'animate-pulse scale-95' : ''}`}
+                style={{ fontSize: `${6 * numberScale}rem`, lineHeight: 1 }}
+              >
                 {currentNum !== null ? String(currentNum).padStart(2, '0') : '--'}
               </span>
             </div>
@@ -1175,10 +1394,15 @@ const BingoPage: React.FC = () => {
             <button
               onClick={drawNumber}
               disabled={!preloadingDone || isRolling || drawnNumbers.length >= 75}
-              className={`mt-8 px-12 py-4 rounded-full font-serif text-lg tracking-widest text-white shadow-lg transition-all duration-300 transform ${!preloadingDone || isRolling || drawnNumbers.length >= 75
+              className={`rounded-full font-serif tracking-widest text-white shadow-lg transition-all duration-300 transform ${!preloadingDone || isRolling || drawnNumbers.length >= 75
                   ? 'bg-stone-400 cursor-not-allowed scale-95 opacity-80'
                   : 'bg-gradient-to-r from-[#8E3535] to-[#aa4747] hover:scale-105 hover:shadow-xl active:scale-95 shadow-[#8E3535]/20'
                 }`}
+              style={{
+                marginTop: `${2 * numberScale}rem`,
+                padding: `${1 * numberScale}rem ${3 * numberScale}rem`,
+                fontSize: `${1.125 * numberScale}rem`,
+              }}
             >
               {!preloadingDone
                 ? `加載婚禮資源 (${preloadingProgress}%)...`
@@ -1189,24 +1413,62 @@ const BingoPage: React.FC = () => {
                     : '開始抽取號碼'}
             </button>
 
-            <p className="text-[10px] text-stone-500 tracking-[0.2em] uppercase mt-3">
+            <p
+              className="text-stone-500 tracking-[0.2em] uppercase"
+              style={{
+                fontSize: `${0.625 * numberScale}rem`,
+                marginTop: `${0.75 * numberScale}rem`,
+              }}
+            >
               已抽過: {drawnNumbers.length} / 75 個號碼
             </p>
           </div>
         </div>
 
         {/* 右側：1-75 歷史點亮網格牆 */}
-        <div className="w-full lg:w-[55%] bg-white/40 backdrop-blur-md border border-white/60 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-5 border-b border-[#8E3535]/10 pb-3">
-            <h2 className="font-serif text-md text-[#8E3535] font-bold tracking-wider">已抽出號碼紀錄牆</h2>
-            <div className="flex gap-4 text-[10px] text-stone-600 font-light">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-[#8E3535] rounded-full" />已抽</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-white border border-[#b08d55]/30 rounded-full" />未抽</span>
+        <div
+          className="w-full lg:w-[55%] bg-white/40 backdrop-blur-md border border-white/60 shadow-sm flex flex-col justify-between transition-[padding,border-radius] duration-200"
+          style={{
+            padding: `${1.5 * gridScale}rem`,
+            borderRadius: `${1.5 * gridScale}rem`,
+          }}
+        >
+          <div
+            className="flex justify-between items-center border-b border-[#8E3535]/10"
+            style={{
+              marginBottom: `${1.25 * gridScale}rem`,
+              paddingBottom: `${0.75 * gridScale}rem`,
+            }}
+          >
+            <h2
+              className="font-serif text-[#8E3535] font-bold tracking-wider"
+              style={{ fontSize: `${1 * gridScale}rem` }}
+            >
+              已抽出號碼紀錄牆
+            </h2>
+            <div className="flex text-stone-600 font-light" style={{ gap: `${1 * gridScale}rem`, fontSize: `${0.625 * gridScale}rem` }}>
+              <span className="flex items-center gap-1">
+                <span
+                  className="bg-[#8E3535] rounded-full"
+                  style={{ width: `${0.625 * gridScale}rem`, height: `${0.625 * gridScale}rem` }}
+                />
+                已抽
+              </span>
+              <span className="flex items-center gap-1">
+                <span
+                  className="bg-white border border-[#b08d55]/30 rounded-full"
+                  style={{ width: `${0.625 * gridScale}rem`, height: `${0.625 * gridScale}rem` }}
+                />
+                未抽
+              </span>
             </div>
           </div>
 
-          {/* 1-75 網格 */}
-          <div className="grid grid-cols-10 gap-1.5 md:gap-2">
+          {/* 1-75 網格（格線、數字、底色同步縮放） */}
+          <div
+            className="grid grid-cols-10 w-full"
+            style={{ gap: `${0.375 * gridScale}rem` }}
+          >
             {Array.from({ length: 75 }, (_, i) => {
               const num = i + 1;
               const isDrawn = drawnNumbers.includes(num);
@@ -1224,13 +1486,17 @@ const BingoPage: React.FC = () => {
                       triggerSpecialEffects(num);
                     }
                   }}
-                  className={`aspect-square flex items-center justify-center text-xs md:text-sm font-semibold rounded-md transition-all duration-500 ${isDrawn ? 'cursor-pointer hover:scale-105 active:scale-95' : ''
+                  className={`aspect-square flex items-center justify-center font-semibold rounded-md transition-all duration-500 ${isDrawn ? 'cursor-pointer hover:scale-105 active:scale-95' : ''
                     } ${isCurrent
                       ? 'bg-amber-400 text-stone-900 scale-110 shadow-lg z-10 font-bold animate-bounce'
                       : isDrawn
                         ? 'bg-gradient-to-br from-[#8E3535] to-[#aa4747] text-white shadow-md'
                         : 'bg-white/70 border border-[#b08d55]/20 text-stone-500 hover:bg-stone-50/50'
-                    } ${isSpecial && !isDrawn ? 'border-[#b08d55] border-2 border-dashed animate-pulse' : ''}`}
+                    } ${isSpecial && !isDrawn ? 'border-[#b08d55] border-dashed animate-pulse' : ''}`}
+                  style={{
+                    fontSize: `${0.875 * gridScale}rem`,
+                    borderWidth: isSpecial && !isDrawn ? `${2 * gridScale}px` : `${1 * gridScale}px`,
+                  }}
                   title={`${num}${isSpecial ? ' (幸運彩蛋號碼 - 點擊可重播特效)' : isDrawn ? ' (點擊可播放特效)' : ''}`}
                 >
                   {num}
@@ -1324,6 +1590,116 @@ const BingoPage: React.FC = () => {
 
               {/* 設定主體 (滾動區域) */}
               <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-sm text-stone-700">
+
+                {/* 主頁入口顯示 */}
+                <div className="bg-stone-50 p-4 rounded-xl space-y-3">
+                  <h4 className="font-bold text-[#8E3535] flex items-center gap-1.5">🏠 主頁賓果入口</h4>
+                  <p className="text-xs text-stone-500">
+                    婚宴前建議關閉，避免賓客提前進入。主持人仍可透過網址直接開啟此頁面。
+                  </p>
+                  <label className="flex items-center justify-between gap-4 cursor-pointer">
+                    <span className="text-xs font-medium">
+                      在婚禮網站主頁顯示「賓果抽獎遊戲」按鈕
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={showBingoOnHome}
+                      onClick={() => updateShowBingoOnHome(!showBingoOnHome)}
+                      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${showBingoOnHome ? 'bg-[#8E3535]' : 'bg-stone-300'
+                        }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${showBingoOnHome ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                      />
+                    </button>
+                  </label>
+                  <p className="text-[10px] text-stone-400">
+                    目前狀態：{showBingoOnHome ? '已開放賓客從主頁進入' : '已隱藏（僅限網址 /bingo）'}
+                  </p>
+                </div>
+
+                {/* 現場螢幕顯示大小 */}
+                <div className="bg-stone-50 p-4 rounded-xl space-y-4">
+                  <h4 className="font-bold text-[#8E3535] flex items-center gap-1.5">📺 現場螢幕顯示大小</h4>
+                  <p className="text-xs text-stone-500">
+                    依婚宴投影或電視的寬高調整，設定會自動保存於此裝置。
+                  </p>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-medium">幸運號碼大小</span>
+                      <span className="text-[#8E3535] font-semibold tabular-nums">{numberDisplayScale}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={70}
+                      max={150}
+                      step={5}
+                      value={numberDisplayScale}
+                      onChange={(e) => setNumberDisplayScale(clampDisplayScale(parseInt(e.target.value, 10)))}
+                      className="w-full accent-[#8E3535]"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {[85, 100, 120, 140].map((preset) => (
+                        <button
+                          key={`num-preset-${preset}`}
+                          type="button"
+                          onClick={() => setNumberDisplayScale(preset)}
+                          className={`px-2.5 py-1 rounded-md text-[10px] border transition-colors ${numberDisplayScale === preset
+                              ? 'bg-[#8E3535] text-white border-[#8E3535]'
+                              : 'bg-white text-stone-600 border-stone-200 hover:border-[#b08d55]'
+                            }`}
+                        >
+                          {preset === 85 ? '小' : preset === 100 ? '中' : preset === 120 ? '大' : '特大'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-medium">賓果盤大小</span>
+                      <span className="text-[#8E3535] font-semibold tabular-nums">{gridDisplayScale}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={70}
+                      max={150}
+                      step={5}
+                      value={gridDisplayScale}
+                      onChange={(e) => setGridDisplayScale(clampDisplayScale(parseInt(e.target.value, 10)))}
+                      className="w-full accent-[#8E3535]"
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      {[85, 100, 120, 140].map((preset) => (
+                        <button
+                          key={`grid-preset-${preset}`}
+                          type="button"
+                          onClick={() => setGridDisplayScale(preset)}
+                          className={`px-2.5 py-1 rounded-md text-[10px] border transition-colors ${gridDisplayScale === preset
+                              ? 'bg-[#8E3535] text-white border-[#8E3535]'
+                              : 'bg-white text-stone-600 border-stone-200 hover:border-[#b08d55]'
+                            }`}
+                        >
+                          {preset === 85 ? '小' : preset === 100 ? '中' : preset === 120 ? '大' : '特大'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNumberDisplayScale(100);
+                      setGridDisplayScale(100);
+                    }}
+                    className="text-[10px] text-stone-500 underline hover:text-[#8E3535]"
+                  >
+                    恢復預設（100%）
+                  </button>
+                </div>
 
                 {/* 數據重置 */}
                 <div className="bg-stone-50 p-4 rounded-xl space-y-3">
