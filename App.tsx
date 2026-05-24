@@ -10,7 +10,7 @@ import { GuestBook } from './components/GuestBook';
 import { Lightbox } from './components/Lightbox';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { LoadingScreen } from './components/LoadingScreen';
-import { APP_CONTENT, WEDDING_PHOTOS, BACKGROUND_IMAGE, THREADS_POST_IMAGE } from './constants';
+import { APP_CONTENT, WEDDING_PHOTOS, BACKGROUND_IMAGE, THREADS_POST_IMAGE, BINGO_SHOW_ON_HOME_KEY } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Photo } from './types';
 import { useIsMobile } from './hooks/useIsMobile';
@@ -106,6 +106,22 @@ function App() {
   const [activeSection, setActiveSection] = useState('timeline');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
+
+  const [showBingoLink, setShowBingoLink] = useState(
+    () => localStorage.getItem(BINGO_SHOW_ON_HOME_KEY) === 'true',
+  );
+
+  useEffect(() => {
+    const syncBingoLink = () => {
+      setShowBingoLink(localStorage.getItem(BINGO_SHOW_ON_HOME_KEY) === 'true');
+    };
+    window.addEventListener('storage', syncBingoLink);
+    window.addEventListener('bingo-show-on-home-change', syncBingoLink);
+    return () => {
+      window.removeEventListener('storage', syncBingoLink);
+      window.removeEventListener('bingo-show-on-home-change', syncBingoLink);
+    };
+  }, []);
 
   // New State for Collapsible Nav
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -527,15 +543,17 @@ function App() {
                 </svg>
                 查看電子喜帖
               </Link>
-              <Link
-                to="/bingo"
-                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5H3M21 7.5V18a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V7.5m18 0V4.5A2.25 2.25 0 0018.75 2.25H5.25A2.25 2.25 0 003 4.5v3m18 0H3M12 2.25v18M12 7.5a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" />
-                </svg>
-                賓果抽獎遊戲
-              </Link>
+              {showBingoLink && (
+                <Link
+                  to="/bingo"
+                  className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5H3M21 7.5V18a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V7.5m18 0V4.5A2.25 2.25 0 0018.75 2.25H5.25A2.25 2.25 0 003 4.5v3m18 0H3M12 2.25v18M12 7.5a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" />
+                  </svg>
+                  賓果抽獎遊戲
+                </Link>
+              )}
             </div>
             <p className="text-stone-500 mb-12 text-sm tracking-wide leading-relaxed font-light">
               您的蒞臨將是我們最大的榮幸。<br /> 請於 4月30日 前確認出席。
