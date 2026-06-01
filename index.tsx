@@ -6,6 +6,8 @@ import RSVPPage from './pages/RSVPPage';
 import InvitationCardPage from './pages/InvitationCardPage';
 import BingoPage from './pages/BingoPage';
 import QuizPage from './pages/QuizPage';
+import CheerPage from './pages/CheerPage';
+import PlaylistPage from './pages/PlaylistPage';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -22,6 +24,8 @@ root.render(
         <Route path="/invitation" element={<InvitationCardPage />} />
         <Route path="/bingo" element={<BingoPage />} />
         <Route path="/quiz" element={<QuizPage />} />
+        <Route path="/cheer" element={<CheerPage />} />
+        <Route path="/playlist" element={<PlaylistPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
