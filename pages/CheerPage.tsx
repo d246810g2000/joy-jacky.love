@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CheerPage() {
   const navigate = useNavigate();
   const cheerImg1 = `${import.meta.env.BASE_URL}cheer_1.jpg`;
   const cheerImg2 = `${import.meta.env.BASE_URL}cheer_2.jpg`;
+  
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   return (
     <div
@@ -69,7 +71,9 @@ export default function CheerPage() {
             <motion.div
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden rounded-2xl shadow-md border border-white/40 bg-stone-100"
+              onClick={() => setActiveImage(cheerImg1)}
+              className="overflow-hidden rounded-2xl shadow-md border border-white/40 bg-stone-100 cursor-zoom-in"
+              title="點擊放大查看"
             >
               <img
                 src={cheerImg1}
@@ -82,7 +86,9 @@ export default function CheerPage() {
             <motion.div
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden rounded-2xl shadow-md border border-white/40 bg-stone-100"
+              onClick={() => setActiveImage(cheerImg2)}
+              className="overflow-hidden rounded-2xl shadow-md border border-white/40 bg-stone-100 cursor-zoom-in"
+              title="點擊放大查看"
             >
               <img
                 src={cheerImg2}
@@ -94,6 +100,39 @@ export default function CheerPage() {
           </div>
         </motion.div>
       </main>
+
+      {/* Lightbox 全螢幕圖片放大彈窗 */}
+      <AnimatePresence>
+        {activeImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveImage(null)}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out select-none"
+          >
+            <motion.img
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              src={activeImage}
+              alt="婚禮應援大圖"
+              className="max-w-full max-h-[92vh] object-contain rounded-lg shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()} // 防止點選圖片本身時關閉
+            />
+            {/* 右上角關閉按鈕 */}
+            <button
+              onClick={() => setActiveImage(null)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/15 transition-all shadow-md active:scale-95"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
