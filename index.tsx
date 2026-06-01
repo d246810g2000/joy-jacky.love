@@ -5,6 +5,7 @@ import App from './App';
 import RSVPPage from './pages/RSVPPage';
 import InvitationCardPage from './pages/InvitationCardPage';
 import BingoPage from './pages/BingoPage';
+import QuizPage from './pages/QuizPage';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,6 +21,7 @@ root.render(
         <Route path="/rsvp" element={<RSVPPage />} />
         <Route path="/invitation" element={<InvitationCardPage />} />
         <Route path="/bingo" element={<BingoPage />} />
+        <Route path="/quiz" element={<QuizPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
