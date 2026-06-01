@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { APP_CONTENT } from '../constants';
 import { GuestBookEntry } from '../types';
 import { ANIME_CHARACTERS } from '../data/animeCharacters';
@@ -677,20 +677,28 @@ const RSVPPage: React.FC = () => {
             <div className="min-h-screen flex flex-col relative">
 
                 {/* Header */}
-                <div className="bg-white border-b border-stone-100 sticky top-0 z-10 shadow-sm">
-                    <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
-                        <button
-                            onClick={() => navigate('/')}
-                            className="flex items-center gap-2 text-[#8E3535] hover:text-[#7a2e2e] transition-colors"
+                <header className="w-full px-6 py-4 flex items-center justify-between z-20 bg-white/40 backdrop-blur-md border-b border-stone-200/40 sticky top-0">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            to="/"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group"
+                            title="返回首頁"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            <span className="font-medium">返回邀請函</span>
-                        </button>
-                        <span className="font-display text-[#2c3e50] text-sm tracking-widest hidden md:block">JOY & JACKY WEDDING RSVP</span>
+                        </Link>
+                        <Link
+                            to="/"
+                            className="font-display text-sm tracking-[0.2em] font-bold text-[#8E3535] hover:opacity-80 transition-opacity"
+                        >
+                            ✦ Joy & Jacky ✦
+                        </Link>
                     </div>
-                </div>
+                    <span className="font-serif text-xs md:text-sm text-stone-600">
+                        出席回覆：RSVP
+                    </span>
+                </header>
 
                 {/* Content */}
                 <div className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 md:py-12 flex flex-col gap-6 md:gap-8">

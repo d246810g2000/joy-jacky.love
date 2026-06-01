@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WEDDING_PHOTOS, BINGO_SUPPORT_CARDS, BINGO_SHOW_ON_HOME_KEY } from '../constants';
 
@@ -965,6 +965,7 @@ const SloganBannerReveal: React.FC<SloganBannerRevealProps> = ({ bannerImg, phot
 
 // ── 主頁面 ──────────────────────────────────────────────────
 const BingoPage: React.FC = () => {
+  const navigate = useNavigate();
   // ── 遊戲狀態 ──
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>(() => {
     const saved = localStorage.getItem('bingo_drawn_numbers');
@@ -1308,32 +1309,38 @@ const BingoPage: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-between text-stone-800 relative py-8 px-4 overflow-x-hidden md:px-8 select-none"
+      className="min-h-screen w-full flex flex-col items-center justify-between text-stone-800 relative pb-8 overflow-x-hidden select-none"
       style={{ background: 'linear-gradient(135deg, #fdf6f0 0%, #fce8e8 40%, #f0e6f6 100%)' }}
     >
       {/* 4類全螢幕特效 (Canvas 實現) */}
       <ParticleSystem type={activeEffect} active={showEffect} />
 
       {/* 頂部 Header */}
-      <header className="w-full max-w-6xl flex justify-between items-center z-30 pb-4 border-b border-[#8E3535]/10">
-        <Link
-          to="/"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-md border border-white/60 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-sm"
-          title="回首頁"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </Link>
-        <div className="text-center">
-          <h1 className="font-serif text-xl md:text-2xl text-[#8E3535] font-bold tracking-widest">Joy & Jacky 婚禮賓果抽獎</h1>
-          <p className="text-[10px] text-[#b08d55] tracking-[0.3em] uppercase mt-0.5">Wedding Bingo Party</p>
+      <header className="w-full px-6 py-4 flex items-center justify-between z-30 bg-white/40 backdrop-blur-md border-b border-stone-200/40 sticky top-0 mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/')}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
+            title="返回首頁"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="font-display text-sm tracking-[0.2em] font-bold text-[#8E3535] hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            ✦ Joy & Jacky ✦
+          </button>
         </div>
-        <div className="w-10 h-10 opacity-0 pointer-events-none" />
+        <span className="font-serif text-xs md:text-sm text-stone-600">
+          賓果抽獎：Bingo
+        </span>
       </header>
 
       {/* 中間大螢幕展示區 */}
-      <main className="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-center justify-center my-6 z-20">
+      <main className="w-full max-w-6xl flex flex-col lg:flex-row gap-8 items-center justify-center my-6 z-20 px-4 md:px-8">
         {/* 左側：抽獎看板與抽獎按鈕 */}
         <div className="w-full lg:w-[45%] flex flex-col items-center space-y-6">
           {/* 整塊看板（外框 + 圓圈 + 數字）依設定等比縮放 */}

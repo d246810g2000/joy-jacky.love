@@ -253,21 +253,27 @@ const InvitationCardPage: React.FC = () => {
       style={{ background: 'linear-gradient(135deg, #fdf6f0 0%, #fce8e8 40%, #f0e6f6 100%)' }}
     >
       {/* 頂部導航列 */}
-      <header className="fixed top-0 left-0 w-full px-6 py-8 flex items-center justify-center z-30">
-        {/* 左上角返回按鈕 */}
-        <Link
-          to="/"
-          className="absolute left-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/40 backdrop-blur-md border border-white/50 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all duration-500 shadow-sm group"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </Link>
-
-        {/* 中心標題 */}
-        <h2 className="font-display text-[11px] md:text-xs tracking-[0.6em] uppercase text-[#b08d55] font-bold opacity-80">
-          Wedding Invitation
-        </h2>
+      <header className="fixed top-0 left-0 w-full px-6 py-4 flex items-center justify-between z-30 bg-white/40 backdrop-blur-md border-b border-stone-200/40">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group"
+            title="返回首頁"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </Link>
+          <Link
+            to="/"
+            className="font-display text-sm tracking-[0.2em] font-bold text-[#8E3535] hover:opacity-80 transition-opacity"
+          >
+            ✦ Joy & Jacky ✦
+          </Link>
+        </div>
+        <span className="font-serif text-xs md:text-sm text-stone-600">
+          電子喜帖：Invitation
+        </span>
       </header>
 
       {/* 背景裝飾粒子 */}

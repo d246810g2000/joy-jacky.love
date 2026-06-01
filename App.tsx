@@ -67,6 +67,40 @@ const HelpCircleIcon = () => (
   </svg>
 );
 
+const VideoPlayIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-amber-600">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+  </svg>
+);
+
+const BingoGridIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-emerald-600">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6zM3.75 9h16.5M3.75 15h16.5M9 3.75v16.5M15 3.75v16.5" />
+  </svg>
+);
+
+const HeartPulseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-rose-600">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 11.5h1.5l1.5-3 1.5 5 1.5-3H16" />
+  </svg>
+);
+
+const MusicNoteIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-indigo-600">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 10l12-3" />
+    <circle cx="6" cy="19" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="1.5" fill="none" />
+  </svg>
+);
+
+const GamepadIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.25 15a.75.75 0 11-.75-.75.75.75 0 01.75.75zm1.5-2.25a.75.75 0 11-.75-.75.75.75 0 01.75.75zM7.5 12h3m-1.5-1.5v3m-5-2.25C4 9.172 6.015 7.5 8.5 7.5h7c2.485 0 4.5 1.672 4.5 3.75v1.5c0 2.078-2.015 3.75-4.5 3.75h-7C6.015 16.5 4 14.828 4 12.75v-1.5z" />
+  </svg>
+);
+
 // --- Custom Hook for Modal History Management ---
 function useModalHistory(isOpen: boolean, close: () => void) {
   const isBack = useRef(false);
@@ -113,22 +147,6 @@ function App() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
 
-  const [showBingoLink, setShowBingoLink] = useState(
-    () => localStorage.getItem(BINGO_SHOW_ON_HOME_KEY) === 'true',
-  );
-
-  useEffect(() => {
-    const syncBingoLink = () => {
-      setShowBingoLink(localStorage.getItem(BINGO_SHOW_ON_HOME_KEY) === 'true');
-    };
-    window.addEventListener('storage', syncBingoLink);
-    window.addEventListener('bingo-show-on-home-change', syncBingoLink);
-    return () => {
-      window.removeEventListener('storage', syncBingoLink);
-      window.removeEventListener('bingo-show-on-home-change', syncBingoLink);
-    };
-  }, []);
-
   // New State for Collapsible Nav
   const [isNavExpanded, setIsNavExpanded] = useState(false);
 
@@ -169,6 +187,16 @@ function App() {
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1) {
         stopAutoScroll();
         return;
+      }
+
+      // 到達跑馬燈時停止自動滾動
+      const marqueeEl = document.getElementById('sticky-marquee');
+      if (marqueeEl) {
+        const rect = marqueeEl.getBoundingClientRect();
+        if (rect.top <= 0) {
+          stopAutoScroll();
+          return;
+        }
       }
 
       // Dynamic speed for better UX
@@ -239,6 +267,47 @@ function App() {
   useEffect(() => {
     if (isHoveringFlyingPhoto) stopAutoScroll();
   }, [isHoveringFlyingPhoto]);
+
+  // --- 記憶與還原首頁滾動高度 (Scroll Restoration) ---
+  useEffect(() => {
+    let isReadyToSave = false;
+    
+    // 延遲 1800ms 才允許儲存滾動高度，防止路由切換重置滾動時的錯誤觸發覆蓋
+    const readyTimer = setTimeout(() => {
+      isReadyToSave = true;
+    }, 1800);
+
+    const handleSaveScroll = () => {
+      if (!isInitialLoading && isReadyToSave && window.scrollY > 0) {
+        sessionStorage.setItem('home_scroll_y', String(window.scrollY));
+      }
+    };
+    window.addEventListener('scroll', handleSaveScroll, { passive: true });
+    return () => {
+      clearTimeout(readyTimer);
+      window.removeEventListener('scroll', handleSaveScroll);
+    };
+  }, [isInitialLoading]);
+
+  useEffect(() => {
+    if (!isInitialLoading) {
+      const savedScrollY = sessionStorage.getItem('home_scroll_y');
+      if (savedScrollY) {
+        const y = parseInt(savedScrollY, 10);
+        // 使用多階段時間差滾動，確保在非同步圖片、組件載入撐開高度後能精準還原滾動高度
+        const scrollTicks = [30, 80, 150, 300, 600, 1000, 1500];
+        const timers = scrollTicks.map(delay =>
+          setTimeout(() => {
+            window.scrollTo({
+              top: y,
+              behavior: 'auto'
+            });
+          }, delay)
+        );
+        return () => timers.forEach(clearTimeout);
+      }
+    }
+  }, [isInitialLoading]);
 
   // --- Asset Preloading（只擋關鍵資源，其餘 lazy 載入）---
   useEffect(() => {
@@ -329,7 +398,7 @@ function App() {
     }, observerOptions);
 
     // 觀察主要區塊
-    const sections = ['timeline', 'location', 'guestbook'];
+    const sections = ['timeline', 'location', 'guestbook', 'games'];
     sections.forEach(id => {
       const el = document.getElementById(id);
       if (el) sectionObserver.observe(el);
@@ -373,6 +442,7 @@ function App() {
     { id: 'timeline', icon: ClockIcon, label: '婚禮流程', targetId: 'timeline' },
     { id: 'location', icon: PinIcon, label: '婚宴地點', targetId: 'location' },
     { id: 'guestbook', icon: PenIcon, label: '祝福留言', targetId: 'guestbook' },
+    { id: 'games', icon: GamepadIcon, label: '互動遊戲', targetId: 'games' },
   ];
 
   const handleNavClick = (id: string, targetId: string) => {
@@ -405,22 +475,32 @@ function App() {
 
   const fmt = (n: number) => String(n).padStart(2, '0');
 
-  const MarqueeContent = () => (
-    <div className="flex items-center gap-6 md:gap-12 px-3 md:px-6 select-none whitespace-nowrap">
-      <span className="font-display text-xs md:text-sm tracking-[0.25em] font-bold uppercase text-[#2c3e50]">
-        Joy & Jacky
-      </span>
-      <span className="text-[#b08d55] text-[10px]">✦</span>
-      <span className="font-serif text-sm md:text-base text-[#8E3535] font-medium tracking-wide">
-        2026.05.30 週六午宴
-      </span>
-      <span className="text-[#b08d55] text-[10px]">✦</span>
-      <span className="font-mono text-[10px] md:text-xs text-[#555] tracking-wider tabular-nums">
-        {timeLeft.days}天 {fmt(timeLeft.hours)}時 {fmt(timeLeft.minutes)}分 {fmt(timeLeft.seconds)}秒
-      </span>
-      <span className="text-[#b08d55] text-[10px]">✦</span>
-    </div>
-  );
+  const MarqueeContent = () => {
+    const isWeddingEnded = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
+
+    return (
+      <div className="flex items-center gap-6 md:gap-12 px-3 md:px-6 select-none whitespace-nowrap">
+        <span className="font-display text-xs md:text-sm tracking-[0.25em] font-bold uppercase text-[#2c3e50]">
+          Joy & Jacky
+        </span>
+        <span className="text-[#b08d55] text-[10px]">✦</span>
+        <span className="font-serif text-sm md:text-base text-[#8E3535] font-medium tracking-wide">
+          2026.05.30 週六午宴
+        </span>
+        <span className="text-[#b08d55] text-[10px]">✦</span>
+        {isWeddingEnded ? (
+          <span className="font-serif text-xs md:text-sm text-[#8E3535] font-semibold tracking-wider">
+            🎉 婚禮已圓滿落幕，感謝大家的出席與溫馨祝福！
+          </span>
+        ) : (
+          <span className="font-mono text-[10px] md:text-xs text-[#555] tracking-wider tabular-nums">
+            {timeLeft.days}天 {fmt(timeLeft.hours)}時 {fmt(timeLeft.minutes)}分 {fmt(timeLeft.seconds)}秒
+          </span>
+        )}
+        <span className="text-[#b08d55] text-[10px]">✦</span>
+      </div>
+    );
+  };
 
   return (
     <main className="w-full min-h-screen bg-transparent text-[#1a1a1a] selection:bg-[#b08d55] selection:text-white">
@@ -532,6 +612,103 @@ function App() {
           />
         </section>
 
+        <section id="games" className={`py-32 px-6 border-t border-white/40 ${isMobile ? 'bg-stone-50' : 'bg-white/10 backdrop-blur-sm'}`}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 border-b border-[#2c3e50]/10 pb-10 gap-6">
+              <div className="space-y-2">
+                <p className="font-display text-[10px] text-[#b08d55] uppercase tracking-[0.4em]">04 / Celebration Zone</p>
+                <h2 className="font-serif text-3xl md:text-4xl text-[#1a1a1a]">婚禮同樂區</h2>
+              </div>
+              <p className="text-[#717171] text-xs max-w-[280px] leading-relaxed font-light">
+                現場備有精彩有趣的互動遊戲、婚禮應援與專屬歌單，歡迎點擊與我們一起同樂！
+              </p>
+            </div>
+
+            {/* 遊戲卡片排版 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {/* 卡片 1: 快問快答 */}
+              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <VideoPlayIcon />
+                  </div>
+                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">新人故事考驗</h3>
+                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                    在遊戲開始前，重溫新人甜蜜愛情影片！挑戰 13 道趣味問答，看看您對新人的故事有多熟悉，還能與賓客一較高下！
+                  </p>
+                </div>
+                <Link
+                  to="/quiz"
+                  onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                >
+                  開始快問快答
+                </Link>
+              </div>
+
+              {/* 卡片 2: 賓果遊戲 */}
+              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <BingoGridIcon />
+                  </div>
+                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">賓果抽獎遊戲</h3>
+                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                    直接顯示的幸運賓果！挑選喜愛的 5x5 動物字卡，點擊選取完成送出，即可與現場同步開獎，祝您幸運連線！
+                  </p>
+                </div>
+                <Link
+                  to="/bingo"
+                  onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                >
+                  開始賓果連線
+                </Link>
+              </div>
+
+              {/* 卡片 3: 婚禮應援 */}
+              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
+                    <HeartPulseIcon />
+                  </div>
+                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">婚禮應援</h3>
+                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                    💓 心跳節奏 即將解鎖 ♫ 有些旋律，藏著青春裡的熱血；有些節拍，等待大家大聲回應。黃底歌詞出現時，一起喊出來吧！🎤🔥
+                  </p>
+                </div>
+                <Link
+                  to="/cheer"
+                  onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                >
+                  查看應援指南
+                </Link>
+              </div>
+
+              {/* 卡片 4: 婚禮歌單 */}
+              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <MusicNoteIcon />
+                  </div>
+                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">婚禮歌單</h3>
+                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                    🎵 幸福旋律 即將播放 💓 有些歌收藏著年少悸動；有些旋律承載著專屬默契。我們把心動與陪伴寫進這份歌單，讓音符溫暖每個片刻 ♡
+                  </p>
+                </div>
+                <Link
+                  to="/playlist"
+                  onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                >
+                  前往婚禮歌單
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <footer className="py-40 px-6 text-center bg-transparent border-t border-stone-200 relative overflow-hidden">
           <div className="absolute inset-0 opacity-[0.4] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] pointer-events-none mix-blend-multiply" />
           <div className="relative z-10 max-w-lg mx-auto">
@@ -549,26 +726,6 @@ function App() {
                 </svg>
                 查看電子喜帖
               </Link>
-              <Link
-                to="/quiz"
-                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-                </svg>
-                快問快答遊戲
-              </Link>
-              {showBingoLink && (
-                <Link
-                  to="/bingo"
-                  className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5H3M21 7.5V18a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V7.5m18 0V4.5A2.25 2.25 0 0018.75 2.25H5.25A2.25 2.25 0 003 4.5v3m18 0H3M12 2.25v18M12 7.5a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" />
-                  </svg>
-                  賓果抽獎遊戲
-                </Link>
-              )}
             </div>
             <p className="text-stone-500 mb-12 text-sm tracking-wide leading-relaxed font-light">
               您的蒞臨將是我們最大的榮幸。<br /> 請於 4月30日 前確認出席。
@@ -751,16 +908,6 @@ function App() {
                       aria-label="Back to Top"
                     >
                       <HeartSolidIcon />
-                    </button>
-
-                    {/* Quiz Button */}
-                    <button
-                      onClick={() => { navigate('/quiz'); if (isMobile) setIsNavExpanded(false); }}
-                      className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#8E3535] hover:bg-stone-50 transition-colors duration-300 shrink-0"
-                      aria-label="Quiz Game"
-                      title="快問快答遊戲"
-                    >
-                      <HelpCircleIcon />
                     </button>
 
                     {/* 僅手機版顯示收合按鈕；電腦版導覽列常駐展開 */}

@@ -387,7 +387,7 @@ export default function QuizPage() {
     setPrepCountdown(3);
     setExpandedChoiceIdx(null);
     setLastPointsGained(0);
-    setGameState('PREPARE');
+    setGameState('VIDEO');
   };
 
   // --- 選擇答案與計分 ---
@@ -468,27 +468,34 @@ export default function QuizPage() {
     <main className="w-full min-h-screen bg-transparent text-[#1a1a1a] selection:bg-[#b08d55] selection:text-white pb-12 relative overflow-hidden flex flex-col justify-between">
       {/* 頂部婚禮主題 Bar */}
       <header className="w-full px-6 py-4 flex items-center justify-between z-20 bg-white/40 backdrop-blur-md border-b border-stone-200/40">
-        <Link
-          to="/"
-          className="font-display text-sm tracking-[0.2em] font-bold text-[#8E3535] hover:opacity-80 transition-opacity"
-        >
-          ✦ Joy & Jacky ✦
-        </Link>
-        <div className="flex items-center gap-4">
-          <span className="font-serif text-xs md:text-sm text-stone-600 hidden sm:inline">
-            快問快答：新人大考驗
-          </span>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => {
               if (window.confirm("確定要結束遊戲返回首頁嗎？")) {
                 navigate('/');
               }
             }}
-            className="px-3 py-1 rounded-full border border-[#8E3535]/30 text-[#8E3535] hover:bg-[#8E3535] hover:text-white text-xs tracking-wider transition-all duration-300"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group"
+            title="返回首頁"
           >
-            回首頁
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm("確定要結束遊戲返回首頁嗎？")) {
+                navigate('/');
+              }
+            }}
+            className="font-display text-sm tracking-[0.2em] font-bold text-[#8E3535] hover:opacity-80 transition-opacity"
+          >
+            ✦ Joy & Jacky ✦
           </button>
         </div>
+        <span className="font-serif text-xs md:text-sm text-stone-600">
+          快問快答：新人大考驗
+        </span>
       </header>
 
       {/* Confetti 慶祝特效 */}
@@ -594,6 +601,58 @@ export default function QuizPage() {
                     })}
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ────────────────────────────────────────────────────────
+              VIDEO - 愛情影片放映室
+              ──────────────────────────────────────────────────────── */}
+          {gameState === 'VIDEO' && (
+            <motion.div
+              key="video"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.5 }}
+              className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6"
+            >
+              <div className="text-center space-y-2">
+                <span className="font-display text-xs md:text-sm text-[#b08d55] tracking-[0.3em] uppercase animate-pulse">
+                  🎬 新人愛情影片
+                </span>
+                <h2 className="font-serif text-2xl md:text-3xl text-stone-800 font-bold leading-tight">
+                  挑戰前，先來回味新人的故事吧！
+                </h2>
+                <div className="h-[2px] w-12 bg-[#b08d55]/30 mx-auto mt-2" />
+              </div>
+
+              {/* 16:9 YouTube 播放器嵌入 */}
+              <div className="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl border border-stone-200/60 bg-black relative">
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src="https://www.youtube.com/embed/Bjd1enMNOa8"
+                  title="Joy & Jacky Love Story"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+
+              {/* 按鈕操作區 */}
+              <div className="flex flex-col sm:flex-row gap-4 w-full justify-center pt-2">
+                <button
+                  onClick={() => setGameState('PREPARE')}
+                  className="px-8 py-4 bg-gradient-to-r from-[#8E3535] to-[#a34b4b] text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 font-serif tracking-widest text-sm font-semibold"
+                >
+                  我準備好了，開始作答！ 🚀
+                </button>
+                <button
+                  onClick={() => setGameState('LOBBY')}
+                  className="px-6 py-4 bg-white border border-stone-200 text-stone-600 rounded-xl shadow-sm hover:bg-stone-50 active:scale-[0.98] transition-all duration-300 font-serif tracking-widest text-xs font-semibold"
+                >
+                  返回大廳
+                </button>
               </div>
             </motion.div>
           )}
