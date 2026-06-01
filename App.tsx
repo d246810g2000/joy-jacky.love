@@ -61,6 +61,12 @@ const InvitationIcon = () => (
   </svg>
 );
 
+const HelpCircleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+  </svg>
+);
+
 // --- Custom Hook for Modal History Management ---
 function useModalHistory(isOpen: boolean, close: () => void) {
   const isBack = useRef(false);
@@ -543,6 +549,15 @@ function App() {
                 </svg>
                 查看電子喜帖
               </Link>
+              <Link
+                to="/quiz"
+                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#b08d55]/50 text-[#8E3535] text-sm tracking-[0.3em] uppercase font-display hover:bg-[#8E3535] hover:text-white hover:border-[#8E3535] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+                快問快答遊戲
+              </Link>
               {showBingoLink && (
                 <Link
                   to="/bingo"
@@ -736,6 +751,16 @@ function App() {
                       aria-label="Back to Top"
                     >
                       <HeartSolidIcon />
+                    </button>
+
+                    {/* Quiz Button */}
+                    <button
+                      onClick={() => { navigate('/quiz'); if (isMobile) setIsNavExpanded(false); }}
+                      className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#8E3535] hover:bg-stone-50 transition-colors duration-300 shrink-0"
+                      aria-label="Quiz Game"
+                      title="快問快答遊戲"
+                    >
+                      <HelpCircleIcon />
                     </button>
 
                     {/* 僅手機版顯示收合按鈕；電腦版導覽列常駐展開 */}
