@@ -190,7 +190,7 @@ export default function PlaylistPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
+            className="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
             title="返回首頁"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -268,7 +268,7 @@ export default function PlaylistPage() {
                 className={`${section.bgColor} border ${section.borderColor} rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-stretch shadow-xs transition-all duration-300 hover:shadow-md group/section`}
               >
                 {/* 左側時段資訊 */}
-                <div className="flex flex-col items-center md:items-start justify-center text-center md:text-left md:w-1/4 border-b md:border-b-0 md:border-r border-stone-200/30 pb-4 md:pb-0 md:pr-6 shrink-0 gap-2">
+                <div className="flex flex-row flex-wrap items-center justify-between w-full md:w-1/4 border-b md:border-b-0 md:border-r border-stone-200/30 pb-3 md:pb-0 md:pr-6 shrink-0 gap-2">
                   <div className="flex items-center gap-2">
                     <span className={`w-8 h-8 rounded-xl ${section.numBgColor} text-white flex items-center justify-center font-bold text-sm shadow-xs transition-transform duration-300 group-hover/section:scale-110 group-hover/section:rotate-3`}>
                       {section.id}
@@ -277,7 +277,7 @@ export default function PlaylistPage() {
                       {section.title}
                     </span>
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="flex flex-row items-center gap-2 sm:gap-3 md:flex-col md:items-start md:gap-0.5">
                     <p className="text-stone-500 font-mono text-xs tracking-wider">
                       {section.time}
                     </p>

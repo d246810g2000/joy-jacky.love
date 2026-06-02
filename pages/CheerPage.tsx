@@ -19,7 +19,7 @@ export default function CheerPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
+            className="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
             title="返回首頁"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -119,17 +119,25 @@ export default function CheerPage() {
               src={activeImage}
               alt="婚禮應援大圖"
               className="max-w-full max-h-[92vh] object-contain rounded-lg shadow-2xl border border-white/10"
-              onClick={(e) => e.stopPropagation()} // 防止點選圖片本身時關閉
             />
             {/* 右上角關閉按鈕 */}
             <button
               onClick={() => setActiveImage(null)}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/15 transition-all shadow-md active:scale-95"
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center border border-white/15 transition-all shadow-md active:scale-95 z-30"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            {/* 下方提示文字 */}
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 0.7, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="absolute bottom-6 text-stone-400 text-xs tracking-widest pointer-events-none select-none font-serif text-center"
+            >
+              ✦ 點選任意處即可關閉返回 ✦
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
