@@ -475,7 +475,7 @@ export default function QuizPage() {
                 navigate('/');
               }
             }}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group"
+            className="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group"
             title="返回首頁"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -527,7 +527,7 @@ export default function QuizPage() {
               </div>
 
               {/* 大廳卡片 */}
-              <div className="glass-panel rounded-2xl p-6 md:p-8 w-full shadow-xl space-y-6">
+              <div className="glass-panel rounded-2xl p-4 md:p-8 w-full shadow-xl space-y-4 md:space-y-6">
                 <div className="space-y-3">
                   <label htmlFor="nickname" className="block font-serif text-base text-stone-700 font-medium">
                     輸入暱稱以開始遊戲：
@@ -758,7 +758,7 @@ export default function QuizPage() {
               </div>
 
               {/* 四色作答按鈕 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
                 {currentQuestion.choices.map((choice, idx) => {
                   const isSelected = selectedChoiceIndex === idx;
                   const colorConfig = KAHOOT_COLORS[idx % 4];
@@ -772,7 +772,7 @@ export default function QuizPage() {
                       key={idx}
                       disabled={gameState === 'REVEALING'}
                       onClick={() => handleAnswerSelect(idx)}
-                      className={`relative flex items-center gap-4 px-6 py-5 rounded-xl text-white font-sans text-base md:text-lg font-medium shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:pointer-events-none ${colorConfig.bg} ${opacityClass}`}
+                      className={`relative flex items-center gap-3 sm:gap-4 px-4 py-3.5 sm:px-6 sm:py-5 rounded-xl text-white font-sans text-sm sm:text-base md:text-lg font-medium shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:pointer-events-none ${colorConfig.bg} ${opacityClass}`}
                     >
                       {/* 經典幾何形狀 */}
                       <span className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/20 text-lg">
@@ -817,17 +817,17 @@ export default function QuizPage() {
 
                   return (
                     <div
-                      className={`rounded-2xl p-6 text-center text-white shadow-lg flex flex-col items-center gap-2 ${
+                      className={`rounded-2xl p-4 sm:p-6 text-center text-white shadow-lg flex flex-col items-center gap-1.5 sm:gap-2 ${
                         isCorrect
                           ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
                           : 'bg-gradient-to-r from-rose-500 to-red-600'
                       }`}
                     >
-                      <span className="text-5xl">{isCorrect ? '✅' : '❌'}</span>
-                      <h2 className="font-serif text-2xl font-bold tracking-wider">
+                      <span className="text-4xl sm:text-5xl">{isCorrect ? '✅' : '❌'}</span>
+                      <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-wider">
                         {isCorrect ? '答對了！' : selectedChoiceIndex === -1 ? '時間到！' : '答錯了！'}
                       </h2>
-                      <p className="font-sans text-sm opacity-90">
+                      <p className="font-sans text-xs sm:text-sm opacity-90">
                         {isCorrect
                           ? `作答時間：${timeTaken.toFixed(2)} 秒，獲得 +${pts} 分！`
                           : selectedChoiceIndex === -1
@@ -838,10 +838,10 @@ export default function QuizPage() {
                   );
                 })()
               ) : (
-                <div className="rounded-2xl p-6 text-center text-white shadow-lg bg-gradient-to-r from-[#b08d55] to-[#c7a976] flex flex-col items-center gap-1">
-                  <span className="text-5xl">📊</span>
-                  <h2 className="font-serif text-2xl font-bold tracking-wider">感謝您的回饋！</h2>
-                  <p className="font-sans text-sm opacity-90">
+                <div className="rounded-2xl p-4 sm:p-6 text-center text-white shadow-lg bg-gradient-to-r from-[#b08d55] to-[#c7a976] flex flex-col items-center gap-1.5 sm:gap-2">
+                  <span className="text-4xl sm:text-5xl">📊</span>
+                  <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-wider">感謝您的回饋！</h2>
+                  <p className="font-sans text-xs sm:text-sm opacity-90">
                     此題為投票題，不列入積分計分。讓我們看看當時現場大家的感受！
                   </p>
                 </div>
@@ -1243,24 +1243,26 @@ export default function QuizPage() {
                     const podium2 = tempBoard[1];
                     const podium3 = tempBoard[2];
 
+                    const isMobilePodium = typeof window !== 'undefined' && window.innerWidth < 640;
+
                     return (
                       <>
                         {/* 第二名 */}
                         {podium2 && (
                           <div className="flex flex-col items-center flex-1">
-                            <span className="font-bold text-stone-700 mb-1.5 text-center truncate max-w-[80px]">
+                            <span className="font-bold text-stone-700 mb-1.5 text-center truncate max-w-[60px] sm:max-w-[80px] text-[10px] sm:text-xs">
                               {podium2.player} {podium2.isPlayer && '(您)'}
                             </span>
-                            <span className="text-[10px] text-stone-500 font-mono mb-2">
+                            <span className="text-[9px] sm:text-[10px] text-stone-500 font-mono mb-2">
                               {podium2.score} pts
                             </span>
                             <motion.div
                               initial={{ height: 0 }}
-                              animate={{ height: 80 }}
+                              animate={{ height: isMobilePodium ? 60 : 80 }}
                               transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
                               className="w-full bg-slate-300 rounded-t-lg flex items-center justify-center border-t-2 border-slate-200 shadow-md relative"
                             >
-                              <span className="text-3xl font-bold text-slate-500">2</span>
+                              <span className="text-2xl sm:text-3xl font-bold text-slate-500">2</span>
                               {podium2.isPlayer && (
                                 <div className="absolute -top-3 w-3 h-3 bg-amber-500 rounded-full animate-ping" />
                               )}
@@ -1271,19 +1273,19 @@ export default function QuizPage() {
                         {/* 第一名 */}
                         {podium1 && (
                           <div className="flex flex-col items-center flex-1">
-                            <span className="font-bold text-amber-600 mb-1.5 text-center truncate max-w-[90px] text-sm flex items-center gap-1">
-                              👑 {podium1.player} {podium1.isPlayer && '(您)'}
+                            <span className="font-bold text-amber-600 mb-1.5 text-center truncate max-w-[70px] sm:max-w-[90px] text-xs sm:text-sm flex items-center justify-center gap-0.5">
+                              👑{podium1.player} {podium1.isPlayer && '(您)'}
                             </span>
-                            <span className="text-[11px] text-amber-700 font-mono mb-2 font-bold">
+                            <span className="text-[10px] sm:text-[11px] text-amber-700 font-mono mb-2 font-bold">
                               {podium1.score} pts
                             </span>
                             <motion.div
                               initial={{ height: 0 }}
-                              animate={{ height: 120 }}
+                              animate={{ height: isMobilePodium ? 90 : 120 }}
                               transition={{ duration: 1, ease: 'easeOut' }}
                               className="w-full bg-amber-400 rounded-t-lg flex items-center justify-center border-t-2 border-amber-300 shadow-lg relative"
                             >
-                              <span className="text-4xl font-bold text-amber-700">1</span>
+                              <span className="text-3xl sm:text-4xl font-bold text-amber-700">1</span>
                               {podium1.isPlayer && (
                                 <div className="absolute -top-3 w-4 h-4 bg-orange-500 rounded-full animate-ping" />
                               )}
@@ -1294,19 +1296,19 @@ export default function QuizPage() {
                         {/* 第三名 */}
                         {podium3 && (
                           <div className="flex flex-col items-center flex-1">
-                            <span className="font-bold text-orange-700 mb-1.5 text-center truncate max-w-[80px]">
+                            <span className="font-bold text-orange-700 mb-1.5 text-center truncate max-w-[60px] sm:max-w-[80px] text-[10px] sm:text-xs">
                               {podium3.player} {podium3.isPlayer && '(您)'}
                             </span>
-                            <span className="text-[10px] text-orange-600 font-mono mb-2">
+                            <span className="text-[9px] sm:text-[10px] text-orange-600 font-mono mb-2">
                               {podium3.score} pts
                             </span>
                             <motion.div
                               initial={{ height: 0 }}
-                              animate={{ height: 60 }}
+                              animate={{ height: isMobilePodium ? 45 : 60 }}
                               transition={{ duration: 1, ease: 'easeOut', delay: 0.4 }}
                               className="w-full bg-orange-300 rounded-t-lg flex items-center justify-center border-t-2 border-orange-200 shadow-md relative"
                             >
-                              <span className="text-2xl font-bold text-orange-600">3</span>
+                              <span className="text-xl sm:text-2xl font-bold text-orange-600">3</span>
                               {podium3.isPlayer && (
                                 <div className="absolute -top-3 w-3 h-3 bg-amber-500 rounded-full animate-ping" />
                               )}

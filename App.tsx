@@ -625,82 +625,82 @@ function App() {
             </div>
 
             {/* 遊戲卡片排版 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {/* 卡片 1: 快問快答 */}
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
-                <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+              <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3 w-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-50 flex items-center justify-center">
                     <VideoPlayIcon />
                   </div>
-                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">新人故事考驗</h3>
-                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                  <h3 className="font-serif text-base md:text-xl text-stone-800 font-bold">新人故事考驗</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed font-light line-clamp-3 lg:line-clamp-none">
                     在遊戲開始前，重溫新人甜蜜愛情影片！挑戰 13 道趣味問答，看看您對新人的故事有多熟悉，還能與賓客一較高下！
                   </p>
                 </div>
                 <Link
                   to="/quiz"
                   onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
-                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                  className="w-full text-center px-3 py-2 sm:px-6 sm:py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-[10px] sm:text-xs font-semibold tracking-wider transition-all shadow-sm"
                 >
                   開始快問快答
                 </Link>
               </div>
 
               {/* 卡片 2: 賓果遊戲 */}
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
-                <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3 w-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
                     <BingoGridIcon />
                   </div>
-                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">賓果抽獎遊戲</h3>
-                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                  <h3 className="font-serif text-base md:text-xl text-stone-800 font-bold">賓果抽獎遊戲</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed font-light line-clamp-3 lg:line-clamp-none">
                     直接顯示的幸運賓果！挑選喜愛的 5x5 動物字卡，點擊選取完成送出，即可與現場同步開獎，祝您幸運連線！
                   </p>
                 </div>
                 <Link
                   to="/bingo"
                   onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
-                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                  className="w-full text-center px-3 py-2 sm:px-6 sm:py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-[10px] sm:text-xs font-semibold tracking-wider transition-all shadow-sm"
                 >
                   開始賓果連線
                 </Link>
               </div>
 
               {/* 卡片 3: 婚禮應援 */}
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
-                <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center">
+              <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3 w-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-rose-50 flex items-center justify-center">
                     <HeartPulseIcon />
                   </div>
-                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">婚禮應援</h3>
-                  <p className="text-stone-500 text-xs leading-relaxed font-light">
+                  <h3 className="font-serif text-base md:text-xl text-stone-800 font-bold">婚禮應援</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed font-light line-clamp-3 lg:line-clamp-none">
                     💓 心跳節奏 即將解鎖 ♫ 有些旋律，藏著青春裡的熱血；有些節拍，等待大家大聲回應。黃底歌詞出現時，一起喊出來吧！🎤🔥
                   </p>
                 </div>
                 <Link
                   to="/cheer"
                   onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
-                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                  className="w-full text-center px-3 py-2 sm:px-6 sm:py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-[10px] sm:text-xs font-semibold tracking-wider transition-all shadow-sm"
                 >
                   查看應援指南
                 </Link>
               </div>
 
               {/* 卡片 4: 婚禮歌單 */}
-              <div className="glass-panel p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-6 hover:shadow-xl transition-all duration-300">
-                <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3 w-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-indigo-50 flex items-center justify-center">
                     <MusicNoteIcon />
                   </div>
-                  <h3 className="font-serif text-lg md:text-xl text-stone-800 font-bold">婚禮歌單</h3>
-                  <p className="text-stone-500 text-xs leading-relaxed font-light">
-                    🎵 幸福旋律 即將播放 💓 有些歌收藏著年少悸動；有些旋律承載著專屬默契。我們把心動與陪伴寫進這份歌單，讓音符溫暖每個片刻 ♡
+                  <h3 className="font-serif text-base md:text-xl text-stone-800 font-bold">婚禮歌單</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed font-light line-clamp-3 lg:line-clamp-none">
+                    🎵 幸福旋律 即將播放 💓 有些歌收藏著年少悸動；有些旋律承載著專屬默契。我們把心動與陪伴寫進這份歌單，讓音符溫慢每個片刻 ♡
                   </p>
                 </div>
                 <Link
                   to="/playlist"
                   onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
-                  className="px-6 py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-xs font-semibold tracking-wider transition-all shadow-sm"
+                  className="w-full text-center px-3 py-2 sm:px-6 sm:py-2.5 bg-[#8E3535] hover:bg-[#7a2e2e] active:scale-[0.98] text-white rounded-lg text-[10px] sm:text-xs font-semibold tracking-wider transition-all shadow-sm"
                 >
                   前往婚禮歌單
                 </Link>

@@ -1020,16 +1020,18 @@ const BingoPage: React.FC = () => {
     window.dispatchEvent(new Event('bingo-show-on-home-change'));
   };
 
-  const clampDisplayScale = (value: number) => Math.min(150, Math.max(70, value));
+  const clampDisplayScale = (value: number) => Math.min(150, Math.max(40, value));
 
   const [numberDisplayScale, setNumberDisplayScale] = useState(() => {
     const saved = localStorage.getItem('bingo_number_scale');
-    return saved ? clampDisplayScale(parseInt(saved, 10)) : 100;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return saved ? clampDisplayScale(parseInt(saved, 10)) : (isMobile ? 65 : 100);
   });
 
   const [gridDisplayScale, setGridDisplayScale] = useState(() => {
     const saved = localStorage.getItem('bingo_grid_scale');
-    return saved ? clampDisplayScale(parseInt(saved, 10)) : 100;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return saved ? clampDisplayScale(parseInt(saved, 10)) : (isMobile ? 55 : 100);
   });
 
   // 10 個直式小卡幸運數字（可自訂）
@@ -1320,7 +1322,7 @@ const BingoPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
+            className="w-10 h-10 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-white/60 border border-[#8E3535]/20 text-[#8E3535] hover:bg-[#8E3535] hover:text-white transition-all shadow-xs group cursor-pointer"
             title="返回首頁"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -1641,7 +1643,7 @@ const BingoPage: React.FC = () => {
                     </div>
                     <input
                       type="range"
-                      min={70}
+                      min={40}
                       max={150}
                       step={5}
                       value={numberDisplayScale}
@@ -1649,7 +1651,7 @@ const BingoPage: React.FC = () => {
                       className="w-full accent-[#8E3535]"
                     />
                     <div className="flex gap-2 flex-wrap">
-                      {[85, 100, 120, 140].map((preset) => (
+                      {[55, 85, 100, 120].map((preset) => (
                         <button
                           key={`num-preset-${preset}`}
                           type="button"
@@ -1659,7 +1661,7 @@ const BingoPage: React.FC = () => {
                               : 'bg-white text-stone-600 border-stone-200 hover:border-[#b08d55]'
                             }`}
                         >
-                          {preset === 85 ? '小' : preset === 100 ? '中' : preset === 120 ? '大' : '特大'}
+                          {preset === 55 ? '微縮' : preset === 85 ? '小' : preset === 100 ? '中' : '大'}
                         </button>
                       ))}
                     </div>
@@ -1672,7 +1674,7 @@ const BingoPage: React.FC = () => {
                     </div>
                     <input
                       type="range"
-                      min={70}
+                      min={40}
                       max={150}
                       step={5}
                       value={gridDisplayScale}
@@ -1680,7 +1682,7 @@ const BingoPage: React.FC = () => {
                       className="w-full accent-[#8E3535]"
                     />
                     <div className="flex gap-2 flex-wrap">
-                      {[85, 100, 120, 140].map((preset) => (
+                      {[55, 85, 100, 120].map((preset) => (
                         <button
                           key={`grid-preset-${preset}`}
                           type="button"
@@ -1690,7 +1692,7 @@ const BingoPage: React.FC = () => {
                               : 'bg-white text-stone-600 border-stone-200 hover:border-[#b08d55]'
                             }`}
                         >
-                          {preset === 85 ? '小' : preset === 100 ? '中' : preset === 120 ? '大' : '特大'}
+                          {preset === 55 ? '微縮' : preset === 85 ? '小' : preset === 100 ? '中' : '大'}
                         </button>
                       ))}
                     </div>
@@ -1699,12 +1701,13 @@ const BingoPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setNumberDisplayScale(100);
-                      setGridDisplayScale(100);
+                      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                      setNumberDisplayScale(isMobile ? 65 : 100);
+                      setGridDisplayScale(isMobile ? 55 : 100);
                     }}
                     className="text-[10px] text-stone-500 underline hover:text-[#8E3535]"
                   >
-                    恢復預設（100%）
+                    恢復預設值
                   </button>
                 </div>
 
