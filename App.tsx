@@ -146,6 +146,8 @@ function App() {
   const [activeSection, setActiveSection] = useState('timeline');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
+  const [visitCount, setVisitCount] = useState<number | null>(null);
+  const [displayCount, setDisplayCount] = useState(0);
 
   // New State for Collapsible Nav
   const [isNavExpanded, setIsNavExpanded] = useState(false);
@@ -379,6 +381,69 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // --- Visit Counter Logic ---
+  useEffect(() => {
+    const fetchVisitCount = async () => {
+      if (!APP_CONTENT.googleScriptUrl || !APP_CONTENT.googleScriptUrl.startsWith('http')) {
+        return;
+      }
+      try {
+        const hasCounted = sessionStorage.getItem('has_counted_visit');
+        const action = hasCounted ? 'get_visit' : 'visit';
+        
+        const separator = APP_CONTENT.googleScriptUrl.includes('?') ? '&' : '?';
+        const url = `${APP_CONTENT.googleScriptUrl}${separator}action=${action}&t=${Date.now()}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          redirect: 'follow',
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          throw new Error("HTML_RESPONSE");
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && typeof data.count === 'number') {
+            setVisitCount(data.count);
+            sessionStorage.setItem('has_counted_visit', 'true');
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to fetch/update visit count:", error);
+      }
+    };
+
+    fetchVisitCount();
+  }, []);
+
+  // --- Visit Counter Dynamic Rolling Animation ---
+  useEffect(() => {
+    if (visitCount === null) return;
+    let start = 0;
+    if (visitCount > 80) {
+      start = Math.floor(visitCount * 0.85); // 從 85% 開始跑數，提升大數值下的動畫流暢度
+    }
+    const end = visitCount;
+    const duration = 1200; // 1.2 秒完成跑動
+    let startTime: number | null = null;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      // 減速動畫曲線 (easeOutQuad)
+      const easeProgress = progress * (2 - progress);
+      const current = Math.floor(start + (end - start) * easeProgress);
+      setDisplayCount(current);
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    requestAnimationFrame(animate);
+  }, [visitCount]);
+
   // --- Scroll Detection & Spy ---
   // --- 捲動事件偵測與監控 (IntersectionObserver 優化版) ---
   useEffect(() => {
@@ -480,6 +545,14 @@ function App() {
 
     return (
       <div className="flex items-center gap-6 md:gap-12 px-3 md:px-6 select-none whitespace-nowrap">
+        {visitCount !== null && (
+          <>
+            <span className="font-serif text-xs md:text-sm text-[#8E3535] font-medium tracking-wide">
+              親友足跡 ✦ <span className="font-sans font-semibold text-[#b08d55]">{displayCount.toLocaleString()}</span>
+            </span>
+            <span className="text-[#b08d55] text-[10px]">✦</span>
+          </>
+        )}
         <span className="font-display text-xs md:text-sm tracking-[0.25em] font-bold uppercase text-[#2c3e50]">
           Joy & Jacky
         </span>

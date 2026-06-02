@@ -146,7 +146,6 @@ const RSVPPage: React.FC = () => {
         setIsSubmitting(true);
 
         // Ensure we don't publish empty messages
-        // Ensure we don't publish empty messages
         const finalFormData = {
             ...formData,
             publishToGuestbook: formData.message.trim().length > 0 ? formData.publishToGuestbook : false,
@@ -154,25 +153,8 @@ const RSVPPage: React.FC = () => {
             guestbookName: (formData.publishToGuestbook && formData.useAnonymous) ? formData.nickname : formData.name
         };
 
-        if (APP_CONTENT.googleScriptUrl && APP_CONTENT.googleScriptUrl.startsWith('http')) {
-            try {
-                await fetch(APP_CONTENT.googleScriptUrl, {
-                    method: "POST",
-                    mode: "no-cors",
-                    headers: {
-                        "Content-Type": "text/plain",
-                    },
-                    body: JSON.stringify({
-                        action: 'rsvp',
-                        ...finalFormData
-                    }),
-                });
-            } catch (error) {
-                console.warn("Submission error (proceeding to success for demo):", error);
-            }
-        } else {
-            console.warn("Google Script URL is not configured or invalid.");
-        }
+        // 婚禮已過，填寫表單不再寫入 google 試算表，僅在 console 記錄並在前端模擬成功
+        console.log("Wedding has passed. Skipping google script submission. RSVP data:", finalFormData);
 
         setTimeout(() => {
             setIsSubmitting(false);
