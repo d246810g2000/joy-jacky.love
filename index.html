@@ -120,8 +120,60 @@
         mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
         -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
       }
+
+      /* Photo gallery page */
+      .photo-page {
+        --photo-bg: #FDFBF7;
+        --photo-border: #E8E1D5;
+        --photo-accent: #B08D55;
+        --photo-ink: #2C3E50;
+      }
+
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .photo-masonry {
+        column-count: 2;
+        column-gap: 12px;
+      }
+      @media (min-width: 768px) {
+        .photo-masonry { column-count: 3; }
+      }
+      @media (min-width: 1024px) {
+        .photo-masonry { column-count: 4; }
+      }
+
+      .photo-skeleton {
+        background: linear-gradient(
+          90deg,
+          #F5F0E8 0%,
+          #EDE6DA 50%,
+          #F5F0E8 100%
+        );
+        background-size: 200% 100%;
+        animation: photo-shimmer 1.4s ease-in-out infinite;
+      }
+      @keyframes photo-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .photo-skeleton { animation: none; }
+      }
+
+      .photo-safe-bottom {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+      }
+      .photo-safe-top {
+        padding-top: max(0px, env(safe-area-inset-top));
+      }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-BiJ-SWZ-.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-Bbk68a92.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-BUi_fg8n.js">
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-react-D_G13wRO.js">
 </head>
