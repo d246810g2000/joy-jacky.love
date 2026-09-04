@@ -123,10 +123,72 @@
 
       /* Photo gallery page */
       .photo-page {
-        --photo-bg: #FDFBF7;
-        --photo-border: #E8E1D5;
+        --photo-bg: #0c0b0a;
+        --photo-border: rgba(255,255,255,0.1);
         --photo-accent: #B08D55;
-        --photo-ink: #2C3E50;
+        --photo-ink: #f5f0e8;
+        --stage-glow: #B08D55;
+      }
+
+      .photo-page-immersive {
+        color: #f5f0e8;
+      }
+
+      .photo-ambient-glow {
+        background:
+          radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--stage-glow) 12%, transparent), transparent 70%),
+          radial-gradient(ellipse 60% 40% at 80% 100%, color-mix(in srgb, var(--stage-glow) 8%, transparent), transparent);
+        transition: background 1.2s ease;
+      }
+
+      .photo-timeline-nav {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(12, 11, 10, 0.88);
+        backdrop-filter: blur(16px);
+      }
+
+      .photo-hero-kenburns {
+        animation: photo-kenburns 24s ease-in-out infinite alternate;
+      }
+      @keyframes photo-kenburns {
+        from { transform: scale(1); }
+        to { transform: scale(1.06); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .photo-hero-kenburns { animation: none; }
+      }
+
+      .photo-film-grain {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+      }
+
+      .photo-film-vignette::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        inset: -20%;
+        box-shadow: inset 0 0 80px 20px rgba(0,0,0,0.5);
+      }
+
+      .photo-lightbox-vignette::before {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        inset: -30%;
+        box-shadow: inset 0 0 100px 30px rgba(0,0,0,0.45);
+        z-index: 1;
+      }
+
+      .photo-skeleton-dark {
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0.04) 0%,
+          rgba(255,255,255,0.08) 50%,
+          rgba(255,255,255,0.04) 100%
+        );
+        background-size: 200% 100%;
+        animation: photo-shimmer 1.4s ease-in-out infinite;
       }
 
       .no-scrollbar {
@@ -173,10 +235,9 @@
         padding-top: max(0px, env(safe-area-inset-top));
       }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-Dzt5tjhn.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-DDhj0Hpr.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-BUi_fg8n.js">
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-react-D_G13wRO.js">
-  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/wedding-photos-DUrbOADk.js">
 </head>
   <body>
     <!-- Persistent Gradient Background -->
