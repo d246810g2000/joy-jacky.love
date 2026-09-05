@@ -41,6 +41,13 @@ export function formatTableTag(table: number): string {
   return name ? `#${table} ${name}` : `#${table} 桌`;
 }
 
+/** 卡片精簡標籤：#6楓生（桌號 + 桌名最多兩字） */
+export function formatTableTagShort(table: number): string {
+  const name = getTableName(table);
+  if (!name) return `#${table}`;
+  return `#${table}${[...name].slice(0, 2).join('')}`;
+}
+
 export function listTableOptions(): Array<{ table: number; label: string; name: string | null }> {
   return Array.from({ length: 27 }, (_, i) => i + 1).map((table) => ({
     table,
