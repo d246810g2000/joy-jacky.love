@@ -86,7 +86,12 @@ const PhotoPage: React.FC = () => {
   const featuredGuestPhotos = useMemo(() => {
     const names = ['李謦伊', '張家銘'];
     return Object.fromEntries(
-      names.map((name) => [name, allPhotos.find((photo) => photo.names.includes(name))?.publicId])
+      names.map((name) => [
+        name,
+        allPhotos.find(
+          (photo) => photo.names.length === 1 && photo.names[0] === name
+        )?.publicId,
+      ])
     );
   }, [allPhotos]);
   const heroCoverIds = useMemo(
