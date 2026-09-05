@@ -154,9 +154,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
 
         <div
           className={`photo-search-bar flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-xl ${
-            hasFilter
-              ? 'border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/8'
-              : 'border-white/12 bg-[#141210]/92'
+            hasFilter ? 'border-[var(--photo-accent)]/35 !bg-[rgba(176,141,85,0.12)]' : ''
           } ${showNameScope ? 'mt-2' : ''}`}
         >
           <button
@@ -177,15 +175,15 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
             <div className="min-w-0 flex-1">
               {hasFilter && filterLabel ? (
                 <>
-                  <p className="truncate text-sm font-medium text-white/95">{filterLabel}</p>
+                  <p className="photo-search-primary truncate text-sm font-medium">{filterLabel}</p>
                   {resultCount != null && (
-                    <p className="text-[10px] text-white/45">{resultCount} 張照片</p>
+                    <p className="photo-search-secondary text-[10px]">{resultCount} 張照片</p>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white/75">搜尋姓名或桌號</p>
-                  <p className="text-[10px] text-white/35">點擊輸入，快速找到您的照片</p>
+                  <p className="photo-search-primary text-sm">搜尋姓名或桌號</p>
+                  <p className="photo-search-secondary text-[10px]">點擊輸入，快速找到您的照片</p>
                 </>
               )}
             </div>

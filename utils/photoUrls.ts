@@ -5,17 +5,17 @@ const withExt = (id: string) => (id.includes('.') ? id : `${id}.jpg`);
 const buildUrl = (publicId: string, transforms: string) =>
   `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${transforms}/${withExt(publicId)}`;
 
-/** 時間軸網格縮圖 */
+/** 時間軸網格縮圖 — q_auto:eco 節省流量，燈箱仍用 q_auto 高清 */
 export const getGridUrl = (publicId: string, width = 800) =>
-  buildUrl(publicId, `f_auto,q_auto,w_${width}`);
+  buildUrl(publicId, `f_auto,q_auto:eco,w_${width}`);
 
 /** Blur 占位（LQIP） */
 export const getBlurUrl = (publicId: string) =>
-  buildUrl(publicId, 'e_blur:300,w_40,q_auto,f_auto');
+  buildUrl(publicId, 'e_blur:300,w_40,q_auto:eco,f_auto');
 
 /** Filmstrip 小縮圖 */
 export const getThumbUrl = (publicId: string, width = 96) =>
-  buildUrl(publicId, `f_auto,q_auto,w_${width},h_${width},c_fill`);
+  buildUrl(publicId, `f_auto,q_auto:eco,w_${width},h_${width},c_fill`);
 
 /** 燈箱高清大圖 */
 export const getLightboxUrl = (publicId: string) =>

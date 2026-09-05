@@ -71,7 +71,9 @@ const PhotoPage: React.FC = () => {
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [expandSearch, setExpandSearch] = useState(false);
+  const [expandThroughIndex, setExpandThroughIndex] = useState<number | null>(null);
   const scrolledToResults = useRef(false);
+  const pendingScrollStage = useRef<string | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const [galleryEl, setGalleryEl] = useState<HTMLElement | null>(null);
 
@@ -100,6 +102,28 @@ const PhotoPage: React.FC = () => {
     stageIds,
     useDockLayout && !isFiltered ? galleryEl : null
   );
+
+  const handleStageSelect = useCallback(
+    (stageId: string) => {
+      const idx = stageIds.indexOf(stageId);
+      if (idx >= 0) setExpandThroughIndex(idx);
+      pendingScrollStage.current = stageId;
+      scrollToStage(stageId);
+    },
+    [stageIds, scrollToStage]
+  );
+
+  useEffect(() => {
+    if (loading || !pendingScrollStage.current) return;
+    const stageId = pendingScrollStage.current;
+    requestAnimationFrame(() => scrollToStage(stageId));
+  }, [loading, scrollToStage]);
+
+  useEffect(() => {
+    if (expandThroughIndex == null) return;
+    const timer = window.setTimeout(() => setExpandThroughIndex(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [expandThroughIndex]);
 
   useEffect(() => {
     setGalleryEl(galleryRef.current);
@@ -132,7 +156,7 @@ const PhotoPage: React.FC = () => {
   const openVideo = useCallback(
     (stageId: string) => {
       if (useDockLayout) {
-        scrollToStage(stageId);
+        handleStageSelect(stageId);
         return;
       }
       const marker = getStageFilmMarker(stageId);
@@ -145,7 +169,7 @@ const PhotoPage: React.FC = () => {
           : stage?.description,
       });
     },
-    [stages, useDockLayout, scrollToStage]
+    [stages, useDockLayout, handleStageSelect]
   );
 
   const openFullFilm = useCallback(() => {
@@ -350,7 +374,7 @@ const PhotoPage: React.FC = () => {
           <PhotoCommandDock
             navItems={isFiltered ? [] : navItems}
             activeStageId={activeStageId}
-            onStageSelect={scrollToStage}
+            onStageSelect={handleStageSelect}
             welcomeTitle={welcomeTitle}
             resultCount={isFiltered ? displayPhotos.length : null}
             hasFilter={isFiltered}
@@ -398,6 +422,7 @@ const PhotoPage: React.FC = () => {
                 filterLabel={currentFilterLabel}
                 onClearFilter={handleClearFilter}
                 compactHeaders
+                expandThroughIndex={expandThroughIndex}
                 nameScope={filter.nameScope}
                 onNameScopeChange={handleNameScopeChange}
                 guestTable={nameGuestTable}
@@ -428,7 +453,7 @@ const PhotoPage: React.FC = () => {
         <PhotoTimelineNav
           items={navItems}
           activeStageId={activeStageId}
-          onSelect={scrollToStage}
+          onSelect={handleStageSelect}
         />
       )}
 
@@ -463,6 +488,7 @@ const PhotoPage: React.FC = () => {
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onClearFilter={handleClearFilter}
+          expandThroughIndex={expandThroughIndex}
           nameScope={filter.nameScope}
           onNameScopeChange={handleNameScopeChange}
           guestTable={nameGuestTable}

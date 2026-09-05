@@ -57,8 +57,12 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
         className="group relative block w-full text-left"
         aria-label={`查看照片${photo.names.length ? `：${photo.names.join('、')}` : ''}`}
       >
-        <div className={`relative overflow-hidden ${dark ? 'bg-black/30' : 'bg-[#F5F0E8]'}`}>
-          {!loaded && <div className="photo-skeleton absolute inset-0 min-h-[180px]" />}
+        <div
+          className={`relative overflow-hidden ${dark ? 'bg-black/30' : 'bg-[#F5F0E8]'} ${
+            photo.orientation === 'landscape' ? 'aspect-[4/3]' : 'aspect-[3/4]'
+          }`}
+        >
+          {!loaded && <div className="photo-skeleton absolute inset-0" aria-hidden />}
           <img
             src={loaded ? gridUrl : blurUrl}
             srcSet={loaded ? srcSet : undefined}
@@ -67,9 +71,9 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}
-            className={`w-full object-cover transition-all duration-500 ${
+            className={`h-full w-full object-cover transition-all duration-500 ${
               loaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-80 blur-sm'
-            } ${photo.orientation === 'landscape' ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
+            }`}
           />
           {loaded && dark && <div className="photo-card-vignette pointer-events-none" aria-hidden />}
           <span className="photo-time-badge absolute right-2 top-2 font-mono text-[11px] tabular-nums">

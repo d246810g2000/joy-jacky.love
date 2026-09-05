@@ -64,23 +64,23 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
 
   return (
     <header
-      className="photo-command-dock shrink-0 border-b border-white/10 bg-[var(--photo-bg)]/95 backdrop-blur-xl photo-safe-top"
+      className="photo-command-dock shrink-0 border-b border-white/10 photo-safe-top"
       aria-label="相簿控制區"
     >
       <div className="px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
           <Link
             to="/"
-            className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80"
+            className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
           >
             ← 喜帖
           </Link>
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate font-serif text-sm text-white/95">
+            <p className="photo-dock-title truncate font-serif text-sm">
               {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
             </p>
             {!welcomeTitle && (
-              <p className="mt-0.5 truncate text-[10px] tracking-wide text-white/40">
+              <p className="photo-dock-tagline mt-0.5 truncate text-[10px] tracking-wide">
                 {PHOTO_THEME.tagline}
               </p>
             )}
