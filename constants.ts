@@ -182,3 +182,6 @@ export const BINGO_SUPPORT_CARDS = [
   "https://res.cloudinary.com/djqnqxzha/image/upload/card-09.jpg",
   "https://res.cloudinary.com/djqnqxzha/image/upload/card-10.jpg"
 ];
+
+/** 婚禮相簿頁面路由（GitHub Pages: /joy-jacky.love/album） */
+export const ALBUM_ROUTE = '/album';

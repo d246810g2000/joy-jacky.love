@@ -17,6 +17,7 @@ import {
   THREADS_POST_IMAGE,
   BINGO_SHOW_ON_HOME_KEY,
   ALBUM_HERO_COVER_IDS,
+  ALBUM_ROUTE,
 } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Photo } from './types';
@@ -524,7 +525,7 @@ function App() {
               🎉 婚禮已圓滿落幕，感謝大家的出席與溫馨祝福！
             </span>
             <Link
-              to="/photo"
+              to={ALBUM_ROUTE}
               onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
               className="font-serif text-xs md:text-sm text-[#B08D55] font-medium hover:underline"
             >
@@ -763,7 +764,7 @@ function App() {
             </div>
 
             <Link
-              to="/photo"
+              to={ALBUM_ROUTE}
               onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
               className="group block overflow-hidden rounded-2xl border border-[#E8E1D5] bg-white shadow-md hover:shadow-xl transition-all duration-300"
             >
@@ -817,7 +818,7 @@ function App() {
                 查看電子喜帖
               </Link>
               <Link
-                to="/photo"
+                to={ALBUM_ROUTE}
                 className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#E8E1D5] text-[#B08D55] text-sm tracking-[0.2em] uppercase font-display hover:bg-[#B08D55] hover:text-white hover:border-[#B08D55] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
               >
                 <CameraIcon />
@@ -971,7 +972,7 @@ function App() {
                     {/* Photo Gallery */}
                     <button
                       onClick={() => {
-                        navigate('/photo');
+                        navigate(ALBUM_ROUTE);
                         if (isMobile) setIsNavExpanded(false);
                       }}
                       className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#B08D55] hover:bg-stone-50 transition-colors duration-300 shrink-0"

@@ -2,7 +2,7 @@ import { copyFile, mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const dist = resolve('dist');
-const routes = ['photo'];
+const routes = ['album', 'photo'];
 
 for (const route of routes) {
   const routeDir = resolve(dist, route);
