@@ -18,7 +18,6 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLightboxZoom } from '../../hooks/useLightboxZoom';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
-import { formatTableTag } from '../../utils/tableLabels';
 
 const FILMSTRIP_WINDOW = 15;
 
@@ -28,7 +27,6 @@ interface PhotoLightboxProps {
   filter?: PhotoFilter;
   onClose: () => void;
   onChange: (photo: WeddingPhoto) => void;
-  onTagClick?: (tag: string) => void;
   onNameClick?: (name: string) => void;
 }
 
@@ -38,7 +36,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   filter,
   onClose,
   onChange,
-  onTagClick,
   onNameClick,
 }) => {
   const isMobile = useIsMobile();
@@ -51,8 +48,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [zoomLoaded, setZoomLoaded] = useState(false);
   const [zoomLoading, setZoomLoading] = useState(false);
   const zoomRequestedRef = useRef(false);
-  const [showFilmstrip, setShowFilmstrip] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
@@ -97,7 +92,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
   useEffect(() => {
     resetZoom();
-    setShowDetails(false);
     setImageError(false);
     setZoomLoaded(false);
     setZoomLoading(false);
@@ -150,10 +144,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [allPhotos, currentIndex, viewportWidth]);
 
   useEffect(() => {
-    if (!showFilmstrip) return;
     const el = filmstripRef.current?.querySelector(`[data-photo-id="${photo.id}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [photo.id, showFilmstrip]);
+  }, [photo.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -198,9 +191,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     a.rel = 'noopener noreferrer';
     a.click();
   };
-
-  const tableTags = photo.tables.map((t) => formatTableTag(t));
-  const allTags = [...tableTags, ...photo.tags.map((t) => `#${t}`)];
 
   const windowStart = Math.max(0, currentIndex - FILMSTRIP_WINDOW);
   const windowEnd = Math.min(allPhotos.length, currentIndex + FILMSTRIP_WINDOW + 1);
@@ -399,7 +389,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
         {photo.names.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {(showDetails ? photo.names : photo.names.slice(0, 4)).map((name) => (
+            {photo.names.slice(0, 4).map((name) => (
               <button
                 key={name}
                 type="button"
@@ -409,58 +399,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 {name}
               </button>
             ))}
-            {!showDetails && photo.names.length > 4 && (
-              <button
-                type="button"
-                onClick={() => setShowDetails(true)}
-                className="text-xs text-white/40"
-              >
+            {photo.names.length > 4 && (
+              <span className="text-xs text-white/40">
                 +{photo.names.length - 4}
-              </button>
+              </span>
             )}
           </div>
         )}
 
-        {showDetails && (
-          <>
-            {photo.caption && <p className="text-sm text-white/85">{photo.caption}</p>}
-            <div className="flex flex-wrap gap-1.5">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => onTagClick?.(tag.replace(/^#/, ''))}
-                  className="rounded-full border border-white/20 bg-white/5 px-2.5 py-0.5 text-xs"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {!showDetails && (photo.caption || allTags.length > 0) && isMobile && (
-          <button
-            type="button"
-            onClick={() => setShowDetails(true)}
-            className="text-xs text-white/40"
-          >
-            更多資訊 ▾
-          </button>
-        )}
-
-        {isMobile ? (
-          <button
-            type="button"
-            onClick={() => setShowFilmstrip((v) => !v)}
-            className="text-xs text-white/45"
-          >
-            {showFilmstrip ? '隱藏縮圖' : `查看縮圖 (${allPhotos.length})`}
-          </button>
-        ) : null}
-
-        {(showFilmstrip || !isMobile) && (
-          <div ref={filmstripRef} className="no-scrollbar flex gap-2 overflow-x-auto py-1">
+        <div ref={filmstripRef} className="no-scrollbar flex gap-2 overflow-x-auto py-1">
             {windowStart > 0 && (
               <span className="flex h-12 w-5 shrink-0 items-center justify-center text-xs text-white/40">
                 …
@@ -475,6 +422,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 md:h-14 md:w-14 ${
                   p.id === photo.id ? 'border-[#B08D55]' : 'border-transparent opacity-60'
                 }`}
+                aria-label={`查看第 ${windowStart + filmstripPhotos.indexOf(p) + 1} 張照片`}
               >
                 <img
                   src={getThumbUrl(p.publicId)}
@@ -489,8 +437,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 …
               </span>
             )}
-          </div>
-        )}
+        </div>
 
         {isMobile && (
           <p className="text-center text-[10px] text-white/25">
