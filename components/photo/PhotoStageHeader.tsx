@@ -11,6 +11,8 @@ interface PhotoStageHeaderProps {
   visibleCount?: number;
   index: number;
   onWatchVideo: (stageId: string) => void;
+  hasPreviewMore?: boolean;
+  onExpandPhotos?: () => void;
   compact?: boolean;
 }
 
@@ -20,6 +22,8 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
   visibleCount,
   index,
   onWatchVideo,
+  hasPreviewMore = false,
+  onExpandPhotos,
   compact = false,
 }) => {
   const isMobile = useIsMobile();
@@ -62,10 +66,12 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
         aria-hidden
       />
 
-      <div className={`relative flex flex-col ${
-        compact ? 'gap-1' : 'gap-4 md:flex-row md:items-end md:justify-between'
+      <div className={`relative flex ${
+        compact
+          ? 'items-start justify-between gap-3'
+          : 'flex-col gap-4 md:flex-row md:items-end md:justify-between'
       }`}>
-        <div className="min-w-0">
+        <div className={`min-w-0 ${compact ? 'flex-1' : ''}`}>
           <p className={`tracking-wide text-white/45 ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {compact ? chapterLabel(index, stageLabel) : `CHAPTER ${String(index + 1).padStart(2, '0')}`}
           </p>
@@ -105,6 +111,31 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
           )}
           <p className={`text-white/40 ${compact ? 'mt-1 text-[10px]' : 'mt-2 text-xs'}`}>{countLabel}</p>
         </div>
+
+        {compact && (
+          <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => onWatchVideo(stage.id)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)]/20 text-xs text-[var(--photo-gold-light)] transition active:scale-95 active:bg-[var(--photo-accent)]/35"
+              aria-label={`播放${stageLabel}影片`}
+              title={`播放${stageLabel}影片`}
+            >
+              ▶
+            </button>
+            {hasPreviewMore && onExpandPhotos && (
+              <button
+                type="button"
+                onClick={onExpandPhotos}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm text-white/65 transition active:scale-95 active:bg-white/10"
+                aria-label={`查看${stageLabel}全部照片`}
+                title={`查看${stageLabel}全部照片`}
+              >
+                ▦
+              </button>
+            )}
+          </div>
+        )}
 
         {!compact && (
           <button

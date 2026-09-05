@@ -81,6 +81,8 @@ function StageSection({
         visibleCount={hasPreviewMore ? visible.length : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
+        hasPreviewMore={hasPreviewMore}
+        onExpandPhotos={() => setExpanded(true)}
         compact={compactHeaders}
       />
       <motion.div
@@ -120,7 +122,7 @@ function StageSection({
           )
         )}
       </motion.div>
-      {hasPreviewMore && (
+      {hasPreviewMore && !compactHeaders && (
         <button
           type="button"
           onClick={() => setExpanded(true)}
