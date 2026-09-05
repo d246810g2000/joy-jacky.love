@@ -69,11 +69,11 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
             </Link>
           )}
           <div className="min-w-0 flex-1 text-center">
-            <p className="photo-dock-title truncate font-serif text-sm">
+            <p className="photo-dock-title truncate whitespace-nowrap font-serif text-[13px] md:text-sm">
               {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
             </p>
             {!welcomeTitle && (
-              <p className="photo-dock-tagline mt-0.5 truncate text-[10px] tracking-wide">
+              <p className="photo-dock-tagline mt-0.5 hidden truncate text-[10px] tracking-wide md:block">
                 {PHOTO_THEME.tagline}
               </p>
             )}
