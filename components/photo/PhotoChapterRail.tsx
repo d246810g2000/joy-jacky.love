@@ -81,16 +81,6 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
     <div
       className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-12 items-center justify-end pr-1 photo-safe-top photo-safe-bottom"
     >
-      {!dragging && activeItem && (
-        <div className="pointer-events-none absolute right-11 top-1/2 max-h-32 -translate-y-1/2 overflow-hidden rounded-lg border border-white/10 bg-black/45 px-1 py-2 backdrop-blur-sm">
-          <span
-            className="block max-h-28 truncate text-[10px] leading-tight tracking-[0.12em] [writing-mode:vertical-rl]"
-            style={{ color: activeMarker?.accent ?? '#e6c896' }}
-          >
-            {activeItem.label}
-          </span>
-        </div>
-      )}
       {dragging && previewItem && (
         <div
           className="pointer-events-none absolute right-11 top-1/2 max-w-[42vw] -translate-y-1/2 rounded-xl border border-white/15 bg-[#141210]/95 px-3 py-2 shadow-xl backdrop-blur-md"
@@ -129,24 +119,34 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
           const isPreview = dragging && item.id === previewId;
 
           return (
-            <span
-              key={item.id}
-              aria-hidden
-              className={`rounded-full transition-all duration-200 ${
-                isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
-              }`}
-              style={{
-                backgroundColor:
-                  isActive || isPreview
-                    ? marker?.accent ?? '#e6c896'
-                    : 'rgba(255,255,255,0.28)',
-                boxShadow:
-                  isActive || isPreview
-                    ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
-                    : undefined,
-                opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
-              }}
-            />
+            <React.Fragment key={item.id}>
+              <span
+                aria-hidden
+                className={`rounded-full transition-all duration-200 ${
+                  isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
+                }`}
+                style={{
+                  backgroundColor:
+                    isActive || isPreview
+                      ? marker?.accent ?? '#e6c896'
+                      : 'rgba(255,255,255,0.28)',
+                  boxShadow:
+                    isActive || isPreview
+                      ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
+                      : undefined,
+                  opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
+                }}
+              />
+              {isActive && !dragging && (
+                <span
+                  className="max-h-24 max-w-4 truncate text-[9px] leading-tight tracking-[0.1em] [writing-mode:vertical-rl]"
+                  style={{ color: activeMarker?.accent ?? '#e6c896' }}
+                  aria-hidden
+                >
+                  {activeItem.label}
+                </span>
+              )}
+            </React.Fragment>
           );
         })}
       </div>
