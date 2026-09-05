@@ -152,7 +152,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
         aria-valuemax={items.length}
         aria-valuenow={activeIndex + 1}
         aria-valuetext={`${previewItem?.time ?? ''} ${previewItem?.label ?? ''}`}
-        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center gap-0.5 rounded-full border px-0.5 py-2 transition ${
+        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center rounded-full border px-0.5 py-2 transition ${
           dragging
             ? 'border-[var(--photo-accent)]/40 bg-black/80 shadow-lg'
             : 'border-white/10 bg-black/55 backdrop-blur-sm'
@@ -162,51 +162,53 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        {items.map((item, index) => {
-          const isActive = item.id === activeStageId;
-          const marker = getStageFilmMarker(item.id);
-          const isPreview = dragging && item.id === previewId;
+        <div className="flex flex-col items-center gap-0">
+          {items.map((item, index) => {
+            const isActive = item.id === activeStageId;
+            const marker = getStageFilmMarker(item.id);
+            const isPreview = dragging && item.id === previewId;
 
-          return (
-            <React.Fragment key={item.id}>
-              <button
-                type="button"
-                data-chapter-index={index}
-                aria-label={`${item.time} ${item.label}`}
-                aria-current={isActive ? 'step' : undefined}
-                onClick={(event) => handleDotClick(event, index)}
-                className="group flex min-h-[24px] min-w-[24px] items-center justify-center rounded-full p-1 transition"
-              >
-                <span
-                  aria-hidden
-                  className={`block rounded-full transition-all duration-200 ${
-                    isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
-                  } ${!isActive && !isPreview ? 'group-hover:h-2 group-hover:w-2' : ''}`}
-                  style={{
-                    backgroundColor:
-                      isActive || isPreview
-                        ? marker?.accent ?? '#e6c896'
-                        : 'rgba(255,255,255,0.28)',
-                    boxShadow:
-                      isActive || isPreview
-                        ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
-                        : undefined,
-                    opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
-                  }}
-                />
-              </button>
-              {isActive && !dragging && (
-                <span
-                  className="max-h-24 max-w-4 truncate text-[9px] leading-tight tracking-[0.1em] [writing-mode:vertical-rl]"
-                  style={{ color: activeMarker?.accent ?? '#e6c896' }}
-                  aria-hidden
+            return (
+              <React.Fragment key={item.id}>
+                <button
+                  type="button"
+                  data-chapter-index={index}
+                  aria-label={`${item.time} ${item.label}`}
+                  aria-current={isActive ? 'step' : undefined}
+                  onClick={(event) => handleDotClick(event, index)}
+                  className="group flex min-h-[20px] min-w-[20px] items-center justify-center rounded-full p-1 transition"
                 >
-                  {activeItem.label}
-                </span>
-              )}
-            </React.Fragment>
-          );
-        })}
+                  <span
+                    aria-hidden
+                    className={`block rounded-full transition-all duration-200 ${
+                      isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
+                    } ${!isActive && !isPreview ? 'group-hover:h-2 group-hover:w-2' : ''}`}
+                    style={{
+                      backgroundColor:
+                        isActive || isPreview
+                          ? marker?.accent ?? '#e6c896'
+                          : 'rgba(255,255,255,0.28)',
+                      boxShadow:
+                        isActive || isPreview
+                          ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
+                          : undefined,
+                      opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
+                    }}
+                  />
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
+        {activeItem && !dragging && (
+          <span
+            className="mt-1 max-w-8 text-center text-[9px] leading-tight tracking-[0.08em] text-white/75"
+            style={{ color: activeMarker?.accent ?? '#e6c896' }}
+            aria-hidden
+          >
+            {activeItem.label}
+          </span>
+        )}
       </div>
     </div>
   );
