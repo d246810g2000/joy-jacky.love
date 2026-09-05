@@ -36,9 +36,9 @@ python label_server.py
 | `data/photo_meta/face_index.json` | 每張照片的臉 + bbox |
 | `data/photo_meta/known_faces.json` | 已確認臉庫（疊代核心） |
 | `data/photo_meta/photo_names.json` | 每張照片的 names/tables |
-| `data/photos.json` | 第一階段最終 manifest |
+| `$WEDDING_PRIVATE_DATA_DIR/photos.json` | 第一階段最終 manifest（私有，不進 git） |
 | `data/photo_meta/cloudinary_map.json` | 上傳進度（resume 用，不進 git） |
-| `data/weddingPhotos.ts` | 網站相簿資料（由腳本生成） |
+| `data/weddingPhotos.ts` | 公開網站使用的最小相簿 manifest |
 
 ## 收尾：上傳已標記照片
 
@@ -62,6 +62,15 @@ python build_wedding_photos_ts.py    # 寫入 data/weddingPhotos.ts
 
 上傳腳本會把進度寫入 `data/photo_meta/cloudinary_map.json`，重跑會跳過已上傳的。
 
+公開 repo 不包含原始 `guest.csv` 與 `photos.json`。若要在私有環境重新產生資料，
+請將兩個檔案放在 `data/` 或設定：
+
+```bash
+export WEDDING_PRIVATE_DATA_DIR="/path/to/private/wedding-data"
+```
+
 ## 隱私
 
-`data/face_crops/`、`data/face_embeddings/`、`data/photo_meta/` 已加入 `.gitignore`，不會上傳 git。
+`guest.csv`、`photos.json`、`data/face_crops/`、`data/face_embeddings/`、
+`data/photo_meta/` 已加入 `.gitignore`，不會上傳 git。公開版本只提交網站運作
+所需的衍生索引與相簿 manifest。

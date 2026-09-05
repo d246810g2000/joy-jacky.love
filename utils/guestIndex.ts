@@ -1,5 +1,5 @@
-import guestCsvRaw from '../data/guest.csv?raw';
 import type { GuestRecord } from '../types';
+import { PUBLIC_GUEST_ROWS, PUBLIC_TABLE_NAMES } from '../data/publicGuestIndex';
 import { formatTableLabel, initTableLabels } from './tableLabels';
 
 function parseCsvLine(line: string): string[] {
@@ -89,7 +89,17 @@ export function buildGuestIndex(guests: GuestRecord[]): GuestIndex {
   return { guests, byName, byTable, byRelation, bySide };
 }
 
-export const GUEST_RECORDS = parseGuestCsv(guestCsvRaw);
+export const GUEST_RECORDS: GuestRecord[] = PUBLIC_GUEST_ROWS.map(
+  ([name, side, relation, table], index) => ({
+    id: index + 1,
+    name,
+    headcount: null,
+    side,
+    relation,
+    table,
+    tableLabel: table == null ? '' : `${String(table).padStart(2, '0')}. ${PUBLIC_TABLE_NAMES[table] ?? ''}`,
+  })
+);
 initTableLabels(GUEST_RECORDS);
 export const GUEST_INDEX = buildGuestIndex(GUEST_RECORDS);
 
