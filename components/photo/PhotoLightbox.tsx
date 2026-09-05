@@ -50,7 +50,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [imageError, setImageError] = useState(false);
   const [zoomLoaded, setZoomLoaded] = useState(false);
   const [zoomLoading, setZoomLoading] = useState(false);
-  const [zoomRequested, setZoomRequested] = useState(false);
+  const zoomRequestedRef = useRef(false);
   const [showFilmstrip, setShowFilmstrip] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
@@ -101,7 +101,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     setImageError(false);
     setZoomLoaded(false);
     setZoomLoading(false);
-    setZoomRequested(false);
+    zoomRequestedRef.current = false;
 
     if (isImagePreloaded(displayUrl)) {
       setImageLoaded(true);
@@ -124,10 +124,10 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [photo.id, displayUrl, resetZoom]);
 
   useEffect(() => {
-    if (!isZoomed || zoomLoaded || zoomRequested) return;
+    if (!isZoomed || zoomLoaded || zoomRequestedRef.current) return;
 
     let cancelled = false;
-    setZoomRequested(true);
+    zoomRequestedRef.current = true;
     setZoomLoading(true);
     preloadImageUrl(zoomUrl)
       .then(() => {
@@ -143,7 +143,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isZoomed, zoomLoaded, zoomRequested, zoomUrl]);
+  }, [isZoomed, zoomLoaded, zoomUrl]);
 
   useEffect(() => {
     preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
