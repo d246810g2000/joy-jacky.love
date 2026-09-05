@@ -628,11 +628,6 @@ const PhotoPage: React.FC = () => {
                 `${window.location.pathname}${window.location.search}#${p.id}`
               );
             }}
-            onTagClick={(tag) => {
-              closeLightbox();
-              handleTagClick(tag);
-              setDrawerOpen(false);
-            }}
             onNameClick={(name) => {
               closeLightbox();
               handleNameClick(name);

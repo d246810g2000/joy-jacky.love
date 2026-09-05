@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearch';
-import type { NameSearchScope } from '../../types';
+import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
-import { formatTableLabel } from '../../utils/tableLabels';
+import { formatTableLabel, listTableOptions } from '../../utils/tableLabels';
 import { POPULAR_TAGS } from '../../utils/photoFilters';
 
 interface PhotoSearchBarProps {
@@ -58,13 +58,11 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     [query]
   );
   const featuredGuests = useMemo(() => {
-    const seen = new Set<string>();
-    return GUEST_RECORDS.filter((guest) => {
-      if (seen.has(guest.name)) return false;
-      seen.add(guest.name);
-      return true;
-    }).slice(0, 6);
+    return ['李謦伊', '張家銘']
+      .map((name) => GUEST_RECORDS.find((guest) => guest.name === name))
+      .filter((guest): guest is GuestRecord => Boolean(guest));
   }, []);
+  const firstTable = useMemo(() => listTableOptions()[0], []);
   const exactTable = useMemo(() => {
     const trimmed = query.trim();
     if (!/^\d{1,2}$/.test(trimmed)) return null;
@@ -245,6 +243,39 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                       </button>
                     ))}
                   </div>
+                </section>
+
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-base font-medium text-white/90">按桌次篩選</h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeSearch();
+                        onOpenDrawer();
+                      }}
+                      className="text-xs text-[var(--photo-gold-light)]"
+                    >
+                      查看全部
+                    </button>
+                  </div>
+                  {firstTable && (
+                    <button
+                      type="button"
+                      onClick={() => submit(String(firstTable.table))}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left active:bg-white/10"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--photo-accent)]/25 font-mono text-sm text-[var(--photo-gold-light)]">
+                        {firstTable.table}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-white/90">
+                          {firstTable.label}
+                        </span>
+                        <span className="block text-xs text-white/45">先從第一桌開始找照片</span>
+                      </span>
+                    </button>
+                  )}
                 </section>
 
                 <section>
