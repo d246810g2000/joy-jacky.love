@@ -1,5 +1,6 @@
 import type { PhotoFilter, WeddingPhoto, WeddingStage } from '../types';
 import { GUEST_INDEX } from './guestIndex';
+import { formatTableFilterTitle, formatTableTag } from './tableLabels';
 
 export const EMPTY_FILTER: PhotoFilter = {
   query: '',
@@ -19,16 +20,19 @@ export const PHOTO_CATEGORIES = [
 ] as const;
 
 export const POPULAR_TAGS = [
-  '#第 5 桌',
-  '#第 3 桌',
+  formatTableTag(5),
+  formatTableTag(3),
   '#女方大學同學',
   '#高中同學',
   '#男方公司同事',
 ];
 
 export function parseTableFromTag(tag: string): number | null {
-  const match = tag.match(/第\s*(\d{1,2})\s*桌/);
-  return match ? parseInt(match[1], 10) : null;
+  const cleaned = tag.replace(/^#/, '').trim();
+  const named = cleaned.match(/^(\d{1,2})\s+/);
+  if (named) return parseInt(named[1], 10);
+  const legacy = cleaned.match(/第\s*(\d{1,2})\s*桌/);
+  return legacy ? parseInt(legacy[1], 10) : null;
 }
 
 export function parseRelationFromTag(tag: string): string | null {
@@ -120,7 +124,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
       photo.time,
       ...photo.tags,
       ...photo.names,
-      ...photo.tables.map((t) => `第${t}桌`),
+      ...photo.tables.map((t) => formatTableTag(t).replace(/^#/, '')),
     ]
       .join(' ')
       .toLowerCase();
@@ -145,7 +149,7 @@ export function filterLabel(filter: PhotoFilter): string | null {
       filter.nameScope === 'table' ? '（含同桌）' : '';
     return `「${filter.name}」的照片${scope}`;
   }
-  if (filter.table != null) return `第 ${filter.table} 桌的照片`;
+  if (filter.table != null) return formatTableFilterTitle(filter.table);
   if (filter.tag) return filter.tag.startsWith('#') ? filter.tag : `#${filter.tag}`;
   if (filter.category && filter.category !== 'all') {
     return PHOTO_CATEGORIES.find((c) => c.id === filter.category)?.label ?? null;

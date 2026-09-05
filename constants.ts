@@ -12,6 +12,15 @@ const CLOUD_NAME = "djqnqxzha";
 
 const withExt = (id: string) => (id.includes(".") ? id : `${id}.jpg`);
 
+/** 相簿入口輪播：只使用同時標記張家銘與李謦伊的照片 */
+export const ALBUM_HERO_COVER_IDS = [
+  "wedding_20260530/260530-105",
+  "wedding_20260530/260530-106",
+  "wedding_20260530/260530-21",
+  "wedding_20260530/260530-22",
+  "wedding_20260530/260530-23",
+];
+
 /** 高清圖 URL（藝廊大圖、Lightbox） */
 const getCloudinaryUrl = (publicId: string) =>
   `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${withExt(publicId)}`;

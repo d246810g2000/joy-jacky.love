@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const STAGE_PAGE_SIZE = 16;
-export const FILTER_PAGE_SIZE = 24;
+export const STAGE_PAGE_SIZE = 10;
+export const FILTER_PAGE_SIZE = 36;
 
 export function usePhotoBatch(total: number, pageSize: number, resetKey?: string) {
   const [visibleCount, setVisibleCount] = useState(pageSize);

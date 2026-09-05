@@ -9,6 +9,7 @@ import { PhotoSearchBar } from '../components/photo/PhotoSearchBar';
 import { PhotoFilterDrawer } from '../components/photo/PhotoFilterDrawer';
 import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
+import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
 import {
   EMPTY_FILTER,
   filterPhotos,
@@ -16,14 +17,15 @@ import {
   guestTableForName,
   isFilterEmpty,
 } from '../utils/photoFilters';
-import { getLightboxUrl } from '../utils/photoUrls';
+import { formatTableFilterTitle } from '../utils/tableLabels';
+import { getLightboxDisplayUrl } from '../utils/photoUrls';
 import { getStageFilmMarker, getStageFilmStart } from '../utils/weddingFilm';
 import { addRecentSearch } from '../utils/photoRecentSearch';
 import { useTimelineSync } from '../hooks/useTimelineSync';
-import { usePhotoDeepLink } from '../hooks/usePhotoDeepLink';
+import { usePhotoDeepLink, shareFilterLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
-import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
+import { usePhotoBulkDownload } from '../hooks/usePhotoBulkDownload';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { NameSearchScope, PhotoFilter, WeddingPhoto } from '../types';
 
@@ -58,6 +60,8 @@ const PhotoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { data, loading, error } = useWeddingPhotos();
+  const { downloading, progress: downloadProgress, error: downloadError, downloadAll, clearError } =
+    usePhotoBulkDownload();
   const useDockLayout = isMobile;
 
   const tableParam = searchParams.get('table');
@@ -70,14 +74,26 @@ const PhotoPage: React.FC = () => {
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [expandSearch, setExpandSearch] = useState(false);
   const scrolledToResults = useRef(false);
+  const pendingScrollStage = useRef<string | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const [galleryEl, setGalleryEl] = useState<HTMLElement | null>(null);
 
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
+  const heroCoverIds = useMemo(
+    () =>
+      allPhotos
+        .filter((photo) =>
+          photo.names.includes('張家銘') && photo.names.includes('李謦伊')
+        )
+        .slice(0, 8)
+        .map((photo) => photo.publicId),
+    [allPhotos]
+  );
 
   const navItems = useMemo(
     () =>
@@ -101,6 +117,20 @@ const PhotoPage: React.FC = () => {
     useDockLayout && !isFiltered ? galleryEl : null
   );
 
+  const handleStageSelect = useCallback(
+    (stageId: string) => {
+      pendingScrollStage.current = stageId;
+      scrollToStage(stageId);
+    },
+    [scrollToStage]
+  );
+
+  useEffect(() => {
+    if (loading || !pendingScrollStage.current) return;
+    const stageId = pendingScrollStage.current;
+    requestAnimationFrame(() => scrollToStage(stageId));
+  }, [loading, scrollToStage]);
+
   useEffect(() => {
     setGalleryEl(galleryRef.current);
   }, [loading, useDockLayout]);
@@ -114,7 +144,7 @@ const PhotoPage: React.FC = () => {
   const showNameScope = isFiltered && !!filter.name;
 
   const welcomeTitle = tableParam
-    ? `第 ${tableParam} 桌的照片`
+    ? formatTableFilterTitle(parseInt(tableParam, 10))
     : nameParam
       ? `「${nameParam}」的照片`
       : undefined;
@@ -127,12 +157,21 @@ const PhotoPage: React.FC = () => {
 
   const closeVideo = useCallback(() => setVideoState(null), []);
 
-  useModalHistory(!!selectedPhoto, closeLightbox);
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const handleBack = () => {
+      closeLightbox();
+    };
+
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
+  }, [selectedPhoto, closeLightbox]);
 
   const openVideo = useCallback(
     (stageId: string) => {
       if (useDockLayout) {
-        scrollToStage(stageId);
+        handleStageSelect(stageId);
         return;
       }
       const marker = getStageFilmMarker(stageId);
@@ -145,7 +184,7 @@ const PhotoPage: React.FC = () => {
           : stage?.description,
       });
     },
-    [stages, useDockLayout, scrollToStage]
+    [stages, useDockLayout, handleStageSelect]
   );
 
   const openFullFilm = useCallback(() => {
@@ -158,8 +197,8 @@ const PhotoPage: React.FC = () => {
 
   const openPhoto = useCallback((photo: WeddingPhoto) => {
     setSelectedPhoto(photo);
-    window.history.replaceState(
-      null,
+    window.history.pushState(
+      { photoLightbox: true },
       '',
       `${window.location.pathname}${window.location.search}#${photo.id}`
     );
@@ -179,7 +218,16 @@ const PhotoPage: React.FC = () => {
     const hash = window.location.hash.replace(/^#/, '');
     if (hash && !selectedPhoto) {
       const photo = allPhotos.find((p) => p.id === hash);
-      if (photo) setSelectedPhoto(photo);
+      if (photo) {
+        const albumPath = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState({ photoPage: true }, '', albumPath);
+        window.history.pushState(
+          { photoLightbox: true },
+          '',
+          `${albumPath}#${photo.id}`
+        );
+        setSelectedPhoto(photo);
+      }
     }
   }, [data, allPhotos, selectedPhoto]);
 
@@ -221,8 +269,14 @@ const PhotoPage: React.FC = () => {
       '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
     );
 
-    if (tableParam) setWelcomeMsg(`為您顯示第 ${tableParam} 桌的照片`);
-    else if (nameParam) setWelcomeMsg(`為您顯示「${nameParam}」的照片`);
+    if (tableParam) {
+      const tableNum = parseInt(tableParam, 10);
+      setWelcomeMsg(
+        Number.isNaN(tableNum)
+          ? `為您顯示第 ${tableParam} 桌的照片`
+          : `為您顯示${formatTableFilterTitle(tableNum)}`
+      );
+    } else if (nameParam) setWelcomeMsg(`為您顯示「${nameParam}」的照片`);
 
     return () => {
       document.title = prevTitle;
@@ -236,7 +290,7 @@ const PhotoPage: React.FC = () => {
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) return;
     if (selectedPhoto) {
-      ogImage.setAttribute('content', getLightboxUrl(selectedPhoto.publicId));
+      ogImage.setAttribute('content', getLightboxDisplayUrl(selectedPhoto.publicId));
     }
   }, [selectedPhoto]);
 
@@ -316,10 +370,22 @@ const PhotoPage: React.FC = () => {
     firstStage?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleWatchFromLightbox = (stageId: string) => {
-    closeLightbox();
-    openVideo(stageId);
-  };
+  const handleDownloadAll = useCallback(() => {
+    if (!filteredPhotos?.length) return;
+    downloadAll(filteredPhotos, currentFilterLabel ?? '婚禮照片');
+  }, [filteredPhotos, currentFilterLabel, downloadAll]);
+
+  const handleShareFilter = useCallback(async () => {
+    if (!isFiltered) return;
+    try {
+      const result = await shareFilterLink(filter);
+      setShareNotice(result === 'shared' ? '已開啟分享' : '連結已複製，可貼到群組給親友');
+      window.setTimeout(() => setShareNotice(null), 2800);
+    } catch {
+      setShareNotice('分享失敗，請稍後再試');
+      window.setTimeout(() => setShareNotice(null), 2800);
+    }
+  }, [filter, isFiltered]);
 
   const hideSearchBar = !!selectedPhoto || !!videoState || useDockLayout;
 
@@ -350,16 +416,21 @@ const PhotoPage: React.FC = () => {
           <PhotoCommandDock
             navItems={isFiltered ? [] : navItems}
             activeStageId={activeStageId}
-            onStageSelect={scrollToStage}
+            onStageSelect={handleStageSelect}
             welcomeTitle={welcomeTitle}
             resultCount={isFiltered ? displayPhotos.length : null}
             hasFilter={isFiltered}
+            loading={loading}
             filterLabel={currentFilterLabel}
             autoExpandSearch={expandSearch}
             onExpandSearchHandled={() => setExpandSearch(false)}
             onSearch={handleQuickSearch}
             onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
+            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
+            onShareFilter={isFiltered ? handleShareFilter : undefined}
+            downloading={downloading}
+            downloadProgress={downloadProgress}
             nameScope={filter.nameScope}
             onNameScopeChange={handleNameScopeChange}
             guestTable={nameGuestTable}
@@ -381,8 +452,15 @@ const PhotoPage: React.FC = () => {
 
           <div
             ref={galleryRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
           >
+            {!isFiltered && !loading && navItems.length > 1 && (
+              <PhotoChapterRail
+                items={navItems}
+                activeStageId={activeStageId}
+                onSelect={handleStageSelect}
+              />
+            )}
             {loading ? (
               <GridSkeleton compact />
             ) : (
@@ -397,6 +475,10 @@ const PhotoPage: React.FC = () => {
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
                 onClearFilter={handleClearFilter}
+                onDownloadAll={handleDownloadAll}
+                onShareFilter={handleShareFilter}
+                downloading={downloading}
+                downloadProgress={downloadProgress}
                 compactHeaders
                 nameScope={filter.nameScope}
                 onNameScopeChange={handleNameScopeChange}
@@ -417,6 +499,7 @@ const PhotoPage: React.FC = () => {
 
       <PhotoHero
         coverPublicId={heroCoverId}
+        coverPublicIds={heroCoverIds}
         compact={skipHero}
         welcomeTitle={welcomeTitle}
         onScrollDown={handleScrollDown}
@@ -428,7 +511,7 @@ const PhotoPage: React.FC = () => {
         <PhotoTimelineNav
           items={navItems}
           activeStageId={activeStageId}
-          onSelect={scrollToStage}
+          onSelect={handleStageSelect}
         />
       )}
 
@@ -463,6 +546,10 @@ const PhotoPage: React.FC = () => {
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onClearFilter={handleClearFilter}
+          onDownloadAll={handleDownloadAll}
+          onShareFilter={handleShareFilter}
+          downloading={downloading}
+          downloadProgress={downloadProgress}
           nameScope={filter.nameScope}
           onNameScopeChange={handleNameScopeChange}
           guestTable={nameGuestTable}
@@ -480,6 +567,10 @@ const PhotoPage: React.FC = () => {
         onSearch={handleQuickSearch}
         onOpenDrawer={() => setDrawerOpen(true)}
         onClearFilter={handleClearFilter}
+        onDownloadAll={handleDownloadAll}
+        onShareFilter={handleShareFilter}
+        downloading={downloading}
+        downloadProgress={downloadProgress}
         nameScope={filter.nameScope}
         onNameScopeChange={handleNameScopeChange}
         guestTable={nameGuestTable}
@@ -495,6 +586,25 @@ const PhotoPage: React.FC = () => {
         onClose={() => setDrawerOpen(false)}
         resultCount={isFiltered ? displayPhotos.length : undefined}
       />
+
+      {shareNotice && (
+        <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
+          {shareNotice}
+        </div>
+      )}
+
+      {downloadError && (
+        <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-red-400/30 bg-[#1a1210]/95 px-4 py-3 text-center text-sm text-red-200 shadow-xl backdrop-blur-md photo-safe-bottom">
+          {downloadError}
+          <button
+            type="button"
+            onClick={clearError}
+            className="mt-2 block w-full text-xs text-red-200/70"
+          >
+            知道了
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedPhoto && (
@@ -521,7 +631,6 @@ const PhotoPage: React.FC = () => {
               handleNameClick(name);
               setDrawerOpen(false);
             }}
-            onWatchFilm={handleWatchFromLightbox}
           />
         )}
       </AnimatePresence>
