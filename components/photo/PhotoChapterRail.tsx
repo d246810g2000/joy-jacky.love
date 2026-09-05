@@ -8,16 +8,6 @@ interface PhotoChapterRailProps {
   onSelect: (stageId: string) => void;
 }
 
-function indexFromClientY(
-  clientY: number,
-  rect: DOMRect,
-  count: number
-): number {
-  if (count <= 1) return 0;
-  const ratio = (clientY - rect.top) / rect.height;
-  return Math.min(count - 1, Math.max(0, Math.round(ratio * (count - 1))));
-}
-
 export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   items,
   activeStageId,
@@ -40,7 +30,27 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
       const rail = railRef.current;
       if (!rail || items.length === 0) return;
 
-      const index = indexFromClientY(clientY, rail.getBoundingClientRect(), items.length);
+      const markers = Array.from(
+        rail.querySelectorAll<HTMLElement>('[data-chapter-index]')
+      );
+      if (markers.length === 0) return;
+
+      const index = Number(
+        markers.reduce((closest, marker) => {
+          const closestDistance = Math.abs(
+            closest.getBoundingClientRect().top +
+              closest.getBoundingClientRect().height / 2 -
+              clientY
+          );
+          const markerDistance = Math.abs(
+            marker.getBoundingClientRect().top +
+              marker.getBoundingClientRect().height / 2 -
+              clientY
+          );
+          return markerDistance < closestDistance ? marker : closest;
+        }, markers[0]).dataset.chapterIndex
+      );
+      if (Number.isNaN(index)) return;
       if (lastIndexRef.current === index) return;
 
       lastIndexRef.current = index;
@@ -122,6 +132,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
             <React.Fragment key={item.id}>
               <span
                 aria-hidden
+                data-chapter-index={items.indexOf(item)}
                 className={`rounded-full transition-all duration-200 ${
                   isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
                 }`}
