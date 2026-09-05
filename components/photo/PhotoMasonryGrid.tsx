@@ -18,7 +18,6 @@ interface PhotoMasonryGridProps {
   onWatchVideo: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   filterLabel?: string | null;
-  onClearFilter?: () => void;
   onDownloadAll?: () => void;
   onShareFilter?: () => void;
   downloading?: boolean;
@@ -145,7 +144,6 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   onWatchVideo,
   registerSection,
   filterLabel,
-  onClearFilter,
   onDownloadAll,
   onShareFilter,
   downloading = false,
@@ -205,15 +203,6 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                     : `↓ 下載全部 (${filteredPhotos.length})`}
                 </button>
               )}
-              {onClearFilter && (
-                <button
-                  type="button"
-                  onClick={onClearFilter}
-                  className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-[var(--photo-gold-light)] active:bg-white/10"
-                >
-                  清除 · 回時間軸
-                </button>
-              )}
             </div>
           </div>
           {showNameScope && onNameScopeChange && nameScope && (
@@ -231,15 +220,6 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
             <p className="mt-2 text-sm text-white/50">
               試試輸入桌號數字，或親友關係如「高中同學」
             </p>
-            {onClearFilter && (
-              <button
-                type="button"
-                onClick={onClearFilter}
-                className="mt-4 rounded-full bg-[#B08D55] px-5 py-2 text-sm text-white"
-              >
-                清除篩選
-              </button>
-            )}
           </div>
         ) : (
           <>

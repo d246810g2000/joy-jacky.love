@@ -16,6 +16,7 @@ interface PhotoCommandDockProps {
   onStageSelect: (stageId: string) => void;
   welcomeTitle?: string;
   hasFilter: boolean;
+  onClearFilter?: () => void;
   loading?: boolean;
 }
 
@@ -25,6 +26,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   onStageSelect,
   welcomeTitle,
   hasFilter,
+  onClearFilter,
   loading = false,
 }) => {
   const isMobile = useIsMobile();
@@ -49,12 +51,22 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
     >
       <div className="px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
-          <Link
-            to="/"
-            className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
-          >
-            ← 喜帖
-          </Link>
+          {hasFilter && onClearFilter ? (
+            <button
+              type="button"
+              onClick={onClearFilter}
+              className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
+            >
+              ← 相簿
+            </button>
+          ) : (
+            <Link
+              to="/"
+              className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
+            >
+              ← 喜帖
+            </Link>
+          )}
           <div className="min-w-0 flex-1 text-center">
             <p className="photo-dock-title truncate font-serif text-sm">
               {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
