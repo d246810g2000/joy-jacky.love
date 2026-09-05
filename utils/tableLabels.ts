@@ -48,5 +48,3 @@ export function listTableOptions(): Array<{ table: number; label: string; name: 
     name: getTableName(table),
   }));
 }
-
-export const TABLE_OPTIONS = listTableOptions();

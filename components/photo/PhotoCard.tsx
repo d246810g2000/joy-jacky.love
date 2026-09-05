@@ -80,7 +80,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
       <button
         type="button"
         onClick={() => onClick(photo)}
-        className="group relative block w-full text-left"
+        className="group relative block w-full touch-manipulation text-left outline-none transition-transform active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-[var(--photo-gold-light)] focus-visible:ring-inset"
         aria-label={`查看照片${photo.names.length ? `：${photo.names.join('、')}` : ''}`}
       >
         <div
