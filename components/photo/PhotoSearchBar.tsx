@@ -4,7 +4,7 @@ import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
 import { formatTableLabel, listTableOptions } from '../../utils/tableLabels';
-import { POPULAR_TAGS } from '../../utils/photoFilters';
+import { POPULAR_TAGS, SIDE_RELATION_TAGS } from '../../utils/photoFilters';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -278,6 +278,22 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 </section>
 
                 <section>
+                  <h2 className="mb-3 text-base font-medium text-white/90">依方別與關係</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SIDE_RELATION_TAGS.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => submitTag(tag)}
+                        className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left text-sm text-white/75 active:bg-white/10"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
                   <h2 className="mb-3 text-base font-medium text-white/90">快速搜尋</h2>
                   <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03]">
                     {POPULAR_TAGS.map((tag) => (
@@ -449,7 +465,22 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 </div>
               </section>
               <section>
-                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">熱門關鍵字</p>
+                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">依方別與關係</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SIDE_RELATION_TAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => submitTag(tag)}
+                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/70 active:bg-white/10"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">熱門桌次</p>
                 <div className="flex flex-wrap gap-1.5">
                   {POPULAR_TAGS.map((tag) => (
                     <button

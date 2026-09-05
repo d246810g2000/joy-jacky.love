@@ -19,47 +19,77 @@ export const PHOTO_CATEGORIES = [
   { id: 'farewell', label: '#送客合照', tag: '送客' },
 ] as const;
 
-export const POPULAR_TAGS = [
-  formatTableTag(5),
-  formatTableTag(3),
-  '#大學同學',
-  '#高中同學',
-  '#同事',
-];
+export const POPULAR_TAGS = [formatTableTag(5), formatTableTag(3)];
+
+/** 可依方別（男方／女方）分開篩選的關係標籤 */
+export const SIDE_RELATION_TAGS = [
+  '#男方大學同學',
+  '#女方大學同學',
+  '#男方高中同學',
+  '#女方高中同學',
+  '#男方同事',
+  '#女方同事',
+  '#男方親戚',
+  '#女方親戚',
+] as const;
+
+export type SideKey = '男方' | '女方';
+
+export function parseSideRelationQuery(query: string): {
+  side: SideKey | null;
+  relation: string;
+} {
+  const q = query.replace(/^#/, '').trim();
+  if (!q) return { side: null, relation: '' };
+
+  if (q.startsWith('男方')) {
+    return { side: '男方', relation: q.slice(2).trim() };
+  }
+  if (q.startsWith('女方')) {
+    return { side: '女方', relation: q.slice(2).trim() };
+  }
+  return { side: null, relation: q };
+}
 
 export function guestMatchesRelationQuery(guest: GuestRecord, query: string): boolean {
-  const q = query.replace(/^#/, '').trim().toLowerCase();
-  if (!q) return false;
+  const { side, relation } = parseSideRelationQuery(query);
+  const relQ = relation.toLowerCase();
+  const guestSide = guest.side.toLowerCase();
+  const guestRelation = guest.relation.toLowerCase();
 
-  const relation = guest.relation.toLowerCase();
-  const side = guest.side.toLowerCase();
-  const combined = `${side}${relation}`;
+  if (side && !guestSide.includes(side)) return false;
+
+  if (!relQ) {
+    return side ? guestSide.includes(side) : false;
+  }
 
   return (
-    relation.includes(q) ||
-    q.includes(relation) ||
-    side.includes(q) ||
-    q.includes(side) ||
-    combined.includes(q) ||
-    q.includes(combined)
+    guestRelation === relQ ||
+    guestRelation.includes(relQ) ||
+    relQ.includes(guestRelation)
   );
 }
 
 const GROUP_SEARCH_KEYWORDS = ['同學', '同事', '親戚', '朋友', '教授'];
 
 export function isRelationOrSideQuery(query: string): boolean {
-  const q = query.replace(/^#/, '').trim().toLowerCase();
-  if (!q) return false;
+  const { side, relation } = parseSideRelationQuery(query);
+  const relQ = relation.toLowerCase();
+  if (!relQ && !side) return false;
 
-  const relationHits = GUEST_INDEX.guests.filter((guest) => guestMatchesRelationQuery(guest, q));
-  if (relationHits.length === 0) return false;
-
-  const nameExact = GUEST_INDEX.guests.some((guest) => guest.name.toLowerCase() === q);
+  const nameExact = GUEST_INDEX.guests.some(
+    (guest) => guest.name.toLowerCase() === relQ && !side
+  );
   if (nameExact) return false;
 
-  if (GROUP_SEARCH_KEYWORDS.some((keyword) => q.includes(keyword))) return true;
+  const hits = GUEST_INDEX.guests.filter((guest) => guestMatchesRelationQuery(guest, query));
+  if (hits.length === 0) return false;
 
-  return relationHits.length >= 2;
+  if (side) return true;
+
+  if (GROUP_SEARCH_KEYWORDS.some((keyword) => relQ.includes(keyword))) return true;
+
+  return hits.length >= 2;
 }
 
 /** 將搜尋框文字轉成篩選條件（桌號 / 關係標籤 / 姓名 / 一般關鍵字） */
