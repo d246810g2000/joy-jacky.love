@@ -86,7 +86,7 @@ const PhotoPage: React.FC = () => {
     () =>
       allPhotos
         .filter((photo) =>
-          photo.names.some((name) => name === '張家銘' || name === '李謦伊')
+          photo.names.includes('張家銘') && photo.names.includes('李謦伊')
         )
         .slice(0, 8)
         .map((photo) => photo.publicId),
