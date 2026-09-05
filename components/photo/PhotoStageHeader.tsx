@@ -13,6 +13,7 @@ interface PhotoStageHeaderProps {
   onWatchVideo: (stageId: string) => void;
   onExpandPhotos?: () => void;
   compact?: boolean;
+  headerRef?: React.Ref<HTMLElement>;
 }
 
 export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
@@ -23,6 +24,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
   onWatchVideo,
   onExpandPhotos,
   compact = false,
+  headerRef,
 }) => {
   const isMobile = useIsMobile();
   const [descOpen, setDescOpen] = useState(!isMobile && !compact);
@@ -36,6 +38,8 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
 
   return (
     <motion.header
+      ref={headerRef}
+      data-stage-marker={stage.id}
       initial={{ opacity: 0, y: compact ? 12 : 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10%' }}
