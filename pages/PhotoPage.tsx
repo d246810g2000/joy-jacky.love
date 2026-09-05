@@ -72,6 +72,7 @@ const PhotoPage: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null);
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [filmStageRequest, setFilmStageRequest] = useState<string | null>(null);
+  const [chapterFocusId, setChapterFocusId] = useState<string | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
@@ -123,6 +124,9 @@ const PhotoPage: React.FC = () => {
   );
 
   const stageIds = stages.map((s) => s.id);
+  const focusedStage = chapterFocusId
+    ? stages.find((stage) => stage.id === chapterFocusId) ?? null
+    : null;
   const { activeStageId, scrollToStage, registerSection } = useTimelineSync(
     stageIds,
     useDockLayout && !isFiltered ? galleryEl : null
@@ -134,6 +138,13 @@ const PhotoPage: React.FC = () => {
     }
   }, [activeStageId, filmStageRequest]);
 
+  useEffect(() => {
+    if (!chapterFocusId) return;
+    requestAnimationFrame(() => {
+      galleryRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    });
+  }, [chapterFocusId]);
+
   const handleStageSelect = useCallback(
     (stageId: string) => {
       pendingScrollStage.current = stageId;
@@ -141,6 +152,16 @@ const PhotoPage: React.FC = () => {
     },
     [scrollToStage]
   );
+
+  const handleEnterChapter = useCallback((stageId: string) => {
+    setChapterFocusId(stageId);
+    setFilmStageRequest(stageId);
+  }, []);
+
+  const handleExitChapter = useCallback(() => {
+    setChapterFocusId(null);
+    setFilmStageRequest(null);
+  }, []);
 
   useEffect(() => {
     if (loading || !pendingScrollStage.current) return;
@@ -352,11 +373,13 @@ const PhotoPage: React.FC = () => {
 
   const handleClearFilter = () => {
     setFilter(EMPTY_FILTER);
+    setChapterFocusId(null);
     clearDeepLink();
   };
 
   const handleTagClick = (tag: string) => {
     const next: PhotoFilter = { ...EMPTY_FILTER, tag, query: tag };
+    setChapterFocusId(null);
     setFilter(next);
     setSelectedPhoto(null);
     syncUrl(next);
@@ -364,12 +387,14 @@ const PhotoPage: React.FC = () => {
 
   const handleNameClick = (name: string) => {
     const next: PhotoFilter = { ...EMPTY_FILTER, name, query: name, nameScope: 'person' };
+    setChapterFocusId(null);
     setFilter(next);
     setSelectedPhoto(null);
     syncUrl(next);
   };
 
   const handleFilterChange = (next: PhotoFilter) => {
+    setChapterFocusId(null);
     setFilter(next);
     syncUrl(next);
   };
@@ -442,10 +467,15 @@ const PhotoPage: React.FC = () => {
             navItems={isFiltered ? [] : navItems}
             activeStageId={activeStageId}
             onStageSelect={handleStageSelect}
-            welcomeTitle={welcomeTitle}
+            welcomeTitle={
+              focusedStage?.title.replace(/^\d{1,2}:\d{2}\s*/, '') ?? welcomeTitle
+            }
             hasFilter={isFiltered}
             onClearFilter={handleClearFilter}
+            isChapterFocused={!!chapterFocusId}
+            onExitChapter={handleExitChapter}
             filmStageId={filmStageRequest}
+            hideTimeline={!!chapterFocusId}
             loading={loading}
           />
 
@@ -466,7 +496,7 @@ const PhotoPage: React.FC = () => {
             ref={galleryRef}
             className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
           >
-            {!isFiltered && !loading && navItems.length > 1 && (
+            {!isFiltered && !chapterFocusId && !loading && navItems.length > 1 && (
               <PhotoChapterRail
                 items={navItems}
                 activeStageId={activeStageId}
@@ -477,13 +507,18 @@ const PhotoPage: React.FC = () => {
               <GridSkeleton compact />
             ) : (
               <PhotoMasonryGrid
-                stages={stages}
+                stages={
+                  chapterFocusId
+                    ? stages.filter((stage) => stage.id === chapterFocusId)
+                    : stages
+                }
                 filteredPhotos={filteredPhotos}
                 isFiltered={isFiltered}
                 onPhotoClick={openPhoto}
                 onTagClick={handleTagClick}
                 onNameClick={handleNameClick}
                 onWatchVideo={openVideo}
+                onEnterChapter={handleEnterChapter}
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
                 onDownloadAll={handleDownloadAll}
@@ -524,10 +559,10 @@ const PhotoPage: React.FC = () => {
         </>
       ) : (
         <>
-      {isFiltered ? (
+      {isFiltered || chapterFocusId ? (
         <button
           type="button"
-          onClick={handleClearFilter}
+          onClick={isFiltered ? handleClearFilter : handleExitChapter}
           className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
         >
           ← 返回相簿
@@ -552,7 +587,7 @@ const PhotoPage: React.FC = () => {
         onQuickSearch={() => setExpandSearch(true)}
       />
 
-      {showNav && !isFiltered && !loading && navItems.length > 0 && (
+      {showNav && !isFiltered && !chapterFocusId && !loading && navItems.length > 0 && (
         <PhotoTimelineNav
           items={navItems}
           activeStageId={activeStageId}
@@ -581,13 +616,18 @@ const PhotoPage: React.FC = () => {
         <GridSkeleton />
       ) : (
         <PhotoMasonryGrid
-          stages={stages}
+          stages={
+            chapterFocusId
+              ? stages.filter((stage) => stage.id === chapterFocusId)
+              : stages
+          }
           filteredPhotos={filteredPhotos}
           isFiltered={isFiltered}
           onPhotoClick={openPhoto}
           onTagClick={handleTagClick}
           onNameClick={handleNameClick}
           onWatchVideo={openVideo}
+          onEnterChapter={handleEnterChapter}
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onDownloadAll={handleDownloadAll}

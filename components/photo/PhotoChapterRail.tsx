@@ -81,7 +81,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
 
   return (
     <div
-      className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-[min(31vw,112px)] items-center justify-end pr-1 photo-safe-top photo-safe-bottom"
+      className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-[min(18vw,68px)] items-center justify-end pr-1 photo-safe-top photo-safe-bottom"
     >
       {dragging && previewItem && (
         <div
@@ -128,7 +128,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
               }}
               aria-label={`跳轉到 ${item.time} ${item.label}`}
               aria-current={isActive ? 'step' : undefined}
-              className={`flex min-h-8 w-full shrink-0 items-center gap-1.5 rounded-xl px-1.5 py-1 text-left transition ${
+              className={`flex min-h-14 w-full shrink-0 items-center justify-center rounded-xl px-1 py-1 text-left transition ${
                 isActive || isPreview
                   ? 'bg-white/12 text-white'
                   : 'text-white/50 active:bg-white/8'
@@ -143,7 +143,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
               }}
             >
               <span
-                className="w-9 shrink-0 text-center font-mono text-[9px] tabular-nums"
+                className="truncate text-[11px] leading-tight tracking-[0.12em] [writing-mode:vertical-rl]"
                 style={{
                   color:
                     isActive || isPreview
@@ -151,9 +151,6 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
                       : undefined,
                 }}
               >
-                {item.time}
-              </span>
-              <span className="min-w-0 truncate text-[10px] leading-tight">
                 {item.label}
               </span>
             </button>

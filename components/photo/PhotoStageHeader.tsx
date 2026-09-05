@@ -11,7 +11,6 @@ interface PhotoStageHeaderProps {
   visibleCount?: number;
   index: number;
   onWatchVideo: (stageId: string) => void;
-  hasPreviewMore?: boolean;
   onExpandPhotos?: () => void;
   compact?: boolean;
 }
@@ -22,7 +21,6 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
   visibleCount,
   index,
   onWatchVideo,
-  hasPreviewMore = false,
   onExpandPhotos,
   compact = false,
 }) => {
@@ -123,15 +121,15 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
             >
               ▶
             </button>
-            {hasPreviewMore && onExpandPhotos && (
+            {onExpandPhotos && (
               <button
                 type="button"
                 onClick={onExpandPhotos}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm text-white/65 transition active:scale-95 active:bg-white/10"
-                aria-label={`查看${stageLabel}全部照片`}
-                title={`查看${stageLabel}全部照片`}
+                aria-label={`進入${stageLabel}章節`}
+                title={`進入${stageLabel}章節`}
               >
-                ▦
+                ↗
               </button>
             )}
           </div>

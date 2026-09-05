@@ -17,8 +17,11 @@ interface PhotoCommandDockProps {
   welcomeTitle?: string;
   hasFilter: boolean;
   onClearFilter?: () => void;
+  isChapterFocused?: boolean;
+  onExitChapter?: () => void;
   filmStageId?: string | null;
   loading?: boolean;
+  hideTimeline?: boolean;
 }
 
 export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
@@ -28,8 +31,11 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   welcomeTitle,
   hasFilter,
   onClearFilter,
+  isChapterFocused = false,
+  onExitChapter,
   filmStageId = null,
   loading = false,
+  hideTimeline = false,
 }) => {
   const isMobile = useIsMobile();
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
@@ -59,7 +65,15 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
     >
       <div className="px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
-          {hasFilter && onClearFilter ? (
+          {isChapterFocused && onExitChapter ? (
+            <button
+              type="button"
+              onClick={onExitChapter}
+              className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
+            >
+              ← 相簿
+            </button>
+          ) : hasFilter && onClearFilter ? (
             <button
               type="button"
               onClick={onClearFilter}
@@ -111,7 +125,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      {!isMobile && navItems.length > 0 && (
+      {!isMobile && !hideTimeline && navItems.length > 0 && (
         <PhotoTimelineNav
           variant="dock"
           items={navItems}
