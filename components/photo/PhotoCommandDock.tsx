@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
-import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import type { NameSearchScope } from '../../types';
 import {
   PHOTO_THEME,
   readFilmExpanded,
@@ -17,24 +15,8 @@ interface PhotoCommandDockProps {
   activeStageId: string;
   onStageSelect: (stageId: string) => void;
   welcomeTitle?: string;
-  resultCount: number | null;
   hasFilter: boolean;
   loading?: boolean;
-  filterLabel?: string | null;
-  autoExpandSearch?: boolean;
-  onExpandSearchHandled?: () => void;
-  onSearch: (query: string) => void;
-  onTagSearch?: (tag: string) => void;
-  onOpenDrawer: () => void;
-  onClearFilter?: () => void;
-  onDownloadAll?: () => void;
-  onShareFilter?: () => void;
-  downloading?: boolean;
-  downloadProgress?: { done: number; total: number } | null;
-  nameScope?: NameSearchScope;
-  onNameScopeChange?: (scope: NameSearchScope) => void;
-  guestTable?: number | null;
-  showNameScope?: boolean;
 }
 
 export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
@@ -42,24 +24,8 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   activeStageId,
   onStageSelect,
   welcomeTitle,
-  resultCount,
   hasFilter,
   loading = false,
-  filterLabel,
-  autoExpandSearch,
-  onExpandSearchHandled,
-  onSearch,
-  onTagSearch,
-  onOpenDrawer,
-  onClearFilter,
-  onDownloadAll,
-  onShareFilter,
-  downloading,
-  downloadProgress,
-  nameScope,
-  onNameScopeChange,
-  guestTable,
-  showNameScope = false,
 }) => {
   const isMobile = useIsMobile();
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
@@ -134,28 +100,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      <div className="border-t border-white/8 px-3 py-1.5">
-        <PhotoSearchBar
-          variant="dock"
-          resultCount={resultCount}
-          hasFilter={hasFilter}
-          filterLabel={filterLabel}
-          autoExpand={autoExpandSearch}
-          onExpandHandled={onExpandSearchHandled}
-          onSearch={onSearch}
-          onTagSearch={onTagSearch}
-          onOpenDrawer={onOpenDrawer}
-          onClearFilter={onClearFilter}
-          onDownloadAll={onDownloadAll}
-          onShareFilter={onShareFilter}
-          downloading={downloading}
-          downloadProgress={downloadProgress}
-          nameScope={nameScope}
-          onNameScopeChange={onNameScopeChange}
-          guestTable={guestTable}
-          showNameScope={showNameScope}
-        />
-      </div>
     </header>
   );
 };
