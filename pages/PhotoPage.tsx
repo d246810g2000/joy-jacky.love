@@ -418,24 +418,8 @@ const PhotoPage: React.FC = () => {
             activeStageId={activeStageId}
             onStageSelect={handleStageSelect}
             welcomeTitle={welcomeTitle}
-            resultCount={isFiltered ? displayPhotos.length : null}
             hasFilter={isFiltered}
             loading={loading}
-            filterLabel={currentFilterLabel}
-            autoExpandSearch={expandSearch}
-            onExpandSearchHandled={() => setExpandSearch(false)}
-            onSearch={handleQuickSearch}
-            onTagSearch={handleTagClick}
-            onOpenDrawer={() => setDrawerOpen(true)}
-            onClearFilter={handleClearFilter}
-            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
-            onShareFilter={isFiltered ? handleShareFilter : undefined}
-            downloading={downloading}
-            downloadProgress={downloadProgress}
-            nameScope={filter.nameScope}
-            onNameScopeChange={handleNameScopeChange}
-            guestTable={nameGuestTable}
-            showNameScope={showNameScope}
           />
 
           {welcomeMsg && isFiltered && (
@@ -488,6 +472,28 @@ const PhotoPage: React.FC = () => {
               />
             )}
           </div>
+
+          <PhotoSearchBar
+            variant="dock"
+            hidden={!!selectedPhoto || !!videoState}
+            resultCount={isFiltered ? displayPhotos.length : null}
+            hasFilter={isFiltered}
+            filterLabel={currentFilterLabel}
+            autoExpand={expandSearch}
+            onExpandHandled={() => setExpandSearch(false)}
+            onSearch={handleQuickSearch}
+            onTagSearch={handleTagClick}
+            onOpenDrawer={() => setDrawerOpen(true)}
+            onClearFilter={handleClearFilter}
+            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
+            onShareFilter={isFiltered ? handleShareFilter : undefined}
+            downloading={downloading}
+            downloadProgress={downloadProgress}
+            nameScope={filter.nameScope}
+            onNameScopeChange={handleNameScopeChange}
+            guestTable={nameGuestTable}
+            showNameScope={false}
+          />
         </>
       ) : (
         <>
