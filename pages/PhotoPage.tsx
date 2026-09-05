@@ -71,6 +71,7 @@ const PhotoPage: React.FC = () => {
   const [filter, setFilter] = useState<PhotoFilter>(EMPTY_FILTER);
   const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null);
   const [videoState, setVideoState] = useState<VideoState | null>(null);
+  const [filmStageRequest, setFilmStageRequest] = useState<string | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
@@ -127,6 +128,12 @@ const PhotoPage: React.FC = () => {
     useDockLayout && !isFiltered ? galleryEl : null
   );
 
+  useEffect(() => {
+    if (filmStageRequest && activeStageId === filmStageRequest) {
+      setFilmStageRequest(null);
+    }
+  }, [activeStageId, filmStageRequest]);
+
   const handleStageSelect = useCallback(
     (stageId: string) => {
       pendingScrollStage.current = stageId;
@@ -181,6 +188,7 @@ const PhotoPage: React.FC = () => {
   const openVideo = useCallback(
     (stageId: string) => {
       if (useDockLayout) {
+        setFilmStageRequest(stageId);
         handleStageSelect(stageId);
         return;
       }
@@ -437,6 +445,7 @@ const PhotoPage: React.FC = () => {
             welcomeTitle={welcomeTitle}
             hasFilter={isFiltered}
             onClearFilter={handleClearFilter}
+            filmStageId={filmStageRequest}
             loading={loading}
           />
 

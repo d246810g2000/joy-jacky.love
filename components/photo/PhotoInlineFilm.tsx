@@ -40,25 +40,27 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
         <button
           type="button"
           onClick={handleExpand}
-          className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition active:bg-white/5"
+          className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition active:bg-white/5 md:gap-2.5 md:py-2"
           aria-expanded={false}
         >
           <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs text-white"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs text-white md:h-9 md:w-9"
             style={{ background: `${accent}99`, boxShadow: `0 0 20px ${accent}44` }}
             aria-hidden
           >
             ▶
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-medium text-white">
+            <p className="flex min-w-0 items-center gap-1 truncate text-[13px] font-medium text-white">
               {clockTime && (
                 <span className="font-mono text-[var(--photo-gold-light)]">{clockTime}</span>
               )}
               {clockTime && <span className="mx-1.5 text-white/30">·</span>}
-              <span>{title}</span>
+              <span className="min-w-0 truncate">{title}</span>
+              <span className="ml-auto shrink-0 text-[10px] font-normal text-white/35">
+                · {filmTime}
+              </span>
             </p>
-            <p className="mt-0.5 text-[10px] text-white/40">影片 {filmTime}</p>
           </div>
           <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[var(--photo-gold-light)]">
             展開
@@ -103,9 +105,9 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
                 </button>
               )}
             </div>
-            <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-1.5">
+            <div className="flex min-h-9 items-center justify-between gap-2 bg-black/40 px-3 py-1">
               <p className="min-w-0 truncate text-[11px] text-white/55">
-                {title} · 影片 {filmTime}
+                {title} · {filmTime}
               </p>
               <div className="flex shrink-0 items-center gap-2">
                 <a
