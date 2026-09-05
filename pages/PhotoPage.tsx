@@ -15,6 +15,7 @@ import {
   filterLabel,
   guestTableForName,
   isFilterEmpty,
+  buildFilterFromSearchQuery,
 } from '../utils/photoFilters';
 import { formatTableFilterTitle } from '../utils/tableLabels';
 import { getLightboxDisplayUrl } from '../utils/photoUrls';
@@ -354,24 +355,11 @@ const PhotoPage: React.FC = () => {
 
   const handleQuickSearch = (query: string) => {
     addRecentSearch(query);
-    const trimmed = query.trim();
-    const tableNum = parseInt(trimmed, 10);
-    if (!Number.isNaN(tableNum) && String(tableNum) === trimmed) {
-      handleFilterChange({ ...EMPTY_FILTER, table: tableNum, query: trimmed });
-    } else {
-      handleFilterChange({ ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' });
-    }
+    handleFilterChange(buildFilterFromSearchQuery(query));
   };
 
   const handleTableSelect = (table: number) => {
     handleFilterChange({ ...EMPTY_FILTER, table, query: String(table) });
-  };
-
-  const handleCategorySelect = (categoryId: string) => {
-    handleFilterChange({
-      ...EMPTY_FILTER,
-      category: categoryId === 'all' ? null : categoryId,
-    });
   };
 
   const handleScrollDown = () => {
@@ -493,7 +481,6 @@ const PhotoPage: React.FC = () => {
             onSearch={handleQuickSearch}
             onTagSearch={handleTagClick}
             onTableSelect={handleTableSelect}
-            onCategorySelect={handleCategorySelect}
             onClearFilter={handleClearFilter}
             onDownloadAll={isFiltered ? handleDownloadAll : undefined}
             onShareFilter={isFiltered ? handleShareFilter : undefined}
@@ -584,7 +571,6 @@ const PhotoPage: React.FC = () => {
         onSearch={handleQuickSearch}
         onTagSearch={handleTagClick}
         onTableSelect={handleTableSelect}
-        onCategorySelect={handleCategorySelect}
         onClearFilter={handleClearFilter}
         onDownloadAll={handleDownloadAll}
         onShareFilter={handleShareFilter}

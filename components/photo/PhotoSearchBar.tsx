@@ -4,7 +4,7 @@ import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
 import { formatTableLabel, listTableOptions } from '../../utils/tableLabels';
-import { PHOTO_CATEGORIES, POPULAR_TAGS } from '../../utils/photoFilters';
+import { POPULAR_TAGS } from '../../utils/photoFilters';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -16,7 +16,6 @@ interface PhotoSearchBarProps {
   onSearch: (query: string) => void;
   onTagSearch?: (tag: string) => void;
   onTableSelect?: (table: number) => void;
-  onCategorySelect?: (categoryId: string) => void;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
   onShareFilter?: () => void;
@@ -39,7 +38,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   onSearch,
   onTagSearch,
   onTableSelect,
-  onCategorySelect,
   onClearFilter,
   onDownloadAll,
   onShareFilter,
@@ -120,12 +118,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     } else {
       onSearch(String(table));
     }
-    setExpanded(false);
-    setQuery('');
-  };
-
-  const selectCategory = (categoryId: string) => {
-    onCategorySelect?.(categoryId);
     setExpanded(false);
     setQuery('');
   };
@@ -280,22 +272,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                         <span className="mt-0.5 block truncate text-[10px] text-white/55">
                           {name || label.replace(/^\d+\s*/, '')}
                         </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="mb-3 text-base font-medium text-white/90">活動分類</h2>
-                  <div className="flex flex-col gap-2">
-                    {PHOTO_CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => selectCategory(cat.id)}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/80 active:bg-white/10"
-                      >
-                        {cat.label}
                       </button>
                     ))}
                   </div>
@@ -468,21 +444,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                       {name && (
                         <span className="mt-0.5 block truncate text-[9px] text-white/50">{name}</span>
                       )}
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section>
-                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">活動分類</p>
-                <div className="flex flex-col gap-1.5">
-                  {PHOTO_CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => selectCategory(cat.id)}
-                      className="rounded-lg bg-white/5 px-3 py-2 text-left text-xs text-white/75 active:bg-white/10"
-                    >
-                      {cat.label}
                     </button>
                   ))}
                 </div>
