@@ -1,4 +1,4 @@
-import type { PhotoFilter, WeddingPhoto, WeddingStage } from '../types';
+import type { GuestRecord, PhotoFilter, WeddingPhoto, WeddingStage } from '../types';
 import { GUEST_INDEX } from './guestIndex';
 import { formatTableFilterTitle, formatTableTag } from './tableLabels';
 
@@ -22,10 +22,71 @@ export const PHOTO_CATEGORIES = [
 export const POPULAR_TAGS = [
   formatTableTag(5),
   formatTableTag(3),
-  '#女方大學同學',
+  '#大學同學',
   '#高中同學',
-  '#男方公司同事',
+  '#同事',
 ];
+
+export function guestMatchesRelationQuery(guest: GuestRecord, query: string): boolean {
+  const q = query.replace(/^#/, '').trim().toLowerCase();
+  if (!q) return false;
+
+  const relation = guest.relation.toLowerCase();
+  const side = guest.side.toLowerCase();
+  const combined = `${side}${relation}`;
+
+  return (
+    relation.includes(q) ||
+    q.includes(relation) ||
+    side.includes(q) ||
+    q.includes(side) ||
+    combined.includes(q) ||
+    q.includes(combined)
+  );
+}
+
+const GROUP_SEARCH_KEYWORDS = ['同學', '同事', '親戚', '朋友', '教授'];
+
+export function isRelationOrSideQuery(query: string): boolean {
+  const q = query.replace(/^#/, '').trim().toLowerCase();
+  if (!q) return false;
+
+  const relationHits = GUEST_INDEX.guests.filter((guest) => guestMatchesRelationQuery(guest, q));
+  if (relationHits.length === 0) return false;
+
+  const nameExact = GUEST_INDEX.guests.some((guest) => guest.name.toLowerCase() === q);
+  if (nameExact) return false;
+
+  if (GROUP_SEARCH_KEYWORDS.some((keyword) => q.includes(keyword))) return true;
+
+  return relationHits.length >= 2;
+}
+
+/** 將搜尋框文字轉成篩選條件（桌號 / 關係標籤 / 姓名 / 一般關鍵字） */
+export function buildFilterFromSearchQuery(raw: string): PhotoFilter {
+  const trimmed = raw.trim();
+  if (!trimmed) return EMPTY_FILTER;
+
+  const tableNum = parseInt(trimmed, 10);
+  if (!Number.isNaN(tableNum) && String(tableNum) === trimmed) {
+    return { ...EMPTY_FILTER, table: tableNum, query: trimmed };
+  }
+
+  const clean = trimmed.replace(/^#/, '');
+
+  if (isRelationOrSideQuery(clean)) {
+    return { ...EMPTY_FILTER, tag: clean, query: trimmed };
+  }
+
+  const nameHits = GUEST_INDEX.guests.filter((guest) =>
+    guest.name.toLowerCase().includes(clean.toLowerCase())
+  );
+  if (nameHits.length > 0) {
+    return { ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' };
+  }
+
+  return { ...EMPTY_FILTER, query: trimmed };
+}
 
 export function parseTableFromTag(tag: string): number | null {
   const cleaned = tag.replace(/^#/, '').trim();
@@ -109,7 +170,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
             (g) =>
               g.table != null &&
               photo.tables.includes(g.table) &&
-              (g.relation.includes(rel) || g.side.includes(rel))
+              guestMatchesRelationQuery(g, rel)
           ));
       if (!tagHit) return false;
     }
@@ -131,9 +192,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
 
     const guestMatch = GUEST_INDEX.guests.some(
       (g) =>
-        (g.name.toLowerCase().includes(q) ||
-          g.relation.toLowerCase().includes(q) ||
-          g.side.toLowerCase().includes(q)) &&
+        (g.name.toLowerCase().includes(q) || guestMatchesRelationQuery(g, q)) &&
         (g.table == null || photo.tables.includes(g.table))
     );
 
