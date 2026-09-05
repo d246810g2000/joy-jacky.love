@@ -122,9 +122,9 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      {navItems.length > 0 && (
+      {!isMobile && navItems.length > 0 && (
         <PhotoTimelineNav
-          variant={isMobile ? 'default' : 'dock'}
+          variant="dock"
           items={navItems}
           activeStageId={activeStageId}
           onSelect={onStageSelect}
