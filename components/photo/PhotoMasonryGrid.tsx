@@ -20,6 +20,7 @@ interface PhotoMasonryGridProps {
   filterLabel?: string | null;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
+  onShareFilter?: () => void;
   downloading?: boolean;
   downloadProgress?: { done: number; total: number } | null;
   compactHeaders?: boolean;
@@ -145,6 +146,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   filterLabel,
   onClearFilter,
   onDownloadAll,
+  onShareFilter,
   downloading = false,
   downloadProgress = null,
   compactHeaders = false,
@@ -182,6 +184,15 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
               <p className="mt-1 text-sm text-white/50">找到 {filteredPhotos.length} 張照片</p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {onShareFilter && (
+                <button
+                  type="button"
+                  onClick={onShareFilter}
+                  className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-[var(--photo-gold-light)] active:bg-white/10"
+                >
+                  分享連結
+                </button>
+              )}
               {onDownloadAll && filteredPhotos.length > 0 && (
                 <button
                   type="button"

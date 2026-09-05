@@ -25,6 +25,7 @@ interface PhotoCommandDockProps {
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
+  onShareFilter?: () => void;
   downloading?: boolean;
   downloadProgress?: { done: number; total: number } | null;
   nameScope?: NameSearchScope;
@@ -47,6 +48,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   onOpenDrawer,
   onClearFilter,
   onDownloadAll,
+  onShareFilter,
   downloading,
   downloadProgress,
   nameScope,
@@ -129,6 +131,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           onOpenDrawer={onOpenDrawer}
           onClearFilter={onClearFilter}
           onDownloadAll={onDownloadAll}
+          onShareFilter={onShareFilter}
           downloading={downloading}
           downloadProgress={downloadProgress}
           nameScope={nameScope}
