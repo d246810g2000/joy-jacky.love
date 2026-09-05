@@ -24,6 +24,7 @@ interface PhotoCommandDockProps {
   autoExpandSearch?: boolean;
   onExpandSearchHandled?: () => void;
   onSearch: (query: string) => void;
+  onTagSearch?: (tag: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
@@ -48,6 +49,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   autoExpandSearch,
   onExpandSearchHandled,
   onSearch,
+  onTagSearch,
   onOpenDrawer,
   onClearFilter,
   onDownloadAll,
@@ -141,6 +143,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           autoExpand={autoExpandSearch}
           onExpandHandled={onExpandSearchHandled}
           onSearch={onSearch}
+          onTagSearch={onTagSearch}
           onOpenDrawer={onOpenDrawer}
           onClearFilter={onClearFilter}
           onDownloadAll={onDownloadAll}

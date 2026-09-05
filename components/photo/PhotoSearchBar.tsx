@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearch';
 import type { NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
-import { formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
+import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
 import { formatTableLabel } from '../../utils/tableLabels';
+import { POPULAR_TAGS } from '../../utils/photoFilters';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -13,6 +14,7 @@ interface PhotoSearchBarProps {
   autoExpand?: boolean;
   variant?: 'fixed' | 'dock';
   onSearch: (query: string) => void;
+  onTagSearch?: (tag: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
@@ -34,6 +36,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   autoExpand = false,
   variant = 'fixed',
   onSearch,
+  onTagSearch,
   onOpenDrawer,
   onClearFilter,
   onDownloadAll,
@@ -54,6 +57,14 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     () => (query.trim().length > 0 ? searchGuests(query, 5) : []),
     [query]
   );
+  const featuredGuests = useMemo(() => {
+    const seen = new Set<string>();
+    return GUEST_RECORDS.filter((guest) => {
+      if (seen.has(guest.name)) return false;
+      seen.add(guest.name);
+      return true;
+    }).slice(0, 6);
+  }, []);
   const exactTable = useMemo(() => {
     const trimmed = query.trim();
     if (!/^\d{1,2}$/.test(trimmed)) return null;
@@ -93,8 +104,182 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     setQuery('');
   };
 
+  const submitTag = (tag: string) => {
+    const cleanTag = tag.replace(/^#/, '').trim();
+    if (!cleanTag) return;
+    addRecentSearch(cleanTag);
+    onTagSearch?.(cleanTag);
+    setExpanded(false);
+    setQuery('');
+  };
+
   return (
     <>
+      {isDock && expanded && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-[#0c0b0a] text-white photo-safe-bottom">
+          <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+            <button
+              type="button"
+              onClick={closeSearch}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-2xl text-white/80 active:bg-white/10"
+              aria-label="返回相簿"
+            >
+              ←
+            </button>
+            <div className="relative min-w-0 flex-1">
+              <input
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submit(query);
+                  if (e.key === 'Escape') closeSearch();
+                }}
+                placeholder="搜尋相片"
+                className="w-full border-0 bg-transparent py-2 text-lg text-white outline-none placeholder:text-white/45"
+                autoComplete="off"
+                enterKeyHint="search"
+                aria-label="搜尋相片"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="absolute right-0 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white/60"
+                  aria-label="清除搜尋文字"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <span className="text-xl text-white/55" aria-hidden>
+              ⌕
+            </span>
+          </div>
+
+          <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-10 pt-5">
+            {query.trim() ? (
+              <div>
+                <p className="mb-3 text-xs text-white/45">搜尋結果</p>
+                {exactTable != null && (
+                  <button
+                    type="button"
+                    onClick={() => submit(String(exactTable))}
+                    className="flex w-full items-center gap-3 border-b border-white/10 py-3 text-left active:bg-white/10"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--photo-accent)]/25 text-sm text-[var(--photo-gold-light)]">
+                      {exactTable}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-base text-white/90">
+                        {formatTableLabel(exactTable)}
+                      </span>
+                      <span className="block text-xs text-white/45">查看這桌的全部照片</span>
+                    </span>
+                  </button>
+                )}
+                {suggestions.map((guest) => (
+                  <button
+                    key={guest.id}
+                    type="button"
+                    onClick={() => submit(guest.name)}
+                    className="flex w-full items-center gap-3 border-b border-white/10 py-3 text-left last:border-0 active:bg-white/10"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm text-white/75">
+                      {guest.name.slice(0, 1)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-base text-white/90">{guest.name}</span>
+                      <span className="block truncate text-xs text-white/45">
+                        {formatGuestSubtitle(guest)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+                {suggestions.length === 0 && exactTable == null && (
+                  <div className="py-12 text-center text-sm text-white/45">
+                    找不到相符的姓名或桌號
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {recent.length > 0 && (
+                  <section>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h2 className="text-base font-medium text-white/90">最近搜尋</h2>
+                      <span className="text-xs text-white/35">點一下快速套用</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {recent.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => submit(item)}
+                          className="rounded-full border border-white/12 bg-white/6 px-3 py-2 text-sm text-white/75 active:bg-white/12"
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section>
+                  <h2 className="mb-3 text-base font-medium text-white/90">搜尋人物</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-1">
+                    {featuredGuests.map((guest) => (
+                      <button
+                        key={guest.id}
+                        type="button"
+                        onClick={() => submit(guest.name)}
+                        className="flex w-14 shrink-0 flex-col items-center gap-1.5"
+                      >
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-base text-white">
+                          {guest.name.slice(0, 1)}
+                        </span>
+                        <span className="w-full truncate text-center text-[11px] text-white/70">
+                          {guest.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h2 className="mb-3 text-base font-medium text-white/90">快速搜尋</h2>
+                  <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03]">
+                    {POPULAR_TAGS.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => submitTag(tag)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-white/75 active:bg-white/10"
+                      >
+                        <span className="text-lg text-white/45">⌕</span>
+                        <span>{tag}</span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeSearch();
+                        onOpenDrawer();
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[var(--photo-gold-light)] active:bg-white/10"
+                    >
+                      <span className="text-lg">☷</span>
+                      <span>更多篩選條件</span>
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {expanded && !isDock && (
         <div
           className="fixed inset-0 z-40 bg-black/50"
@@ -110,7 +295,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
             : 'fixed bottom-4 left-1/2 z-50 w-[min(94vw,420px)] -translate-x-1/2 photo-safe-bottom'
         }
       >
-        {expanded && (
+        {expanded && !isDock && (
           <div
             className={`photo-search-panel overflow-hidden rounded-2xl border border-white/12 p-3 shadow-2xl backdrop-blur-xl ${
               isDock ? 'mb-2' : 'mb-2'
