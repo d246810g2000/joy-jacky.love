@@ -31,6 +31,7 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
 import { usePhotoBulkDownload } from '../hooks/usePhotoBulkDownload';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { readFilmExpanded } from '../utils/photoTheme';
 import type { NameSearchScope, PhotoFilter, WeddingPhoto } from '../types';
 
 function GridSkeleton({ compact = false }: { compact?: boolean }) {
@@ -76,6 +77,7 @@ const PhotoPage: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null);
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [filmStageRequest, setFilmStageRequest] = useState<string | null>(null);
+  const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
   const [chapterFocusId, setChapterFocusId] = useState<string | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
@@ -483,6 +485,7 @@ const PhotoPage: React.FC = () => {
             isChapterFocused={!!chapterFocusId}
             onExitChapter={handleExitChapter}
             filmStageId={filmStageRequest}
+            onFilmExpandedChange={setFilmExpanded}
             hideTimeline={!!chapterFocusId}
             loading={loading}
           />
@@ -509,6 +512,7 @@ const PhotoPage: React.FC = () => {
                 items={navItems}
                 activeStageId={activeStageId}
                 onSelect={handleStageSelect}
+                filmExpanded={filmExpanded}
               />
             )}
             {loading ? (

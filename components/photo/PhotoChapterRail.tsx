@@ -6,6 +6,7 @@ interface PhotoChapterRailProps {
   items: TimelineNavItem[];
   activeStageId: string;
   onSelect: (stageId: string) => void;
+  filmExpanded?: boolean;
 }
 
 const DRAG_THRESHOLD_PX = 10;
@@ -14,6 +15,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   items,
   activeStageId,
   onSelect,
+  filmExpanded = false,
 }) => {
   const railRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -119,7 +121,15 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   if (items.length <= 1) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-12 items-center justify-end pr-1 photo-safe-top photo-safe-bottom">
+    <div
+      className="pointer-events-none fixed right-0 z-30 flex w-8 items-center justify-end pr-0.5"
+      style={{
+        top: `calc(env(safe-area-inset-top) + ${
+          filmExpanded ? 'min(28rem, 52dvh)' : '6rem'
+        })`,
+        bottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)',
+      }}
+    >
       {dragging && previewItem && (
         <div
           className="pointer-events-none absolute right-11 top-1/2 max-w-[42vw] -translate-y-1/2 rounded-xl border border-white/15 bg-[#141210]/95 px-3 py-2 shadow-xl backdrop-blur-md"
@@ -142,7 +152,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
         aria-valuemax={items.length}
         aria-valuenow={activeIndex + 1}
         aria-valuetext={`${previewItem?.time ?? ''} ${previewItem?.label ?? ''}`}
-        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center gap-0.5 rounded-full border px-1.5 py-2.5 transition ${
+        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center gap-0.5 rounded-full border px-0.5 py-2 transition ${
           dragging
             ? 'border-[var(--photo-accent)]/40 bg-black/80 shadow-lg'
             : 'border-white/10 bg-black/55 backdrop-blur-sm'
@@ -165,7 +175,7 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
                 aria-label={`${item.time} ${item.label}`}
                 aria-current={isActive ? 'step' : undefined}
                 onClick={(event) => handleDotClick(event, index)}
-                className="group flex min-h-[28px] min-w-[28px] items-center justify-center rounded-full p-1.5 transition"
+                className="group flex min-h-[24px] min-w-[24px] items-center justify-center rounded-full p-1 transition"
               >
                 <span
                   aria-hidden
