@@ -12,6 +12,7 @@ import { buildPhotoShareUrl, buildPhotoShareTitle } from '../../hooks/usePhotoDe
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
+import { formatTableTag } from '../../utils/tableLabels';
 
 const FILMSTRIP_WINDOW = 15;
 
@@ -131,7 +132,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     a.click();
   };
 
-  const tableTags = photo.tables.map((t) => `#第${t}桌`);
+  const tableTags = photo.tables.map((t) => formatTableTag(t));
   const allTags = [...tableTags, ...photo.tags.map((t) => `#${t}`)];
 
   const windowStart = Math.max(0, currentIndex - FILMSTRIP_WINDOW);
