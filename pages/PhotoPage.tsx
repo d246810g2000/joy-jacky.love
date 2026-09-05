@@ -163,7 +163,7 @@ const PhotoPage: React.FC = () => {
 
   const handleEnterChapter = useCallback((stageId: string) => {
     setChapterFocusId(stageId);
-    setFilmStageRequest(stageId);
+    setFilmStageRequest(null);
   }, []);
 
   const handleExitChapter = useCallback(() => {
