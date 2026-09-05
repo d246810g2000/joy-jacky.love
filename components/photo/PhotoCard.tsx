@@ -22,10 +22,12 @@ const MAX_NAME_CHIPS = 3;
 const MAX_TABLE_CHIPS = 2;
 const MAX_HASH_TAG_CHIPS = 2;
 
+type ExpandedMetaRow = 'names' | 'tables' | 'hashTags' | null;
+
 function chipLabel(items: string[], max: number) {
   const visible = items.slice(0, max);
   const hidden = items.length - visible.length;
-  return { visible, hidden };
+  return { visible, hidden, hiddenItems: items.slice(max) };
 }
 
 export const PhotoCard: React.FC<PhotoCardProps> = ({
@@ -38,6 +40,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [gridWidth, setGridWidth] = useState(800);
+  const [expandedRow, setExpandedRow] = useState<ExpandedMetaRow>(null);
 
   useEffect(() => {
     const update = () => setGridWidth(getResponsiveGridWidth(window.innerWidth));
@@ -53,12 +56,23 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const tableTags = photo.tables.map((t) => formatTableTag(t));
   const hashTags = photo.tags.map((t) => `#${t}`);
 
-  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(photo.names, MAX_NAME_CHIPS);
-  const { visible: visibleTables, hidden: hiddenTables } = chipLabel(tableTags, MAX_TABLE_CHIPS);
-  const { visible: visibleHashTags, hidden: hiddenHashTags } = chipLabel(
-    hashTags,
-    MAX_HASH_TAG_CHIPS
+  const { visible: visibleNames, hidden: hiddenNames, hiddenItems: hiddenNameItems } = chipLabel(
+    photo.names,
+    MAX_NAME_CHIPS
   );
+  const { visible: visibleTables, hidden: hiddenTables, hiddenItems: hiddenTableItems } = chipLabel(
+    tableTags,
+    MAX_TABLE_CHIPS
+  );
+  const {
+    visible: visibleHashTags,
+    hidden: hiddenHashTags,
+    hiddenItems: hiddenHashTagItems,
+  } = chipLabel(hashTags, MAX_HASH_TAG_CHIPS);
+
+  const toggleExpandedRow = (row: Exclude<ExpandedMetaRow, null>) => {
+    setExpandedRow((current) => (current === row ? null : row));
+  };
 
   const nameChipClass = dark
     ? 'rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/12 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-light)] hover:bg-[var(--photo-accent)]/22'
@@ -69,12 +83,10 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     : 'rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
 
   const moreChipClass = dark
-    ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/45'
-    : 'shrink-0 rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-[10px] text-[#2C3E50]/45';
+    ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/55 transition active:scale-95 active:bg-white/10 hover:bg-white/10'
+    : 'shrink-0 rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-[10px] text-[#2C3E50]/55 transition active:scale-95 active:bg-[#E8E1D5]/60 hover:bg-[#E8E1D5]/60';
 
-  const chipRowClass = compact
-    ? 'flex min-w-0 flex-wrap items-center gap-1'
-    : 'flex flex-nowrap items-center gap-1 overflow-hidden';
+  const chipRowClass = 'flex min-w-0 flex-wrap items-center gap-1';
 
   const nameChipSizeClass = 'max-w-[31%] truncate';
 
@@ -138,10 +150,38 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                   {name}
                 </button>
               ))}
+              {expandedRow === 'names' &&
+                hiddenNameItems.map((name) => (
+                  <button
+                    key={`more-${name}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNameClick?.(name);
+                      setExpandedRow(null);
+                    }}
+                    className={`${nameChipClass} max-w-full truncate`}
+                  >
+                    {name}
+                  </button>
+                ))}
               {hiddenNames > 0 && (
-                <span className={moreChipClass} title={photo.names.slice(MAX_NAME_CHIPS).join('、')}>
-                  +{hiddenNames}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandedRow('names');
+                  }}
+                  className={moreChipClass}
+                  aria-expanded={expandedRow === 'names'}
+                  aria-label={
+                    expandedRow === 'names'
+                      ? '收合更多姓名'
+                      : `展開 ${hiddenNames} 個更多姓名`
+                  }
+                >
+                  {expandedRow === 'names' ? '−' : `+${hiddenNames}`}
+                </button>
               )}
             </div>
           )}
@@ -161,10 +201,38 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                   {tag}
                 </button>
               ))}
+              {expandedRow === 'tables' &&
+                hiddenTableItems.map((tag) => (
+                  <button
+                    key={`more-${tag}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTagClick?.(tag.replace(/^#/, ''));
+                      setExpandedRow(null);
+                    }}
+                    className={`${tagChipClass} max-w-full truncate`}
+                  >
+                    {tag}
+                  </button>
+                ))}
               {hiddenTables > 0 && (
-                <span className={moreChipClass} title={tableTags.slice(MAX_TABLE_CHIPS).join(' ')}>
-                  +{hiddenTables}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandedRow('tables');
+                  }}
+                  className={moreChipClass}
+                  aria-expanded={expandedRow === 'tables'}
+                  aria-label={
+                    expandedRow === 'tables'
+                      ? '收合更多桌次'
+                      : `展開 ${hiddenTables} 個更多桌次`
+                  }
+                >
+                  {expandedRow === 'tables' ? '−' : `+${hiddenTables}`}
+                </button>
               )}
             </div>
           )}
@@ -184,10 +252,38 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                   {tag}
                 </button>
               ))}
+              {expandedRow === 'hashTags' &&
+                hiddenHashTagItems.map((tag) => (
+                  <button
+                    key={`more-${tag}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTagClick?.(tag.replace(/^#/, ''));
+                      setExpandedRow(null);
+                    }}
+                    className={`${tagChipClass} max-w-full truncate`}
+                  >
+                    {tag}
+                  </button>
+                ))}
               {hiddenHashTags > 0 && (
-                <span className={moreChipClass} title={hashTags.slice(MAX_HASH_TAG_CHIPS).join(' ')}>
-                  +{hiddenHashTags}
-                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpandedRow('hashTags');
+                  }}
+                  className={moreChipClass}
+                  aria-expanded={expandedRow === 'hashTags'}
+                  aria-label={
+                    expandedRow === 'hashTags'
+                      ? '收合更多標籤'
+                      : `展開 ${hiddenHashTags} 個更多標籤`
+                  }
+                >
+                  {expandedRow === 'hashTags' ? '−' : `+${hiddenHashTags}`}
+                </button>
               )}
             </div>
           )}
