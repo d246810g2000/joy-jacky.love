@@ -137,6 +137,48 @@
         color: #f5f0e8;
       }
 
+      /* 相簿頁隱藏喜帖淺色背景，避免 header 白字疊在粉藍漸層上 */
+      .photo-page-immersive ~ .bg-grid-fixed,
+      .photo-page-immersive ~ .bg-noise,
+      body:has(.photo-page-immersive) .bg-grid-fixed,
+      body:has(.photo-page-immersive) .bg-noise {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .photo-command-dock {
+        background: rgba(12, 11, 10, 0.98);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .photo-command-dock .photo-dock-title {
+        color: rgba(245, 240, 232, 0.98);
+      }
+
+      .photo-command-dock .photo-dock-tagline {
+        color: rgba(230, 200, 150, 0.72);
+      }
+
+      .photo-command-dock .photo-dock-back {
+        color: rgba(245, 240, 232, 0.92);
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .photo-search-bar {
+        background: rgba(18, 16, 14, 0.96);
+        border-color: rgba(255, 255, 255, 0.14);
+      }
+
+      .photo-search-bar .photo-search-primary {
+        color: rgba(245, 240, 232, 0.92);
+      }
+
+      .photo-search-bar .photo-search-secondary {
+        color: rgba(230, 200, 150, 0.62);
+      }
+
       .photo-ambient-glow {
         background:
           radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--stage-glow) 12%, transparent), transparent 70%),

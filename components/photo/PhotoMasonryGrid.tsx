@@ -20,6 +20,7 @@ interface PhotoMasonryGridProps {
   filterLabel?: string | null;
   onClearFilter?: () => void;
   compactHeaders?: boolean;
+  expandThroughIndex?: number | null;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
@@ -49,6 +50,7 @@ function StageSection({
   onWatchVideo,
   registerSection,
   compactHeaders = false,
+  expandThroughIndex = null,
 }: {
   stage: WeddingStage;
   index: number;
@@ -58,11 +60,14 @@ function StageSection({
   onWatchVideo: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   compactHeaders?: boolean;
+  expandThroughIndex?: number | null;
 }) {
   const isMobile = useIsMobile();
   const total = stage.photos.length;
+  const forceShowAll = expandThroughIndex != null && index <= expandThroughIndex;
   const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(total, STAGE_PAGE_SIZE, stage.id);
-  const visible = stage.photos.slice(0, visibleCount);
+  const visible = stage.photos.slice(0, forceShowAll ? total : visibleCount);
+  const showLoadMore = hasMore && !forceShowAll;
 
   return (
     <section
@@ -74,7 +79,7 @@ function StageSection({
       <PhotoStageHeader
         stage={stage}
         photoCount={total}
-        visibleCount={hasMore ? visibleCount : undefined}
+        visibleCount={showLoadMore ? visibleCount : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
         compact={compactHeaders}
@@ -115,7 +120,7 @@ function StageSection({
           )
         )}
       </motion.div>
-      {hasMore && (
+      {showLoadMore && (
         <>
           <LoadMoreSkeleton />
           <div ref={sentinelRef} className="h-4" aria-hidden />
@@ -137,6 +142,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   filterLabel,
   onClearFilter,
   compactHeaders = false,
+  expandThroughIndex = null,
   nameScope,
   onNameScopeChange,
   guestTable,
@@ -243,6 +249,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           onWatchVideo={onWatchVideo}
           registerSection={registerSection}
           compactHeaders={compactHeaders}
+          expandThroughIndex={expandThroughIndex}
         />
       ))}
       {compactHeaders && <div className="h-[45vh] shrink-0" aria-hidden />}
