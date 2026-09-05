@@ -6,7 +6,6 @@ import { PhotoHero } from '../components/photo/PhotoHero';
 import { PhotoTimelineNav } from '../components/photo/PhotoTimelineNav';
 import { PhotoMasonryGrid } from '../components/photo/PhotoMasonryGrid';
 import { PhotoSearchBar } from '../components/photo/PhotoSearchBar';
-import { PhotoFilterDrawer } from '../components/photo/PhotoFilterDrawer';
 import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
 import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
@@ -69,7 +68,6 @@ const PhotoPage: React.FC = () => {
   const skipHero = !!(tableParam || nameParam);
 
   const [filter, setFilter] = useState<PhotoFilter>(EMPTY_FILTER);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null);
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
@@ -317,7 +315,7 @@ const PhotoPage: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, [skipHero, useDockLayout]);
 
-  useBodyScrollLock(drawerOpen || !!selectedPhoto);
+  useBodyScrollLock(!!selectedPhoto);
 
   useEffect(() => {
     if (isFiltered) syncUrl(filter, selectedPhoto?.id ?? null);
@@ -363,6 +361,17 @@ const PhotoPage: React.FC = () => {
     } else {
       handleFilterChange({ ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' });
     }
+  };
+
+  const handleTableSelect = (table: number) => {
+    handleFilterChange({ ...EMPTY_FILTER, table, query: String(table) });
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    handleFilterChange({
+      ...EMPTY_FILTER,
+      category: categoryId === 'all' ? null : categoryId,
+    });
   };
 
   const handleScrollDown = () => {
@@ -483,7 +492,8 @@ const PhotoPage: React.FC = () => {
             onExpandHandled={() => setExpandSearch(false)}
             onSearch={handleQuickSearch}
             onTagSearch={handleTagClick}
-            onOpenDrawer={() => setDrawerOpen(true)}
+            onTableSelect={handleTableSelect}
+            onCategorySelect={handleCategorySelect}
             onClearFilter={handleClearFilter}
             onDownloadAll={isFiltered ? handleDownloadAll : undefined}
             onShareFilter={isFiltered ? handleShareFilter : undefined}
@@ -572,7 +582,9 @@ const PhotoPage: React.FC = () => {
         autoExpand={expandSearch}
         onExpandHandled={() => setExpandSearch(false)}
         onSearch={handleQuickSearch}
-        onOpenDrawer={() => setDrawerOpen(true)}
+        onTagSearch={handleTagClick}
+        onTableSelect={handleTableSelect}
+        onCategorySelect={handleCategorySelect}
         onClearFilter={handleClearFilter}
         onDownloadAll={handleDownloadAll}
         onShareFilter={handleShareFilter}
@@ -585,14 +597,6 @@ const PhotoPage: React.FC = () => {
       />
         </>
       )}
-
-      <PhotoFilterDrawer
-        open={drawerOpen}
-        filter={filter}
-        onChange={handleFilterChange}
-        onClose={() => setDrawerOpen(false)}
-        resultCount={isFiltered ? displayPhotos.length : undefined}
-      />
 
       {shareNotice && (
         <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
@@ -631,7 +635,6 @@ const PhotoPage: React.FC = () => {
             onNameClick={(name) => {
               closeLightbox();
               handleNameClick(name);
-              setDrawerOpen(false);
             }}
           />
         )}
