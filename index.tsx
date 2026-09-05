@@ -8,6 +8,7 @@ import BingoPage from './pages/BingoPage';
 import QuizPage from './pages/QuizPage';
 import CheerPage from './pages/CheerPage';
 import PlaylistPage from './pages/PlaylistPage';
+import PhotoPage from './pages/PhotoPage';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -26,6 +27,7 @@ root.render(
         <Route path="/quiz" element={<QuizPage />} />
         <Route path="/cheer" element={<CheerPage />} />
         <Route path="/playlist" element={<PlaylistPage />} />
+        <Route path="/photo" element={<PhotoPage />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
