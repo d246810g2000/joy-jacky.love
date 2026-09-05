@@ -942,13 +942,6 @@ function App() {
                       }}
                       title="點擊加入 LINE 官方帳號"
                     >
-                      <motion.span
-                        animate={{ opacity: [0.6, 1, 0.6], y: [0, -1, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        className="font-serif text-[#8E3535] text-[10px] md:text-[13px] tracking-[0.2em] font-medium"
-                      >
-                        點擊加入 LINE 好友
-                      </motion.span>
                     </a>
                   </div>
                 </motion.div>
