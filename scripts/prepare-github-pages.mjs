@@ -8,7 +8,7 @@ for (const route of routes) {
   const routeDir = resolve(dist, route);
   await mkdir(routeDir, { recursive: true });
   await copyFile(resolve(dist, 'index.html'), resolve(routeDir, 'index.html'));
-  await copyFile(resolve(dist, 'index.html'), resolve(dist, route));
+  await copyFile(resolve(dist, 'index.html'), resolve(dist, `${route}.html`));
 }
 
 console.log(`Prepared direct GitHub Pages routes: ${routes.join(', ')}`);
