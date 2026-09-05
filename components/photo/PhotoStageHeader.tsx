@@ -11,6 +11,8 @@ interface PhotoStageHeaderProps {
   visibleCount?: number;
   index: number;
   onWatchVideo: (stageId: string) => void;
+  hasPreviewMore?: boolean;
+  onExpandPhotos?: () => void;
   compact?: boolean;
 }
 
@@ -20,6 +22,8 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
   visibleCount,
   index,
   onWatchVideo,
+  hasPreviewMore = false,
+  onExpandPhotos,
   compact = false,
 }) => {
   const isMobile = useIsMobile();
@@ -39,7 +43,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={`photo-stage-header relative overflow-hidden rounded-2xl border border-white/10 ${
-        compact ? 'mb-4 py-4 pl-5 pr-4' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
+        compact ? 'mb-3 py-3 pl-4 pr-3' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
       }`}
       style={{
         background: compact
@@ -62,23 +66,35 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
         aria-hidden
       />
 
-      <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs tracking-wide text-white/45">
+      <div className={`relative flex ${
+        compact
+          ? 'items-start justify-between gap-3'
+          : 'flex-col gap-4 md:flex-row md:items-end md:justify-between'
+      }`}>
+        <div className={`min-w-0 ${compact ? 'flex-1' : ''}`}>
+          <p className={`tracking-wide text-white/45 ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {compact ? chapterLabel(index, stageLabel) : `CHAPTER ${String(index + 1).padStart(2, '0')}`}
           </p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className={`mt-1 flex min-w-0 items-baseline gap-x-2 ${compact ? 'flex-nowrap' : 'flex-wrap gap-y-1 md:gap-x-3'}`}>
             <span
-              className="font-mono text-xl font-light tabular-nums md:text-3xl"
+              className={`shrink-0 font-mono font-light tabular-nums ${
+                compact ? 'text-lg' : 'text-xl md:text-3xl'
+              }`}
               style={{ color: accent }}
             >
               {stage.time}
             </span>
-            <h2 className="font-serif text-xl text-white md:text-3xl">{stageLabel}</h2>
+            <h2 className={`min-w-0 truncate font-serif text-white ${
+              compact ? 'text-lg' : 'text-xl md:text-3xl'
+            }`}>{stageLabel}</h2>
           </div>
           {(stage.description || marker?.description) && (
-            <div className="mt-2">
-              {descOpen || !isMobile ? (
+            <div className={compact ? 'mt-1' : 'mt-2'}>
+              {compact ? (
+                <p className="truncate text-xs leading-relaxed text-white/55">
+                  {stage.description || marker?.description}
+                </p>
+              ) : descOpen || !isMobile ? (
                 <p className="max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
                   {stage.description || marker?.description}
                 </p>
@@ -93,8 +109,33 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
               )}
             </div>
           )}
-          <p className="mt-2 text-xs text-white/40">{countLabel}</p>
+          <p className={`text-white/40 ${compact ? 'mt-1 text-[10px]' : 'mt-2 text-xs'}`}>{countLabel}</p>
         </div>
+
+        {compact && (
+          <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => onWatchVideo(stage.id)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)]/20 text-xs text-[var(--photo-gold-light)] transition active:scale-95 active:bg-[var(--photo-accent)]/35"
+              aria-label={`播放${stageLabel}影片`}
+              title={`播放${stageLabel}影片`}
+            >
+              ▶
+            </button>
+            {hasPreviewMore && onExpandPhotos && (
+              <button
+                type="button"
+                onClick={onExpandPhotos}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-sm text-white/65 transition active:scale-95 active:bg-white/10"
+                aria-label={`查看${stageLabel}全部照片`}
+                title={`查看${stageLabel}全部照片`}
+              >
+                ▦
+              </button>
+            )}
+          </div>
+        )}
 
         {!compact && (
           <button
