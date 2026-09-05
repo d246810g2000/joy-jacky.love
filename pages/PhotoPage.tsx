@@ -74,6 +74,7 @@ const PhotoPage: React.FC = () => {
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const [expandSearch, setExpandSearch] = useState(false);
   const scrolledToResults = useRef(false);
   const pendingScrollStage = useRef<string | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
