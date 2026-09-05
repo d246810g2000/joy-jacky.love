@@ -519,6 +519,7 @@ const PhotoPage: React.FC = () => {
                 onNameClick={handleNameClick}
                 onWatchVideo={openVideo}
                 onEnterChapter={handleEnterChapter}
+                showAllPhotos={!!chapterFocusId}
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
                 onDownloadAll={handleDownloadAll}
@@ -628,6 +629,7 @@ const PhotoPage: React.FC = () => {
           onNameClick={handleNameClick}
           onWatchVideo={openVideo}
           onEnterChapter={handleEnterChapter}
+          showAllPhotos={!!chapterFocusId}
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onDownloadAll={handleDownloadAll}
@@ -702,6 +704,10 @@ const PhotoPage: React.FC = () => {
             onNameClick={(name) => {
               closeLightbox();
               handleNameClick(name);
+            }}
+            onTagClick={(tag) => {
+              closeLightbox();
+              handleTagClick(tag);
             }}
           />
         )}

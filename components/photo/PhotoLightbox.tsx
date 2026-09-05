@@ -18,6 +18,7 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLightboxZoom } from '../../hooks/useLightboxZoom';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
+import { formatTableTag, formatTableTagShort } from '../../utils/tableLabels';
 
 const FILMSTRIP_WINDOW = 15;
 
@@ -28,6 +29,7 @@ interface PhotoLightboxProps {
   onClose: () => void;
   onChange: (photo: WeddingPhoto) => void;
   onNameClick?: (name: string) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
@@ -37,6 +39,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   onClose,
   onChange,
   onNameClick,
+  onTagClick,
 }) => {
   const isMobile = useIsMobile();
   const [viewportWidth, setViewportWidth] = useState(
@@ -47,9 +50,14 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [imageError, setImageError] = useState(false);
   const [zoomLoaded, setZoomLoaded] = useState(false);
   const [zoomLoading, setZoomLoading] = useState(false);
+  const [expandedMeta, setExpandedMeta] = useState<'names' | 'tables' | null>(null);
   const zoomRequestedRef = useRef(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
+
+  useEffect(() => {
+    setExpandedMeta(null);
+  }, [photo.id]);
 
   const {
     scale,
@@ -232,15 +240,13 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 還原
               </button>
             )}
-            {!isMobile && (
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
-              >
-                下載原圖
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
+            >
+              {isMobile ? '下載' : '下載原圖'}
+            </button>
             <button
               type="button"
               onClick={handleShare}
@@ -372,24 +378,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       </div>
 
       <footer className="shrink-0 space-y-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs tabular-nums md:text-sm">
-            {photo.time}
-          </span>
-          {isMobile && (
-            <button
-              type="button"
-              onClick={handleDownload}
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70"
-            >
-              下載原圖
-            </button>
-          )}
-        </div>
-
         {photo.names.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {photo.names.slice(0, 4).map((name) => (
+            {(expandedMeta === 'names' ? photo.names : photo.names.slice(0, 2)).map((name) => (
               <button
                 key={name}
                 type="button"
@@ -399,10 +390,41 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 {name}
               </button>
             ))}
-            {photo.names.length > 4 && (
-              <span className="text-xs text-white/40">
-                +{photo.names.length - 4}
-              </span>
+            {photo.names.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setExpandedMeta(expandedMeta === 'names' ? null : 'names')}
+                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/55"
+                aria-expanded={expandedMeta === 'names'}
+              >
+                {expandedMeta === 'names' ? '−' : `+${photo.names.length - 2}`}
+              </button>
+            )}
+          </div>
+        )}
+
+        {photo.tables.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {(expandedMeta === 'tables' ? photo.tables : photo.tables.slice(0, 2)).map((table) => (
+              <button
+                key={table}
+                type="button"
+                onClick={() => onTagClick?.(formatTableTag(table).replace(/^#/, ''))}
+                className="rounded-full border border-white/12 bg-white/5 px-2.5 py-0.5 text-xs text-white/72"
+                title={formatTableTag(table)}
+              >
+                {expandedMeta === 'tables' ? formatTableTag(table) : formatTableTagShort(table)}
+              </button>
+            ))}
+            {photo.tables.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setExpandedMeta(expandedMeta === 'tables' ? null : 'tables')}
+                className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/55"
+                aria-expanded={expandedMeta === 'tables'}
+              >
+                {expandedMeta === 'tables' ? '−' : `+${photo.tables.length - 2}`}
+              </button>
             )}
           </div>
         )}
