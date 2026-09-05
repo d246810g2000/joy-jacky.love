@@ -1,20 +1,55 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-const TOP_THRESHOLD_PX = 48;
+const TOP_THRESHOLD_PX = 32;
 const BOTTOM_THRESHOLD_PX = 64;
-const REFERENCE_VIEWPORT_RATIO = 0.2;
+const DEFAULT_ANCHOR_OFFSET_PX = 24;
+const DESKTOP_ANCHOR_OFFSET_PX = 96;
 const SCROLL_RETRY_MS = 80;
 const SCROLL_RETRY_MAX = 40;
-const LAYOUT_SETTLE_MS = 2400;
+const LAYOUT_SETTLE_MS = 900;
+const USER_SCROLL_RELEASE_PX = 12;
+const USER_SCROLL_DRIFT_PX = 56;
+
+export interface TimelineSyncOptions {
+  /** Distance from scroll container top before a chapter banner counts as active. */
+  anchorOffset?: number;
+}
+
+function getScrollMetrics(scrollRoot: HTMLElement | null) {
+  if (scrollRoot) {
+    return {
+      scrollTop: scrollRoot.scrollTop,
+      viewportHeight: scrollRoot.clientHeight,
+      scrollHeight: scrollRoot.scrollHeight,
+      rootTop: scrollRoot.getBoundingClientRect().top,
+    };
+  }
+
+  return {
+    scrollTop: window.scrollY || document.documentElement.scrollTop,
+    viewportHeight: window.innerHeight,
+    scrollHeight: document.documentElement.scrollHeight,
+    rootTop: 0,
+  };
+}
+
+function getMarkerViewportOffset(
+  marker: HTMLElement,
+  scrollRoot: HTMLElement | null,
+  rootTop: number
+): number {
+  return marker.getBoundingClientRect().top - rootTop;
+}
 
 function scrollElementIntoRoot(
   el: HTMLElement,
   scrollRoot: HTMLElement,
-  behavior: ScrollBehavior = 'smooth'
+  behavior: ScrollBehavior = 'smooth',
+  anchorOffset = DEFAULT_ANCHOR_OFFSET_PX
 ) {
   const rootTop = scrollRoot.getBoundingClientRect().top;
   const elTop = el.getBoundingClientRect().top;
-  const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - 8;
+  const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - anchorOffset;
   const maxScroll = scrollRoot.scrollHeight - scrollRoot.clientHeight;
   scrollRoot.scrollTo({
     top: Math.min(Math.max(0, nextTop), maxScroll),
@@ -24,27 +59,13 @@ function scrollElementIntoRoot(
 
 function resolveActiveStage(
   stageIds: string[],
-  elements: Map<string, HTMLElement>,
-  scrollRoot: HTMLElement | null
+  markers: Map<string, HTMLElement>,
+  scrollRoot: HTMLElement | null,
+  anchorOffset: number
 ): string | null {
   if (stageIds.length === 0) return null;
 
-  let scrollTop: number;
-  let viewportHeight: number;
-  let scrollHeight: number;
-  let rootTop: number;
-
-  if (scrollRoot) {
-    scrollTop = scrollRoot.scrollTop;
-    viewportHeight = scrollRoot.clientHeight;
-    scrollHeight = scrollRoot.scrollHeight;
-    rootTop = scrollRoot.getBoundingClientRect().top;
-  } else {
-    scrollTop = window.scrollY || document.documentElement.scrollTop;
-    viewportHeight = window.innerHeight;
-    scrollHeight = document.documentElement.scrollHeight;
-    rootTop = 0;
-  }
+  const { scrollTop, viewportHeight, scrollHeight, rootTop } = getScrollMetrics(scrollRoot);
 
   if (scrollTop <= TOP_THRESHOLD_PX) {
     return stageIds[0];
@@ -54,14 +75,15 @@ function resolveActiveStage(
     return stageIds[stageIds.length - 1];
   }
 
-  const referenceY = rootTop + viewportHeight * REFERENCE_VIEWPORT_RATIO;
+  const activationLine = anchorOffset;
 
   let activeId = stageIds[0];
   for (const id of stageIds) {
-    const el = elements.get(id);
-    if (!el) continue;
-    const rect = el.getBoundingClientRect();
-    if (rect.top <= referenceY + 16) {
+    const marker = markers.get(id);
+    if (!marker) continue;
+
+    const markerOffset = getMarkerViewportOffset(marker, scrollRoot, rootTop);
+    if (markerOffset <= activationLine) {
       activeId = id;
     } else {
       break;
@@ -71,25 +93,35 @@ function resolveActiveStage(
   return activeId;
 }
 
-export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | null) {
+export function useTimelineSync(
+  stageIds: string[],
+  scrollRoot?: HTMLElement | null,
+  options: TimelineSyncOptions = {}
+) {
+  const anchorOffset = options.anchorOffset ?? DEFAULT_ANCHOR_OFFSET_PX;
   const [activeStageId, setActiveStageId] = useState(stageIds[0] ?? '');
-  const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
+  const markersRef = useRef<Map<string, HTMLElement>>(new Map());
   const pendingStageRef = useRef<string | null>(null);
+  const targetScrollTopRef = useRef<number | null>(null);
+  const lastScrollTopRef = useRef(0);
   const scrollCleanupRef = useRef<(() => void) | null>(null);
   const rafRef = useRef<number | null>(null);
   const stageIdsRef = useRef(stageIds);
   const scrollRootRef = useRef(scrollRoot ?? null);
+  const anchorOffsetRef = useRef(anchorOffset);
 
   stageIdsRef.current = stageIds;
   scrollRootRef.current = scrollRoot ?? null;
+  anchorOffsetRef.current = anchorOffset;
 
   const syncActiveStage = useCallback(() => {
     if (pendingStageRef.current) return;
 
     const next = resolveActiveStage(
       stageIdsRef.current,
-      elementsRef.current,
-      scrollRootRef.current
+      markersRef.current,
+      scrollRootRef.current,
+      anchorOffsetRef.current
     );
     if (next) {
       setActiveStageId((prev) => (prev === next ? prev : next));
@@ -104,6 +136,14 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
     });
   }, [syncActiveStage]);
 
+  const releasePending = useCallback(() => {
+    pendingStageRef.current = null;
+    targetScrollTopRef.current = null;
+    scrollCleanupRef.current?.();
+    scrollCleanupRef.current = null;
+    syncActiveStage();
+  }, [syncActiveStage]);
+
   useEffect(() => {
     if (stageIds.length && !stageIds.includes(activeStageId)) {
       setActiveStageId(stageIds[0]);
@@ -112,15 +152,33 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
 
   useEffect(() => {
     scheduleSync();
-  }, [stageIds.join(','), scrollRoot, scheduleSync]);
+  }, [stageIds.join(','), scrollRoot, anchorOffset, scheduleSync]);
 
   useEffect(() => {
     const target = scrollRoot ?? window;
-    const onScroll = () => scheduleSync();
+
+    const onScroll = () => {
+      const metrics = getScrollMetrics(scrollRoot ?? null);
+      const previousScrollTop = lastScrollTopRef.current;
+      lastScrollTopRef.current = metrics.scrollTop;
+
+      if (pendingStageRef.current) {
+        const moved = Math.abs(metrics.scrollTop - previousScrollTop);
+        const targetTop = targetScrollTopRef.current;
+        const drift =
+          targetTop == null ? moved : Math.abs(metrics.scrollTop - targetTop);
+
+        if (moved >= USER_SCROLL_RELEASE_PX && drift >= USER_SCROLL_DRIFT_PX) {
+          releasePending();
+        }
+      }
+
+      scheduleSync();
+    };
 
     target.addEventListener('scroll', onScroll, { passive: true });
     return () => target.removeEventListener('scroll', onScroll);
-  }, [scrollRoot, scheduleSync]);
+  }, [scrollRoot, scheduleSync, releasePending]);
 
   useEffect(() => {
     if (!scrollRoot) {
@@ -131,7 +189,7 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
 
     const resizeObserver = new ResizeObserver(() => scheduleSync());
     resizeObserver.observe(scrollRoot);
-    elementsRef.current.forEach((node) => resizeObserver.observe(node));
+    markersRef.current.forEach((node) => resizeObserver.observe(node));
 
     return () => resizeObserver.disconnect();
   }, [scrollRoot, stageIds.join(','), scheduleSync]);
@@ -147,9 +205,9 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
       if (el) {
-        elementsRef.current.set(id, el);
+        markersRef.current.set(id, el);
       } else {
-        elementsRef.current.delete(id);
+        markersRef.current.delete(id);
       }
       scheduleSync();
     },
@@ -167,24 +225,36 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
       let resizeObserver: ResizeObserver | null = null;
       let correctionCount = 0;
 
-      const releasePending = () => {
-        pendingStageRef.current = null;
+      const cleanupPendingTimers = () => {
         resizeObserver?.disconnect();
         resizeObserver = null;
         if (retryTimer != null) window.clearTimeout(retryTimer);
         if (settleTimer != null) window.clearTimeout(settleTimer);
+      };
+
+      const finishPending = () => {
+        pendingStageRef.current = null;
+        targetScrollTopRef.current = null;
+        cleanupPendingTimers();
         scrollCleanupRef.current = null;
         syncActiveStage();
       };
 
       const performScroll = (behavior: ScrollBehavior) => {
-        const el = document.getElementById(`stage-${stageId}`);
-        if (!el) return false;
+        const marker = markersRef.current.get(stageId) ?? document.getElementById(`stage-${stageId}`);
+        if (!marker) return false;
 
         if (scrollRoot) {
-          scrollElementIntoRoot(el, scrollRoot, behavior);
+          const rootTop = scrollRoot.getBoundingClientRect().top;
+          const elTop = marker.getBoundingClientRect().top;
+          targetScrollTopRef.current = Math.max(
+            0,
+            scrollRoot.scrollTop + (elTop - rootTop) - anchorOffsetRef.current
+          );
+          scrollElementIntoRoot(marker, scrollRoot, behavior, anchorOffsetRef.current);
         } else {
-          el.scrollIntoView({ behavior, block: 'start' });
+          marker.scrollIntoView({ behavior, block: 'start' });
+          targetScrollTopRef.current = window.scrollY || document.documentElement.scrollTop;
         }
         return true;
       };
@@ -201,10 +271,10 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
             window.requestAnimationFrame(correctScroll);
           });
           resizeObserver.observe(scrollRoot);
-          elementsRef.current.forEach((node) => resizeObserver?.observe(node));
+          markersRef.current.forEach((node) => resizeObserver?.observe(node));
         }
 
-        settleTimer = window.setTimeout(releasePending, LAYOUT_SETTLE_MS);
+        settleTimer = window.setTimeout(finishPending, LAYOUT_SETTLE_MS);
       };
 
       const attemptScroll = (attempt = 0) => {
@@ -214,14 +284,14 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
         }
 
         if (attempt >= SCROLL_RETRY_MAX) {
-          releasePending();
+          finishPending();
           return;
         }
 
         retryTimer = window.setTimeout(() => attemptScroll(attempt + 1), SCROLL_RETRY_MS);
       };
 
-      scrollCleanupRef.current = releasePending;
+      scrollCleanupRef.current = finishPending;
       attemptScroll();
     },
     [scrollRoot, syncActiveStage]
@@ -229,3 +299,5 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
 
   return { activeStageId, setActiveStageId, registerSection, scrollToStage };
 }
+
+export { DEFAULT_ANCHOR_OFFSET_PX, DESKTOP_ANCHOR_OFFSET_PX };
