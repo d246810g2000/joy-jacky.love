@@ -146,6 +146,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   onTagClick,
   onNameClick,
   onWatchVideo,
+  onEnterChapter,
   registerSection,
   filterLabel,
   onDownloadAll,
