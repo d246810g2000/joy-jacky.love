@@ -17,6 +17,7 @@ interface PhotoCommandDockProps {
   welcomeTitle?: string;
   hasFilter: boolean;
   onClearFilter?: () => void;
+  filmStageId?: string | null;
   loading?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   welcomeTitle,
   hasFilter,
   onClearFilter,
+  filmStageId = null,
   loading = false,
 }) => {
   const isMobile = useIsMobile();
@@ -36,8 +38,14 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
     writeFilmExpanded(filmExpanded);
   }, [filmExpanded]);
 
-  const marker = getStageFilmMarker(activeStageId);
-  const activeIndex = navItems.findIndex((i) => i.id === activeStageId);
+  useEffect(() => {
+    if (!filmStageId) return;
+    setFilmExpanded(true);
+  }, [filmStageId]);
+
+  const displayedStageId = filmStageId ?? activeStageId;
+  const marker = getStageFilmMarker(displayedStageId);
+  const activeIndex = navItems.findIndex((i) => i.id === displayedStageId);
   const activeItem = navItems[activeIndex] ?? navItems[0];
   const filmTitle = activeItem?.label ?? '婚宴影片';
   const clockTime = activeItem?.time;
