@@ -74,7 +74,6 @@ const PhotoPage: React.FC = () => {
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
-  const [expandThroughIndex, setExpandThroughIndex] = useState<number | null>(null);
   const scrolledToResults = useRef(false);
   const pendingScrollStage = useRef<string | null>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -118,12 +117,10 @@ const PhotoPage: React.FC = () => {
 
   const handleStageSelect = useCallback(
     (stageId: string) => {
-      const idx = stageIds.indexOf(stageId);
-      if (idx >= 0) setExpandThroughIndex(idx);
       pendingScrollStage.current = stageId;
       scrollToStage(stageId);
     },
-    [stageIds, scrollToStage]
+    [scrollToStage]
   );
 
   useEffect(() => {
@@ -131,12 +128,6 @@ const PhotoPage: React.FC = () => {
     const stageId = pendingScrollStage.current;
     requestAnimationFrame(() => scrollToStage(stageId));
   }, [loading, scrollToStage]);
-
-  useEffect(() => {
-    if (expandThroughIndex == null) return;
-    const timer = window.setTimeout(() => setExpandThroughIndex(null), 4000);
-    return () => window.clearTimeout(timer);
-  }, [expandThroughIndex]);
 
   useEffect(() => {
     setGalleryEl(galleryRef.current);
@@ -485,7 +476,6 @@ const PhotoPage: React.FC = () => {
                 downloading={downloading}
                 downloadProgress={downloadProgress}
                 compactHeaders
-                expandThroughIndex={expandThroughIndex}
                 nameScope={filter.nameScope}
                 onNameScopeChange={handleNameScopeChange}
                 guestTable={nameGuestTable}
@@ -556,7 +546,6 @@ const PhotoPage: React.FC = () => {
           onShareFilter={handleShareFilter}
           downloading={downloading}
           downloadProgress={downloadProgress}
-          expandThroughIndex={expandThroughIndex}
           nameScope={filter.nameScope}
           onNameScopeChange={handleNameScopeChange}
           guestTable={nameGuestTable}

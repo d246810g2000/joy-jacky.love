@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { WeddingPhoto, WeddingStage } from '../../types';
 import { PhotoCard } from './PhotoCard';
@@ -24,7 +24,6 @@ interface PhotoMasonryGridProps {
   downloading?: boolean;
   downloadProgress?: { done: number; total: number } | null;
   compactHeaders?: boolean;
-  expandThroughIndex?: number | null;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
@@ -54,7 +53,6 @@ function StageSection({
   onWatchVideo,
   registerSection,
   compactHeaders = false,
-  expandThroughIndex = null,
 }: {
   stage: WeddingStage;
   index: number;
@@ -64,14 +62,12 @@ function StageSection({
   onWatchVideo: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   compactHeaders?: boolean;
-  expandThroughIndex?: number | null;
 }) {
   const isMobile = useIsMobile();
   const total = stage.photos.length;
-  const forceShowAll = expandThroughIndex != null && index <= expandThroughIndex;
-  const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(total, STAGE_PAGE_SIZE, stage.id);
-  const visible = stage.photos.slice(0, forceShowAll ? total : visibleCount);
-  const showLoadMore = hasMore && !forceShowAll;
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? stage.photos : stage.photos.slice(0, STAGE_PAGE_SIZE);
+  const hasPreviewMore = !expanded && total > STAGE_PAGE_SIZE;
 
   return (
     <section
@@ -83,7 +79,7 @@ function StageSection({
       <PhotoStageHeader
         stage={stage}
         photoCount={total}
-        visibleCount={showLoadMore ? visibleCount : undefined}
+        visibleCount={hasPreviewMore ? visible.length : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
         compact={compactHeaders}
@@ -124,11 +120,15 @@ function StageSection({
           )
         )}
       </motion.div>
-      {showLoadMore && (
-        <>
-          <LoadMoreSkeleton />
-          <div ref={sentinelRef} className="h-4" aria-hidden />
-        </>
+      {hasPreviewMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-4 py-3 text-xs font-medium text-[var(--photo-gold-light)] transition active:scale-[0.99] active:bg-[var(--photo-accent)]/20"
+        >
+          查看本章全部 {total} 張照片
+          <span aria-hidden>↓</span>
+        </button>
       )}
     </section>
   );
@@ -150,7 +150,6 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   downloading = false,
   downloadProgress = null,
   compactHeaders = false,
-  expandThroughIndex = null,
   nameScope,
   onNameScopeChange,
   guestTable,
@@ -280,7 +279,6 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           onWatchVideo={onWatchVideo}
           registerSection={registerSection}
           compactHeaders={compactHeaders}
-          expandThroughIndex={expandThroughIndex}
         />
       ))}
       {compactHeaders && <div className="h-[45vh] shrink-0" aria-hidden />}
