@@ -78,7 +78,6 @@ function StageSection({
   return (
     <section
       id={`stage-${stage.id}`}
-      ref={registerSection(stage.id)}
       data-stage-id={stage.id}
       className={compactHeaders ? 'scroll-mt-2' : 'scroll-mt-20'}
     >
@@ -90,6 +89,7 @@ function StageSection({
         onWatchVideo={onWatchVideo}
         onExpandPhotos={() => onEnterChapter?.(stage.id)}
         compact={compactHeaders}
+        headerRef={registerSection(stage.id)}
       />
       <motion.div
         initial={isMobile ? undefined : { opacity: 0 }}
