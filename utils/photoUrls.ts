@@ -17,10 +17,16 @@ export const getBlurUrl = (publicId: string) =>
 export const getThumbUrl = (publicId: string, width = 96) =>
   buildUrl(publicId, `f_auto,q_auto:eco,w_${width},h_${width},c_fill`);
 
-/** 燈箱瀏覽用 — 依螢幕寬度限制，平衡畫質與流量（非原圖） */
+/** 燈箱初始畫面 — 足夠清晰，但不先下載放大用的大檔案 */
 export function getLightboxDisplayUrl(publicId: string, viewportWidth = 1200): string {
   const width =
-    viewportWidth < 640 ? 960 : viewportWidth < 1024 ? 1280 : viewportWidth < 1536 ? 1600 : 1920;
+    viewportWidth < 640 ? 1280 : viewportWidth < 1024 ? 1600 : viewportWidth < 1536 ? 1920 : 2560;
+  return buildUrl(publicId, `f_auto,q_auto:good,w_${width},c_limit`);
+}
+
+/** 燈箱放大畫面 — 只有使用者放大時才載入，避免初始流量過大 */
+export function getLightboxZoomUrl(publicId: string, viewportWidth = 1200): string {
+  const width = viewportWidth < 640 ? 1920 : viewportWidth < 1024 ? 2560 : 2880;
   return buildUrl(publicId, `f_auto,q_auto:good,w_${width},c_limit`);
 }
 
