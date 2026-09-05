@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-export function useTimelineSync(stageIds: string[]) {
+export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | null) {
   const [activeStageId, setActiveStageId] = useState(stageIds[0] ?? '');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
+
+  useEffect(() => {
+    if (stageIds.length && !stageIds.includes(activeStageId)) {
+      setActiveStageId(stageIds[0]);
+    }
+  }, [stageIds, activeStageId]);
 
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
@@ -16,13 +22,17 @@ export function useTimelineSync(stageIds: string[]) {
           setActiveStageId(top.target.dataset.stageId);
         }
       },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
+      {
+        root: scrollRoot ?? null,
+        rootMargin: scrollRoot ? '-8% 0px -45% 0px' : '-20% 0px -55% 0px',
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      }
     );
 
     elementsRef.current.forEach((el) => observerRef.current?.observe(el));
 
     return () => observerRef.current?.disconnect();
-  }, [stageIds.join(',')]);
+  }, [stageIds.join(','), scrollRoot]);
 
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
@@ -39,13 +49,23 @@ export function useTimelineSync(stageIds: string[]) {
     []
   );
 
-  const scrollToStage = useCallback((stageId: string) => {
-    const el = document.getElementById(`stage-${stageId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToStage = useCallback(
+    (stageId: string) => {
+      const el = document.getElementById(`stage-${stageId}`);
+      if (!el) return;
+
+      if (scrollRoot) {
+        const rootTop = scrollRoot.getBoundingClientRect().top;
+        const elTop = el.getBoundingClientRect().top;
+        const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - 8;
+        scrollRoot.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       setActiveStageId(stageId);
-    }
-  }, []);
+    },
+    [scrollRoot]
+  );
 
   return { activeStageId, setActiveStageId, registerSection, scrollToStage };
 }

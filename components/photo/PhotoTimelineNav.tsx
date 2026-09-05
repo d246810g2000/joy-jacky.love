@@ -15,6 +15,7 @@ interface PhotoTimelineNavProps {
   activeStageId: string;
   onSelect: (stageId: string) => void;
   isSticky?: boolean;
+  variant?: 'default' | 'dock';
 }
 
 export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
@@ -22,8 +23,10 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
   activeStageId,
   onSelect,
   isSticky = true,
+  variant = 'default',
 }) => {
   const isMobile = useIsMobile();
+  const useDockPills = variant === 'dock' || !isMobile;
   const [sheetOpen, setSheetOpen] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
@@ -43,7 +46,7 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
     setSheetOpen(false);
   };
 
-  if (isMobile) {
+  if (isMobile && !useDockPills) {
     return (
       <>
         <nav
@@ -131,7 +134,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
 
   return (
     <nav
-      className={`photo-timeline-nav ${isSticky ? 'sticky top-0 z-30' : ''}`}
+      className={`photo-timeline-nav ${isSticky ? 'sticky top-0 z-30' : ''} ${
+        variant === 'dock' ? 'border-t-0' : ''
+      }`}
       aria-label="婚禮時間軸"
       style={
         activeMarker
@@ -141,7 +146,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
     >
       <div
         ref={navRef}
-        className="no-scrollbar flex gap-1.5 overflow-x-auto px-3 py-2.5 md:justify-center md:px-6 md:py-3"
+        className={`no-scrollbar flex gap-1.5 overflow-x-auto ${
+          variant === 'dock' ? 'px-3 py-2' : 'px-3 py-2.5 md:justify-center md:px-6 md:py-3'
+        }`}
       >
         {items.map((item) => {
           const isActive = item.id === activeStageId;
@@ -152,7 +159,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
               ref={isActive ? activeRef : undefined}
               type="button"
               onClick={() => onSelect(item.id)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-all md:px-4 md:py-2 md:text-sm ${
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-all ${
+                variant === 'dock' ? 'py-1.5' : 'md:px-4 md:py-2 md:text-sm'
+              } ${
                 isActive
                   ? 'photo-timeline-nav-active border-transparent text-white shadow-lg'
                   : 'border-white/10 bg-white/5 text-white/65 hover:border-white/25 hover:bg-white/10'

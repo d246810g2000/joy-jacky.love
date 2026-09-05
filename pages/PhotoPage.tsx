@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { PhotoCommandDock } from '../components/photo/PhotoCommandDock';
 import { PhotoHero } from '../components/photo/PhotoHero';
 import { PhotoTimelineNav } from '../components/photo/PhotoTimelineNav';
 import { PhotoMasonryGrid } from '../components/photo/PhotoMasonryGrid';
@@ -22,11 +23,12 @@ import { usePhotoDeepLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { PhotoFilter, WeddingPhoto } from '../types';
 
-function GridSkeleton() {
+function GridSkeleton({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="space-y-14 px-4 pb-32 pt-8 md:px-8">
+    <div className={`space-y-10 px-4 ${compact ? 'pb-8 pt-4' : 'space-y-14 pb-32 pt-8'} md:px-8`}>
       {[0, 1].map((section) => (
         <div key={section}>
           <div className="photo-skeleton-dark mb-6 h-28 rounded-2xl" />
@@ -53,7 +55,9 @@ interface VideoState {
 
 const PhotoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const { data, loading, error } = useWeddingPhotos();
+  const useDockLayout = isMobile;
 
   const tableParam = searchParams.get('table');
   const nameParam = searchParams.get('name');
@@ -67,31 +71,40 @@ const PhotoPage: React.FC = () => {
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
   const [expandSearch, setExpandSearch] = useState(false);
   const scrolledToResults = useRef(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [galleryEl, setGalleryEl] = useState<HTMLElement | null>(null);
 
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
-
-  const stageIds = stages.map((s) => s.id);
-  const { activeStageId, scrollToStage, registerSection } = useTimelineSync(stageIds);
 
   const navItems = useMemo(
     () =>
       stages.map((s) => ({
         id: s.id,
         time: s.time,
-        label: s.title.replace(/^\d{2}:\d{2}\s*/, '') || s.title,
+        label: s.title.replace(/^\d{1,2}:\d{2}\s*/, '') || s.title,
       })),
     [stages]
   );
-
-  const activeMarker = getStageFilmMarker(activeStageId);
 
   const isFiltered = !isFilterEmpty(filter);
   const filteredPhotos = useMemo(
     () => (isFiltered && data ? filterPhotos(stages, filter) : null),
     [filter, isFiltered, stages, data]
   );
+
+  const stageIds = stages.map((s) => s.id);
+  const { activeStageId, scrollToStage, registerSection } = useTimelineSync(
+    stageIds,
+    useDockLayout && !isFiltered ? galleryEl : null
+  );
+
+  useEffect(() => {
+    setGalleryEl(galleryRef.current);
+  }, [loading, useDockLayout]);
+
+  const activeMarker = getStageFilmMarker(activeStageId);
 
   const displayPhotos = filteredPhotos ?? allPhotos;
   const currentFilterLabel = filterLabel(filter);
@@ -114,6 +127,10 @@ const PhotoPage: React.FC = () => {
 
   const openVideo = useCallback(
     (stageId: string) => {
+      if (useDockLayout) {
+        scrollToStage(stageId);
+        return;
+      }
       const marker = getStageFilmMarker(stageId);
       const stage = stages.find((s) => s.id === stageId);
       setVideoState({
@@ -124,7 +141,7 @@ const PhotoPage: React.FC = () => {
           : stage?.description,
       });
     },
-    [stages]
+    [stages, useDockLayout, scrollToStage]
   );
 
   const openFullFilm = useCallback(() => {
@@ -163,10 +180,23 @@ const PhotoPage: React.FC = () => {
   }, [data, allPhotos, selectedPhoto]);
 
   useEffect(() => {
+    if (!useDockLayout) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [useDockLayout]);
+
+  useEffect(() => {
     if (!skipHero || scrolledToResults.current || loading) return;
     scrolledToResults.current = true;
     requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'auto' });
+      if (galleryRef.current) {
+        galleryRef.current.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
     });
   }, [skipHero, loading]);
 
@@ -207,6 +237,16 @@ const PhotoPage: React.FC = () => {
   }, [selectedPhoto]);
 
   useEffect(() => {
+    if (!isFiltered) return;
+    if (galleryRef.current) {
+      galleryRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [isFiltered, currentFilterLabel]);
+
+  useEffect(() => {
+    if (useDockLayout) return;
     const onScroll = () => {
       if (skipHero) {
         setShowNav(true);
@@ -217,7 +257,7 @@ const PhotoPage: React.FC = () => {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [skipHero]);
+  }, [skipHero, useDockLayout]);
 
   useBodyScrollLock(drawerOpen || !!selectedPhoto);
 
@@ -270,7 +310,7 @@ const PhotoPage: React.FC = () => {
     openVideo(stageId);
   };
 
-  const hideSearchBar = !!selectedPhoto || !!videoState;
+  const hideSearchBar = !!selectedPhoto || !!videoState || useDockLayout;
 
   if (error) {
     return (
@@ -282,7 +322,9 @@ const PhotoPage: React.FC = () => {
 
   return (
     <div
-      className="photo-page photo-page-immersive relative min-h-screen"
+      className={`photo-page photo-page-immersive relative ${
+        useDockLayout ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen'
+      }`}
       style={
         activeMarker && !isFiltered
           ? ({ '--stage-glow': activeMarker.accent } as React.CSSProperties)
@@ -292,6 +334,61 @@ const PhotoPage: React.FC = () => {
       <div className="photo-ambient-glow pointer-events-none fixed inset-0 -z-10" aria-hidden />
       <div className="fixed inset-0 -z-20 bg-[#0c0b0a]" aria-hidden />
 
+      {useDockLayout ? (
+        <>
+          <PhotoCommandDock
+            navItems={isFiltered ? [] : navItems}
+            activeStageId={activeStageId}
+            onStageSelect={scrollToStage}
+            welcomeTitle={welcomeTitle}
+            resultCount={isFiltered ? displayPhotos.length : null}
+            hasFilter={isFiltered}
+            filterLabel={currentFilterLabel}
+            autoExpandSearch={expandSearch}
+            onExpandSearchHandled={() => setExpandSearch(false)}
+            onSearch={handleQuickSearch}
+            onOpenDrawer={() => setDrawerOpen(true)}
+            onClearFilter={handleClearFilter}
+          />
+
+          {welcomeMsg && isFiltered && (
+            <div className="shrink-0 border-b border-white/10 bg-black/50 px-4 py-2 text-center text-xs text-white/80">
+              {welcomeMsg}
+              <button
+                type="button"
+                onClick={() => setWelcomeMsg(null)}
+                className="ml-2 text-[#e6c896]"
+              >
+                知道了
+              </button>
+            </div>
+          )}
+
+          <div
+            ref={galleryRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+          >
+            {loading ? (
+              <GridSkeleton compact />
+            ) : (
+              <PhotoMasonryGrid
+                stages={stages}
+                filteredPhotos={filteredPhotos}
+                isFiltered={isFiltered}
+                onPhotoClick={openPhoto}
+                onTagClick={handleTagClick}
+                onNameClick={handleNameClick}
+                onWatchVideo={openVideo}
+                registerSection={registerSection}
+                filterLabel={currentFilterLabel}
+                onClearFilter={handleClearFilter}
+                compactHeaders
+              />
+            )}
+          </div>
+        </>
+      ) : (
+        <>
       <Link
         to="/"
         className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
@@ -361,6 +458,8 @@ const PhotoPage: React.FC = () => {
         onOpenDrawer={() => setDrawerOpen(true)}
         onClearFilter={handleClearFilter}
       />
+        </>
+      )}
 
       <PhotoFilterDrawer
         open={drawerOpen}
@@ -400,6 +499,7 @@ const PhotoPage: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {!useDockLayout && (
       <PhotoVideoPlayer
         open={!!videoState}
         startSec={videoState?.startSec ?? 0}
@@ -407,6 +507,7 @@ const PhotoPage: React.FC = () => {
         subtitle={videoState?.subtitle}
         onClose={closeVideo}
       />
+      )}
     </div>
   );
 };

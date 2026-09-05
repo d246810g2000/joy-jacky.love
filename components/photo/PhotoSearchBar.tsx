@@ -7,6 +7,7 @@ interface PhotoSearchBarProps {
   filterLabel?: string | null;
   hidden?: boolean;
   autoExpand?: boolean;
+  variant?: 'fixed' | 'dock';
   onSearch: (query: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
@@ -19,6 +20,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   filterLabel,
   hidden = false,
   autoExpand = false,
+  variant = 'fixed',
   onSearch,
   onOpenDrawer,
   onClearFilter,
@@ -45,6 +47,8 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
 
   if (hidden) return null;
 
+  const isDock = variant === 'dock';
+
   const submit = (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
@@ -56,7 +60,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
 
   return (
     <>
-      {expanded && (
+      {expanded && !isDock && (
         <div
           className="fixed inset-0 z-40 bg-black/50"
           onClick={() => setExpanded(false)}
@@ -64,9 +68,19 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
         />
       )}
 
-      <div className="fixed bottom-4 left-1/2 z-50 w-[min(94vw,420px)] -translate-x-1/2 photo-safe-bottom">
+      <div
+        className={
+          isDock
+            ? 'relative w-full'
+            : 'fixed bottom-4 left-1/2 z-50 w-[min(94vw,420px)] -translate-x-1/2 photo-safe-bottom'
+        }
+      >
         {expanded && (
-          <div className="mb-2 overflow-hidden rounded-2xl border border-white/10 bg-[#1a1816]/95 p-3 shadow-2xl backdrop-blur-xl">
+          <div
+            className={`overflow-hidden rounded-2xl border border-white/10 bg-[#1a1816]/95 p-3 shadow-2xl backdrop-blur-xl ${
+              isDock ? 'mb-2' : 'mb-2'
+            }`}
+          >
             <input
               ref={inputRef}
               type="search"
