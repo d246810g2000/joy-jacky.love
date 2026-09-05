@@ -83,6 +83,12 @@ const PhotoPage: React.FC = () => {
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
+  const featuredGuestPhotos = useMemo(() => {
+    const names = ['李謦伊', '張家銘'];
+    return Object.fromEntries(
+      names.map((name) => [name, allPhotos.find((photo) => photo.names.includes(name))?.publicId])
+    );
+  }, [allPhotos]);
   const heroCoverIds = useMemo(
     () =>
       allPhotos
@@ -498,6 +504,7 @@ const PhotoPage: React.FC = () => {
             nameScope={filter.nameScope}
             onNameScopeChange={handleNameScopeChange}
             guestTable={nameGuestTable}
+            featuredGuestPhotos={featuredGuestPhotos}
             showNameScope={false}
           />
         </>
@@ -588,6 +595,7 @@ const PhotoPage: React.FC = () => {
         nameScope={filter.nameScope}
         onNameScopeChange={handleNameScopeChange}
         guestTable={nameGuestTable}
+        featuredGuestPhotos={featuredGuestPhotos}
         showNameScope={showNameScope}
       />
         </>

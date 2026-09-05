@@ -6,6 +6,7 @@ import {
   RSVP_RELATIONS,
 } from '../../utils/photoFilters';
 import { listTableOptions } from '../../utils/tableLabels';
+import { getFaceAvatarUrl } from '../../utils/photoUrls';
 
 interface SearchFilterSectionProps<T> {
   title: string;
@@ -59,6 +60,7 @@ function SearchFilterSection<T>({
 
 interface PhotoSearchFilterSectionsProps {
   featuredGuests: GuestRecord[];
+  featuredGuestPhotos?: Record<string, string | undefined>;
   recent: string[];
   onSubmit: (query: string) => void;
   onSubmitTag: (tag: string) => void;
@@ -68,6 +70,7 @@ interface PhotoSearchFilterSectionsProps {
 
 export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps> = ({
   featuredGuests,
+  featuredGuestPhotos,
   recent,
   onSubmit,
   onSubmitTag,
@@ -82,6 +85,8 @@ export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps>
   const selectSideRelation = (side: '男方' | '女方', relation: string) => {
     onSubmitTag(`${side}${relation}`);
   };
+
+  const [avatarFallbacks, setAvatarFallbacks] = useState<Record<string, boolean>>({});
 
   return (
     <div className={compact ? 'space-y-3' : 'space-y-4'}>
@@ -115,9 +120,21 @@ export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps>
               onClick={() => onSubmit(guest.name)}
               className="flex w-14 shrink-0 flex-col items-center gap-1"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-sm text-white">
-                {guest.name.slice(0, 1)}
-              </span>
+              {featuredGuestPhotos?.[guest.name] && !avatarFallbacks[guest.name] ? (
+                <img
+                  src={getFaceAvatarUrl(featuredGuestPhotos[guest.name]!, 160)}
+                  alt={`${guest.name} 的照片`}
+                  className="h-11 w-11 rounded-full border border-white/20 object-cover"
+                  loading="lazy"
+                  onError={() =>
+                    setAvatarFallbacks((current) => ({ ...current, [guest.name]: true }))
+                  }
+                />
+              ) : (
+                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-sm text-white">
+                  {guest.name.slice(0, 1)}
+                </span>
+              )}
               <span className="w-full truncate text-center text-[10px] text-white/70">
                 {guest.name}
               </span>
