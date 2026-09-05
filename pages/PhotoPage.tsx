@@ -425,6 +425,7 @@ const PhotoPage: React.FC = () => {
             autoExpandSearch={expandSearch}
             onExpandSearchHandled={() => setExpandSearch(false)}
             onSearch={handleQuickSearch}
+            onTagSearch={handleTagClick}
             onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
             onDownloadAll={isFiltered ? handleDownloadAll : undefined}
