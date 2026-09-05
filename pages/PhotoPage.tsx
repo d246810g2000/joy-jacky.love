@@ -24,6 +24,7 @@ import { usePhotoDeepLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
+import { usePhotoBulkDownload } from '../hooks/usePhotoBulkDownload';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { NameSearchScope, PhotoFilter, WeddingPhoto } from '../types';
 
@@ -58,6 +59,8 @@ const PhotoPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { data, loading, error } = useWeddingPhotos();
+  const { downloading, progress: downloadProgress, error: downloadError, downloadAll, clearError } =
+    usePhotoBulkDownload();
   const useDockLayout = isMobile;
 
   const tableParam = searchParams.get('table');
@@ -345,6 +348,11 @@ const PhotoPage: React.FC = () => {
     openVideo(stageId);
   };
 
+  const handleDownloadAll = useCallback(() => {
+    if (!filteredPhotos?.length) return;
+    downloadAll(filteredPhotos, currentFilterLabel ?? '婚禮照片');
+  }, [filteredPhotos, currentFilterLabel, downloadAll]);
+
   const hideSearchBar = !!selectedPhoto || !!videoState || useDockLayout;
 
   if (error) {
@@ -384,6 +392,9 @@ const PhotoPage: React.FC = () => {
             onSearch={handleQuickSearch}
             onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
+            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
+            downloading={downloading}
+            downloadProgress={downloadProgress}
             nameScope={filter.nameScope}
             onNameScopeChange={handleNameScopeChange}
             guestTable={nameGuestTable}
@@ -421,6 +432,9 @@ const PhotoPage: React.FC = () => {
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
                 onClearFilter={handleClearFilter}
+                onDownloadAll={handleDownloadAll}
+                downloading={downloading}
+                downloadProgress={downloadProgress}
                 compactHeaders
                 expandThroughIndex={expandThroughIndex}
                 nameScope={filter.nameScope}
@@ -488,6 +502,9 @@ const PhotoPage: React.FC = () => {
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onClearFilter={handleClearFilter}
+          onDownloadAll={handleDownloadAll}
+          downloading={downloading}
+          downloadProgress={downloadProgress}
           expandThroughIndex={expandThroughIndex}
           nameScope={filter.nameScope}
           onNameScopeChange={handleNameScopeChange}
@@ -506,6 +523,9 @@ const PhotoPage: React.FC = () => {
         onSearch={handleQuickSearch}
         onOpenDrawer={() => setDrawerOpen(true)}
         onClearFilter={handleClearFilter}
+        onDownloadAll={handleDownloadAll}
+        downloading={downloading}
+        downloadProgress={downloadProgress}
         nameScope={filter.nameScope}
         onNameScopeChange={handleNameScopeChange}
         guestTable={nameGuestTable}
@@ -521,6 +541,19 @@ const PhotoPage: React.FC = () => {
         onClose={() => setDrawerOpen(false)}
         resultCount={isFiltered ? displayPhotos.length : undefined}
       />
+
+      {downloadError && (
+        <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-red-400/30 bg-[#1a1210]/95 px-4 py-3 text-center text-sm text-red-200 shadow-xl backdrop-blur-md photo-safe-bottom">
+          {downloadError}
+          <button
+            type="button"
+            onClick={clearError}
+            className="mt-2 block w-full text-xs text-red-200/70"
+          >
+            知道了
+          </button>
+        </div>
+      )}
 
       <AnimatePresence>
         {selectedPhoto && (

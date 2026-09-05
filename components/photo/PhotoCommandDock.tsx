@@ -24,6 +24,9 @@ interface PhotoCommandDockProps {
   onSearch: (query: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
+  onDownloadAll?: () => void;
+  downloading?: boolean;
+  downloadProgress?: { done: number; total: number } | null;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
@@ -43,6 +46,9 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   onSearch,
   onOpenDrawer,
   onClearFilter,
+  onDownloadAll,
+  downloading,
+  downloadProgress,
   nameScope,
   onNameScopeChange,
   guestTable,
@@ -122,6 +128,9 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           onSearch={onSearch}
           onOpenDrawer={onOpenDrawer}
           onClearFilter={onClearFilter}
+          onDownloadAll={onDownloadAll}
+          downloading={downloading}
+          downloadProgress={downloadProgress}
           nameScope={nameScope}
           onNameScopeChange={onNameScopeChange}
           guestTable={guestTable}

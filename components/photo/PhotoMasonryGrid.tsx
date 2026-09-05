@@ -19,6 +19,9 @@ interface PhotoMasonryGridProps {
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   filterLabel?: string | null;
   onClearFilter?: () => void;
+  onDownloadAll?: () => void;
+  downloading?: boolean;
+  downloadProgress?: { done: number; total: number } | null;
   compactHeaders?: boolean;
   expandThroughIndex?: number | null;
   nameScope?: NameSearchScope;
@@ -141,6 +144,9 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   registerSection,
   filterLabel,
   onClearFilter,
+  onDownloadAll,
+  downloading = false,
+  downloadProgress = null,
   compactHeaders = false,
   expandThroughIndex = null,
   nameScope,
@@ -175,15 +181,29 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
               <h2 className="font-serif mt-1 text-xl text-white/95">{filterLabel ?? '搜尋結果'}</h2>
               <p className="mt-1 text-sm text-white/50">找到 {filteredPhotos.length} 張照片</p>
             </div>
-            {onClearFilter && (
-              <button
-                type="button"
-                onClick={onClearFilter}
-                className="shrink-0 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-[var(--photo-gold-light)] active:bg-white/10"
-              >
-                清除 · 回時間軸
-              </button>
-            )}
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {onDownloadAll && filteredPhotos.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onDownloadAll}
+                  disabled={downloading}
+                  className="rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/15 px-4 py-2 text-xs font-medium text-[var(--photo-gold-light)] active:bg-[var(--photo-accent)]/25 disabled:opacity-60"
+                >
+                  {downloading && downloadProgress
+                    ? `打包中 ${downloadProgress.done}/${downloadProgress.total}`
+                    : `↓ 下載全部 (${filteredPhotos.length})`}
+                </button>
+              )}
+              {onClearFilter && (
+                <button
+                  type="button"
+                  onClick={onClearFilter}
+                  className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-[var(--photo-gold-light)] active:bg-white/10"
+                >
+                  清除 · 回時間軸
+                </button>
+              )}
+            </div>
           </div>
           {showNameScope && onNameScopeChange && nameScope && (
             <PhotoNameScopeBar
