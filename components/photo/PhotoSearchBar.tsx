@@ -4,7 +4,7 @@ import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
 import { formatTableLabel, listTableOptions } from '../../utils/tableLabels';
-import { POPULAR_TAGS } from '../../utils/photoFilters';
+import { PHOTO_CATEGORIES, POPULAR_TAGS } from '../../utils/photoFilters';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -15,7 +15,8 @@ interface PhotoSearchBarProps {
   variant?: 'fixed' | 'dock';
   onSearch: (query: string) => void;
   onTagSearch?: (tag: string) => void;
-  onOpenDrawer: () => void;
+  onTableSelect?: (table: number) => void;
+  onCategorySelect?: (categoryId: string) => void;
   onClearFilter?: () => void;
   onDownloadAll?: () => void;
   onShareFilter?: () => void;
@@ -37,7 +38,8 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   variant = 'fixed',
   onSearch,
   onTagSearch,
-  onOpenDrawer,
+  onTableSelect,
+  onCategorySelect,
   onClearFilter,
   onDownloadAll,
   onShareFilter,
@@ -62,7 +64,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
       .map((name) => GUEST_RECORDS.find((guest) => guest.name === name))
       .filter((guest): guest is GuestRecord => Boolean(guest));
   }, []);
-  const firstTable = useMemo(() => listTableOptions()[0], []);
+  const tableOptions = useMemo(() => listTableOptions(), []);
   const exactTable = useMemo(() => {
     const trimmed = query.trim();
     if (!/^\d{1,2}$/.test(trimmed)) return null;
@@ -107,6 +109,23 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     if (!cleanTag) return;
     addRecentSearch(cleanTag);
     onTagSearch?.(cleanTag);
+    setExpanded(false);
+    setQuery('');
+  };
+
+  const selectTable = (table: number) => {
+    addRecentSearch(String(table));
+    if (onTableSelect) {
+      onTableSelect(table);
+    } else {
+      onSearch(String(table));
+    }
+    setExpanded(false);
+    setQuery('');
+  };
+
+  const selectCategory = (categoryId: string) => {
+    onCategorySelect?.(categoryId);
     setExpanded(false);
     setQuery('');
   };
@@ -246,36 +265,40 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 </section>
 
                 <section>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-base font-medium text-white/90">按桌次篩選</h2>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        closeSearch();
-                        onOpenDrawer();
-                      }}
-                      className="text-xs text-[var(--photo-gold-light)]"
-                    >
-                      查看全部
-                    </button>
-                  </div>
-                  {firstTable && (
-                    <button
-                      type="button"
-                      onClick={() => submit(String(firstTable.table))}
-                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left active:bg-white/10"
-                    >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--photo-accent)]/25 font-mono text-sm text-[var(--photo-gold-light)]">
-                        {firstTable.table}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm text-white/90">
-                          {firstTable.label}
+                  <h2 className="mb-3 text-base font-medium text-white/90">按桌次篩選</h2>
+                  <div className="grid grid-cols-3 gap-2">
+                    {tableOptions.map(({ table, name, label }) => (
+                      <button
+                        key={table}
+                        type="button"
+                        onClick={() => selectTable(table)}
+                        className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5 text-left active:bg-white/10"
+                      >
+                        <span className="block text-sm font-medium tabular-nums text-[var(--photo-gold-light)]">
+                          {table}
                         </span>
-                        <span className="block text-xs text-white/45">先從第一桌開始找照片</span>
-                      </span>
-                    </button>
-                  )}
+                        <span className="mt-0.5 block truncate text-[10px] text-white/55">
+                          {name || label.replace(/^\d+\s*/, '')}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <h2 className="mb-3 text-base font-medium text-white/90">活動分類</h2>
+                  <div className="flex flex-col gap-2">
+                    {PHOTO_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => selectCategory(cat.id)}
+                        className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm text-white/80 active:bg-white/10"
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </section>
 
                 <section>
@@ -292,17 +315,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                         <span>{tag}</span>
                       </button>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        closeSearch();
-                        onOpenDrawer();
-                      }}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[var(--photo-gold-light)] active:bg-white/10"
-                    >
-                      <span className="text-lg">☷</span>
-                      <span>更多篩選條件</span>
-                    </button>
                   </div>
                 </section>
               </div>
@@ -439,6 +451,58 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 </div>
               </div>
             )}
+            <div className="mt-3 max-h-[42vh] space-y-4 overflow-y-auto pr-1">
+              <section>
+                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">按桌次篩選</p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {tableOptions.map(({ table, name, label }) => (
+                    <button
+                      key={table}
+                      type="button"
+                      onClick={() => selectTable(table)}
+                      className="rounded-lg bg-white/5 px-1.5 py-1.5 text-left active:bg-white/10"
+                    >
+                      <span className="block text-xs font-medium tabular-nums text-[var(--photo-gold-light)]">
+                        {table}
+                      </span>
+                      {name && (
+                        <span className="mt-0.5 block truncate text-[9px] text-white/50">{name}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">活動分類</p>
+                <div className="flex flex-col gap-1.5">
+                  {PHOTO_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => selectCategory(cat.id)}
+                      className="rounded-lg bg-white/5 px-3 py-2 text-left text-xs text-white/75 active:bg-white/10"
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">熱門關鍵字</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {POPULAR_TAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => submitTag(tag)}
+                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/70 active:bg-white/10"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
             <button
               type="button"
               onClick={() => submit(query)}
@@ -543,21 +607,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               </svg>
             </button>
           )}
-          {!isDock && <button
-            type="button"
-            onClick={onOpenDrawer}
-            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 active:bg-white/10"
-            aria-label="進階篩選"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
-            </svg>
-            {hasFilter && resultCount != null && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--photo-accent)] px-1 text-[9px] font-medium text-white">
-                {resultCount > 99 ? '99+' : resultCount}
-              </span>
-            )}
-          </button>}
         </div>
       </div>
     </>
