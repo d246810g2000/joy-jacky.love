@@ -100,6 +100,7 @@ function StageSection({
               onTagClick={onTagClick}
               onNameClick={onNameClick}
               dark
+              compact
             />
           ) : (
             <motion.div
@@ -251,6 +252,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                   onTagClick={onTagClick}
                   onNameClick={onNameClick}
                   dark
+                  compact
                 />
               ))}
             </div>

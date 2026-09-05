@@ -4,6 +4,7 @@ import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
 import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { NameSearchScope } from '../../types';
 import {
   PHOTO_THEME,
@@ -58,6 +59,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   guestTable,
   showNameScope = false,
 }) => {
+  const isMobile = useIsMobile();
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
 
   useEffect(() => {
@@ -122,7 +124,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
 
       {navItems.length > 0 && (
         <PhotoTimelineNav
-          variant="dock"
+          variant={isMobile ? 'default' : 'dock'}
           items={navItems}
           activeStageId={activeStageId}
           onSelect={onStageSelect}
