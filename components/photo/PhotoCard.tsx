@@ -40,12 +40,13 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const tableTags = photo.tables.map((t) => `#第${t}桌`);
   const displayTags = [...tableTags, ...photo.tags.slice(0, 2).map((t) => `#${t}`)];
   const displayNames = photo.names.slice(0, 3);
+  const overlayNames = photo.names.slice(0, 2).join(' · ');
 
   return (
     <article
       className={`photo-card mb-3 break-inside-avoid overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:shadow-lg ${
         dark
-          ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-[#B08D55]/10'
+          ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-[var(--photo-accent)]/10'
           : 'border-[#E8E1D5] bg-white hover:shadow-md'
       }`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 280px' }}
@@ -70,9 +71,15 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
               loaded ? 'scale-100 opacity-100 blur-0' : 'scale-105 opacity-80 blur-sm'
             } ${photo.orientation === 'landscape' ? 'aspect-[4/3]' : 'aspect-[3/4]'}`}
           />
-          <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-xs text-white backdrop-blur-sm">
+          {loaded && dark && <div className="photo-card-vignette pointer-events-none" aria-hidden />}
+          <span className="photo-time-badge absolute right-2 top-2 font-mono text-[11px] tabular-nums">
             {photo.time}
           </span>
+          {dark && overlayNames && (
+            <p className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-2.5 pb-2 pt-8 text-[11px] text-white/85">
+              {overlayNames}
+            </p>
+          )}
         </div>
       </button>
 
@@ -87,7 +94,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                   e.stopPropagation();
                   onNameClick?.(name);
                 }}
-                className="rounded-full border border-[#B08D55]/30 bg-[#B08D55]/10 px-2 py-0.5 text-[11px] font-medium text-[#8B6F3E] hover:bg-[#B08D55]/20"
+                className="rounded-full border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--photo-gold-dark)] hover:bg-[var(--photo-accent)]/20"
               >
                 {name}
               </button>
@@ -117,7 +124,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                 e.stopPropagation();
                 onTagClick?.(tag.replace(/^#/, ''));
               }}
-              className="rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[11px] text-[#B08D55] hover:bg-[#E8E1D5]/40"
+              className="rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[11px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40"
             >
               {tag.startsWith('#') ? tag : `#${tag}`}
             </button>

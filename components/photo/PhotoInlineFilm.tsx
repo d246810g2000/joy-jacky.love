@@ -1,69 +1,131 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getFilmEmbedUrl, getFilmWatchUrl } from '../../utils/weddingFilm';
+import { PHOTO_THEME } from '../../utils/photoTheme';
 
 interface PhotoInlineFilmProps {
   startSec: number;
   title: string;
   filmTime: string;
+  clockTime?: string;
   accent?: string;
+  expanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 }
 
 export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
   startSec,
   title,
   filmTime,
-  accent = '#B08D55',
+  clockTime,
+  accent = PHOTO_THEME.gold,
+  expanded,
+  onExpandedChange,
 }) => {
   const [playing, setPlaying] = useState(false);
   const watchUrl = getFilmWatchUrl(startSec);
 
+  const handleCollapse = () => {
+    onExpandedChange(false);
+    setPlaying(false);
+  };
+
+  const handleExpand = () => {
+    onExpandedChange(true);
+  };
+
   return (
-    <div className="photo-inline-film">
-      <div className="relative aspect-video w-full overflow-hidden bg-black">
-        {playing ? (
-          <iframe
-            key={startSec}
-            src={getFilmEmbedUrl(startSec)}
-            title={title}
-            className="absolute inset-0 h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPlaying(true)}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-b from-black/40 to-black/70"
-            style={{
-              background: `linear-gradient(160deg, ${accent}33 0%, rgba(0,0,0,0.85) 55%)`,
-            }}
-            aria-label={`播放 ${title}`}
+    <div className="photo-inline-film border-b border-white/8">
+      {!expanded ? (
+        <button
+          type="button"
+          onClick={handleExpand}
+          className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-white/5"
+          aria-expanded={false}
+        >
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm text-white"
+            style={{ background: `${accent}99`, boxShadow: `0 0 20px ${accent}44` }}
+            aria-hidden
           >
-            <span
-              className="flex h-12 w-12 items-center justify-center rounded-full text-lg text-white shadow-lg"
-              style={{ background: `${accent}cc` }}
-            >
-              ▶
-            </span>
-            <span className="px-4 text-center text-sm font-medium text-white">{title}</span>
-            <span className="text-xs text-white/50">影片 {filmTime}</span>
-          </button>
-        )}
-      </div>
-      {playing && (
-        <div className="flex items-center justify-between gap-2 border-t border-white/8 bg-black/40 px-3 py-1.5">
-          <p className="min-w-0 truncate text-[11px] text-white/55">
-            {title} · 影片 {filmTime}
-          </p>
-          <a
-            href={watchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-[11px] text-[#e6c896]"
+            ▶
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-white">
+              {clockTime && (
+                <span className="font-mono text-[var(--photo-gold-light)]">{clockTime}</span>
+              )}
+              {clockTime && <span className="mx-1.5 text-white/30">·</span>}
+              <span>{title}</span>
+            </p>
+            <p className="mt-0.5 text-[11px] text-white/45">影片 {filmTime} · 點擊展開</p>
+          </div>
+          <span className="shrink-0 text-[10px] text-white/40">展開 ▾</span>
+        </button>
+      ) : (
+        <AnimatePresence initial={false}>
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            YouTube ↗
-          </a>
-        </div>
+            <div className="relative aspect-video w-full overflow-hidden bg-black">
+              {playing ? (
+                <iframe
+                  key={startSec}
+                  src={getFilmEmbedUrl(startSec)}
+                  title={title}
+                  className="absolute inset-0 h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPlaying(true)}
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                  style={{
+                    background: `linear-gradient(160deg, ${accent}33 0%, rgba(0,0,0,0.88) 55%)`,
+                  }}
+                  aria-label={`播放 ${title}`}
+                >
+                  <span
+                    className="flex h-12 w-12 items-center justify-center rounded-full text-lg text-white shadow-lg"
+                    style={{ background: `${accent}cc`, boxShadow: `0 0 28px ${accent}55` }}
+                  >
+                    ▶
+                  </span>
+                  <span className="px-4 text-center text-sm font-medium text-white">{title}</span>
+                  <span className="text-xs text-white/50">影片 {filmTime}</span>
+                </button>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-1.5">
+              <p className="min-w-0 truncate text-[11px] text-white/55">
+                {title} · 影片 {filmTime}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <a
+                  href={watchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-[var(--photo-gold-light)]"
+                >
+                  YouTube ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCollapse}
+                  className="text-[11px] text-white/40"
+                  aria-label="收合影片"
+                >
+                  收合 ▴
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
       )}
     </div>
   );

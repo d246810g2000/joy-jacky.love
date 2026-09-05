@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getBlurUrl, getLightboxUrl } from '../../utils/photoUrls';
 import { APP_CONTENT } from '../../constants';
+import { PHOTO_THEME } from '../../utils/photoTheme';
 
 interface PhotoHeroProps {
   coverPublicId: string;
@@ -80,7 +81,7 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.7 }}
-          className="font-mono text-[10px] tracking-[0.35em] text-[#e6c896]/90 md:text-xs md:tracking-[0.4em]"
+          className="font-mono text-[10px] tracking-[0.35em] text-[var(--photo-gold-light,#e6c896)]/90 md:text-xs md:tracking-[0.4em]"
         >
           WEDDING FILM & GALLERY
         </motion.p>
@@ -100,6 +101,14 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
         >
           {APP_CONTENT.chineseNames} · {APP_CONTENT.date}
         </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.7 }}
+          className="mt-3 max-w-md text-sm font-light italic text-white/50"
+        >
+          {PHOTO_THEME.tagline}
+        </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -110,7 +119,7 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
           <button
             type="button"
             onClick={onQuickSearch}
-            className="order-first rounded-full bg-[#B08D55] px-5 py-3.5 text-sm font-medium text-white shadow-lg shadow-[#B08D55]/25 md:order-none md:px-6 md:py-3"
+            className="order-first rounded-full bg-[var(--photo-accent,#B08D55)] px-5 py-3.5 text-sm font-medium text-white shadow-lg shadow-[#B08D55]/25 md:order-none md:px-6 md:py-3"
           >
             🔍 輸入姓名找照片
           </button>

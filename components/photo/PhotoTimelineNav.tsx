@@ -37,9 +37,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
   useBodyScrollLock(sheetOpen);
 
   useEffect(() => {
-    if (isMobile) return;
+    if (!useDockPills && isMobile) return;
     activeRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, [activeStageId, isMobile]);
+  }, [activeStageId, isMobile, useDockPills]);
 
   const handleSelect = (id: string) => {
     onSelect(id);
@@ -153,27 +153,38 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
         {items.map((item) => {
           const isActive = item.id === activeStageId;
           const marker = getStageFilmMarker(item.id);
+          const isDock = variant === 'dock';
           return (
             <button
               key={item.id}
               ref={isActive ? activeRef : undefined}
               type="button"
               onClick={() => onSelect(item.id)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-all ${
-                variant === 'dock' ? 'py-1.5' : 'md:px-4 md:py-2 md:text-sm'
+              title={isDock ? `${item.time} ${item.label}` : undefined}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
+                isDock ? 'py-1.5' : 'md:px-4 md:py-2 md:text-sm'
               } ${
                 isActive
-                  ? 'photo-timeline-nav-active border-transparent text-white shadow-lg'
+                  ? 'photo-timeline-nav-active border-transparent text-white'
                   : 'border-white/10 bg-white/5 text-white/65 hover:border-white/25 hover:bg-white/10'
-              }`}
+              } ${isActive && isDock ? 'scale-105' : ''}`}
               style={
                 isActive && marker
-                  ? { background: `linear-gradient(135deg, ${marker.accent}cc, ${marker.accent}88)` }
+                  ? {
+                      background: `linear-gradient(135deg, ${marker.accent}cc, ${marker.accent}88)`,
+                      boxShadow: isDock ? `0 0 20px ${marker.accent}55, 0 4px 12px rgba(0,0,0,0.35)` : undefined,
+                    }
                   : undefined
               }
             >
-              <span className="font-mono font-medium tabular-nums">{item.time}</span>
-              <span className="ml-1.5">{item.label}</span>
+              {isDock ? (
+                <span className="font-medium">{item.label}</span>
+              ) : (
+                <>
+                  <span className="font-mono font-medium tabular-nums">{item.time}</span>
+                  <span className="ml-1.5">{item.label}</span>
+                </>
+              )}
             </button>
           );
         })}

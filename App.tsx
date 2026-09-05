@@ -482,6 +482,7 @@ function App() {
     { id: 'timeline', icon: ClockIcon, label: '婚禮流程', targetId: 'timeline' },
     { id: 'location', icon: PinIcon, label: '婚宴地點', targetId: 'location' },
     { id: 'guestbook', icon: PenIcon, label: '祝福留言', targetId: 'guestbook' },
+    { id: 'photos', icon: CameraIcon, label: '婚禮相簿', targetId: 'photos' },
     { id: 'games', icon: GamepadIcon, label: '互動遊戲', targetId: 'games' },
   ];
 
@@ -537,9 +538,18 @@ function App() {
         </span>
         <span className="text-[#b08d55] text-[10px]">✦</span>
         {isWeddingEnded ? (
-          <span className="font-serif text-xs md:text-sm text-[#8E3535] font-semibold tracking-wider">
-            🎉 婚禮已圓滿落幕，感謝大家的出席與溫馨祝福！
-          </span>
+          <>
+            <span className="font-serif text-xs md:text-sm text-[#8E3535] font-semibold tracking-wider">
+              🎉 婚禮已圓滿落幕，感謝大家的出席與溫馨祝福！
+            </span>
+            <Link
+              to="/photo"
+              onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+              className="font-serif text-xs md:text-sm text-[#B08D55] font-medium hover:underline"
+            >
+              瀏覽婚禮相簿 →
+            </Link>
+          </>
         ) : (
           <span className="font-mono text-[10px] md:text-xs text-[#555] tracking-wider tabular-nums">
             {timeLeft.days}天 {fmt(timeLeft.hours)}時 {fmt(timeLeft.minutes)}分 {fmt(timeLeft.seconds)}秒
@@ -681,7 +691,7 @@ function App() {
               <div className="grid md:grid-cols-5">
                 <div className="md:col-span-2 relative min-h-[200px] md:min-h-[260px] overflow-hidden">
                   <img
-                    src="https://res.cloudinary.com/djqnqxzha/image/upload/f_auto,q_auto,w_800/disney-v-01.jpg"
+                    src="https://res.cloudinary.com/djqnqxzha/image/upload/f_auto,q_auto,w_800/wedding_20260530/260530-57.jpg"
                     alt="婚禮相簿預覽"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"

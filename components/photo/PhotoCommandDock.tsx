@@ -1,9 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
 import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
+import {
+  chapterLabel,
+  PHOTO_THEME,
+  readFilmExpanded,
+  writeFilmExpanded,
+} from '../../utils/photoTheme';
 
 interface PhotoCommandDockProps {
   navItems: TimelineNavItem[];
@@ -34,36 +40,70 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   onOpenDrawer,
   onClearFilter,
 }) => {
+  const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
+
+  useEffect(() => {
+    writeFilmExpanded(filmExpanded);
+  }, [filmExpanded]);
+
   const marker = getStageFilmMarker(activeStageId);
-  const activeItem = navItems.find((i) => i.id === activeStageId) ?? navItems[0];
+  const activeIndex = navItems.findIndex((i) => i.id === activeStageId);
+  const activeItem = navItems[activeIndex] ?? navItems[0];
   const filmTitle = activeItem?.label ?? '婚宴影片';
+  const clockTime = activeItem?.time;
   const startSec = marker?.startSec ?? 0;
   const filmTime = marker?.filmTime ?? '00:00';
+  const chapterSubtitle =
+    marker?.description ?? PHOTO_THEME.tagline;
 
   return (
     <header
-      className="photo-command-dock shrink-0 border-b border-white/10 bg-[#0c0b0a]/95 backdrop-blur-xl photo-safe-top"
+      className="photo-command-dock shrink-0 border-b border-white/10 bg-[var(--photo-bg)]/95 backdrop-blur-xl photo-safe-top"
       aria-label="相簿控制區"
     >
-      <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-2">
-        <Link
-          to="/"
-          className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80"
-        >
-          ← 喜帖
-        </Link>
-        <p className="min-w-0 truncate text-center font-serif text-sm text-white/90">
-          {welcomeTitle ?? '婚禮相簿'}
-        </p>
-        <div className="w-[52px]" aria-hidden />
+      <div className="px-3 pb-2 pt-2">
+        <div className="flex items-center justify-between gap-2">
+          <Link
+            to="/"
+            className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80"
+          >
+            ← 喜帖
+          </Link>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate font-serif text-sm text-white/95">
+              {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
+            </p>
+            {!welcomeTitle && (
+              <p className="mt-0.5 truncate text-[10px] tracking-wide text-white/40">
+                {PHOTO_THEME.tagline}
+              </p>
+            )}
+          </div>
+          <div className="w-[52px]" aria-hidden />
+        </div>
+
+        {!hasFilter && activeItem && (
+          <p className="mt-2 text-center text-[11px] text-white/50">
+            <span className="text-[var(--photo-gold-light)]">
+              {chapterLabel(activeIndex >= 0 ? activeIndex : 0, filmTitle)}
+            </span>
+            <span className="mx-1.5 text-white/25">·</span>
+            <span className="line-clamp-1">{chapterSubtitle}</span>
+          </p>
+        )}
       </div>
 
-      <PhotoInlineFilm
-        startSec={startSec}
-        title={filmTitle}
-        filmTime={filmTime}
-        accent={marker?.accent}
-      />
+      {!hasFilter && (
+        <PhotoInlineFilm
+          startSec={startSec}
+          title={filmTitle}
+          filmTime={filmTime}
+          clockTime={clockTime}
+          accent={marker?.accent}
+          expanded={filmExpanded}
+          onExpandedChange={setFilmExpanded}
+        />
+      )}
 
       {navItems.length > 0 && (
         <PhotoTimelineNav
