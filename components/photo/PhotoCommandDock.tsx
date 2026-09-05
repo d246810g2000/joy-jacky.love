@@ -18,6 +18,7 @@ interface PhotoCommandDockProps {
   welcomeTitle?: string;
   resultCount: number | null;
   hasFilter: boolean;
+  loading?: boolean;
   filterLabel?: string | null;
   autoExpandSearch?: boolean;
   onExpandSearchHandled?: () => void;
@@ -41,6 +42,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   welcomeTitle,
   resultCount,
   hasFilter,
+  loading = false,
   filterLabel,
   autoExpandSearch,
   onExpandSearchHandled,
@@ -97,7 +99,16 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         </div>
       </div>
 
-      {!hasFilter && (
+      {loading ? (
+        <div className="space-y-2 border-y border-white/8 px-3 py-2.5" aria-label="相簿載入中">
+          <div className="photo-skeleton-dark h-8 rounded-xl" />
+          <div className="flex gap-1.5 overflow-hidden">
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="photo-skeleton-dark h-7 w-20 shrink-0 rounded-full" />
+            ))}
+          </div>
+        </div>
+      ) : !hasFilter && (
         <PhotoInlineFilm
           startSec={startSec}
           title={filmTitle}
