@@ -20,6 +20,7 @@ interface PhotoCommandDockProps {
   isChapterFocused?: boolean;
   onExitChapter?: () => void;
   filmStageId?: string | null;
+  onFilmExpandedChange?: (expanded: boolean) => void;
   loading?: boolean;
   hideTimeline?: boolean;
 }
@@ -34,6 +35,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   isChapterFocused = false,
   onExitChapter,
   filmStageId = null,
+  onFilmExpandedChange,
   loading = false,
   hideTimeline = false,
 }) => {
@@ -42,7 +44,8 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
 
   useEffect(() => {
     writeFilmExpanded(filmExpanded);
-  }, [filmExpanded]);
+    onFilmExpandedChange?.(filmExpanded);
+  }, [filmExpanded, onFilmExpandedChange]);
 
   useEffect(() => {
     if (!filmStageId) return;
