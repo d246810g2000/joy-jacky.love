@@ -51,7 +51,6 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const blurUrl = getBlurUrl(photo.publicId);
   const srcSet = getGridSrcSet(photo.publicId);
 
-  const hashTags = photo.tags.map((t) => `#${t}`);
   const { visible: visibleNames, hidden: hiddenNames, hiddenItems: hiddenNameItems } = chipLabel(
     photo.names,
     MAX_NAME_CHIPS
@@ -61,18 +60,11 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     MAX_TABLE_CHIPS
   );
 
-  const tableExpandItems = [
-    ...hiddenTableNumbers.map((table) => ({
-      key: `table-${table}`,
-      label: formatTableTag(table),
-      filterValue: formatTableTag(table).replace(/^#/, ''),
-    })),
-    ...hashTags.map((tag) => ({
-      key: `tag-${tag}`,
-      label: tag,
-      filterValue: tag.replace(/^#/, ''),
-    })),
-  ];
+  const tableExpandItems = hiddenTableNumbers.map((table) => ({
+    key: `table-${table}`,
+    label: formatTableTag(table),
+    filterValue: formatTableTag(table).replace(/^#/, ''),
+  }));
   const tableRowMoreCount = tableExpandItems.length;
 
   const toggleExpandedRow = (row: Exclude<ExpandedMetaRow, null>) => {
@@ -93,7 +85,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 
   const chipRowClass = 'flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden';
 
-  const hasMeta = photo.names.length > 0 || photo.tables.length > 0 || hashTags.length > 0;
+  const hasMeta = photo.names.length > 0 || photo.tables.length > 0;
 
   return (
     <article
@@ -188,7 +180,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
             </div>
           )}
 
-          {(photo.tables.length > 0 || hashTags.length > 0) && (
+          {photo.tables.length > 0 && (
             <div className={expandedRow === 'tables' ? 'flex min-w-0 flex-wrap items-center gap-1' : chipRowClass}>
               {visibleTables.map((table) => (
                 <button
@@ -230,8 +222,8 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                   aria-expanded={expandedRow === 'tables'}
                   aria-label={
                     expandedRow === 'tables'
-                      ? '收合更多桌次與標籤'
-                      : `展開 ${tableRowMoreCount} 個更多桌次或標籤`
+                      ? '收合更多桌次'
+                      : `展開 ${tableRowMoreCount} 個更多桌次`
                   }
                 >
                   {expandedRow === 'tables' ? '−' : `+${tableRowMoreCount}`}
