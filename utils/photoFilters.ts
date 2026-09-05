@@ -21,17 +21,27 @@ export const PHOTO_CATEGORIES = [
 
 export const POPULAR_TAGS = [formatTableTag(5), formatTableTag(3)];
 
-/** 可依方別（男方／女方）分開篩選的關係標籤 */
-export const SIDE_RELATION_TAGS = [
-  '#男方大學同學',
-  '#女方大學同學',
-  '#男方高中同學',
-  '#女方高中同學',
-  '#男方同事',
-  '#女方同事',
-  '#男方親戚',
-  '#女方親戚',
+/** 與 RSVP 回函相同的關係選項 */
+export const RSVP_RELATIONS = [
+  '親戚',
+  '國中同學',
+  '高中同學',
+  '大學同學',
+  '碩士同學',
+  '朋友',
+  '同事',
+  '其他',
 ] as const;
+
+export const PHOTO_SEARCH_SIDES = [
+  { key: '男方' as const, label: '男方親友', relationTitle: '與新郎的關係' },
+  { key: '女方' as const, label: '女方親友', relationTitle: '與新娘的關係' },
+] as const;
+
+/** @deprecated 改用 PHOTO_SEARCH_SIDES × RSVP_RELATIONS */
+export const SIDE_RELATION_TAGS = PHOTO_SEARCH_SIDES.flatMap(({ key }) =>
+  RSVP_RELATIONS.slice(0, 4).map((relation) => `#${key}${relation}`)
+);
 
 export type SideKey = '男方' | '女方';
 

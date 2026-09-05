@@ -3,8 +3,8 @@ import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearc
 import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 import { GUEST_RECORDS, formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
-import { formatTableLabel, listTableOptions } from '../../utils/tableLabels';
-import { POPULAR_TAGS, SIDE_RELATION_TAGS } from '../../utils/photoFilters';
+import { formatTableLabel } from '../../utils/tableLabels';
+import { PhotoSearchFilterSections } from './PhotoSearchFilterSections';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -62,7 +62,6 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
       .map((name) => GUEST_RECORDS.find((guest) => guest.name === name))
       .filter((guest): guest is GuestRecord => Boolean(guest));
   }, []);
-  const tableOptions = useMemo(() => listTableOptions(), []);
   const exactTable = useMemo(() => {
     const trimmed = query.trim();
     if (!/^\d{1,2}$/.test(trimmed)) return null;
@@ -213,103 +212,13 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 )}
               </div>
             ) : (
-              <div className="space-y-8">
-                {recent.length > 0 && (
-                  <section>
-                    <div className="mb-3 flex items-center justify-between">
-                      <h2 className="text-base font-medium text-white/90">最近搜尋</h2>
-                      <span className="text-xs text-white/35">點一下快速套用</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {recent.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => submit(item)}
-                          className="rounded-full border border-white/12 bg-white/6 px-3 py-2 text-sm text-white/75 active:bg-white/12"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                <section>
-                  <h2 className="mb-3 text-base font-medium text-white/90">搜尋人物</h2>
-                  <div className="flex gap-4 overflow-x-auto pb-1">
-                    {featuredGuests.map((guest) => (
-                      <button
-                        key={guest.id}
-                        type="button"
-                        onClick={() => submit(guest.name)}
-                        className="flex w-14 shrink-0 flex-col items-center gap-1.5"
-                      >
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-base text-white">
-                          {guest.name.slice(0, 1)}
-                        </span>
-                        <span className="w-full truncate text-center text-[11px] text-white/70">
-                          {guest.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="mb-3 text-base font-medium text-white/90">按桌次篩選</h2>
-                  <div className="grid grid-cols-3 gap-2">
-                    {tableOptions.map(({ table, name, label }) => (
-                      <button
-                        key={table}
-                        type="button"
-                        onClick={() => selectTable(table)}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5 text-left active:bg-white/10"
-                      >
-                        <span className="block text-sm font-medium tabular-nums text-[var(--photo-gold-light)]">
-                          {table}
-                        </span>
-                        <span className="mt-0.5 block truncate text-[10px] text-white/55">
-                          {name || label.replace(/^\d+\s*/, '')}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="mb-3 text-base font-medium text-white/90">依方別與關係</h2>
-                  <div className="grid grid-cols-2 gap-2">
-                    {SIDE_RELATION_TAGS.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => submitTag(tag)}
-                        className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left text-sm text-white/75 active:bg-white/10"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="mb-3 text-base font-medium text-white/90">快速搜尋</h2>
-                  <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03]">
-                    {POPULAR_TAGS.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => submitTag(tag)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-white/75 active:bg-white/10"
-                      >
-                        <span className="text-lg text-white/45">⌕</span>
-                        <span>{tag}</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              </div>
+              <PhotoSearchFilterSections
+                featuredGuests={featuredGuests}
+                recent={recent}
+                onSubmit={submit}
+                onSubmitTag={submitTag}
+                onSelectTable={selectTable}
+              />
             )}
           </div>
         </div>
@@ -427,10 +336,9 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               <div className="mt-2.5">
                 <div className="mb-1.5 flex items-center justify-between px-1">
                   <p className="text-[10px] text-white/35">最近搜尋</p>
-                  <span className="text-[10px] text-white/25">點一下快速套用</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {recent.map((r) => (
+                  {recent.slice(0, 4).map((r) => (
                     <button
                       key={r}
                       type="button"
@@ -443,57 +351,15 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 </div>
               </div>
             )}
-            <div className="mt-3 max-h-[42vh] space-y-4 overflow-y-auto pr-1">
-              <section>
-                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">按桌次篩選</p>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {tableOptions.map(({ table, name, label }) => (
-                    <button
-                      key={table}
-                      type="button"
-                      onClick={() => selectTable(table)}
-                      className="rounded-lg bg-white/5 px-1.5 py-1.5 text-left active:bg-white/10"
-                    >
-                      <span className="block text-xs font-medium tabular-nums text-[var(--photo-gold-light)]">
-                        {table}
-                      </span>
-                      {name && (
-                        <span className="mt-0.5 block truncate text-[9px] text-white/50">{name}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section>
-                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">依方別與關係</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SIDE_RELATION_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => submitTag(tag)}
-                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/70 active:bg-white/10"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section>
-                <p className="mb-2 text-[10px] tracking-wider text-white/45 uppercase">熱門桌次</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {POPULAR_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => submitTag(tag)}
-                      className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/70 active:bg-white/10"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </section>
+            <div className="mt-3 max-h-[42vh] overflow-y-auto pr-1">
+              <PhotoSearchFilterSections
+                featuredGuests={featuredGuests}
+                recent={[]}
+                onSubmit={submit}
+                onSubmitTag={submitTag}
+                onSelectTable={selectTable}
+                compact
+              />
             </div>
             <button
               type="button"
