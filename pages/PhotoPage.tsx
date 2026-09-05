@@ -370,11 +370,6 @@ const PhotoPage: React.FC = () => {
     firstStage?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleWatchFromLightbox = (stageId: string) => {
-    closeLightbox();
-    openVideo(stageId);
-  };
-
   const handleDownloadAll = useCallback(() => {
     if (!filteredPhotos?.length) return;
     downloadAll(filteredPhotos, currentFilterLabel ?? '婚禮照片');
@@ -636,7 +631,6 @@ const PhotoPage: React.FC = () => {
               handleNameClick(name);
               setDrawerOpen(false);
             }}
-            onWatchFilm={handleWatchFromLightbox}
           />
         )}
       </AnimatePresence>

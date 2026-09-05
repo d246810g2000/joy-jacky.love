@@ -9,6 +9,7 @@ import {
 } from '../../utils/photoPreload';
 import { buildPhotoShareUrl, buildPhotoShareTitle } from '../../hooks/usePhotoDeepLink';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useLightboxZoom } from '../../hooks/useLightboxZoom';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
 import { formatTableTag } from '../../utils/tableLabels';
@@ -23,7 +24,6 @@ interface PhotoLightboxProps {
   onChange: (photo: WeddingPhoto) => void;
   onTagClick?: (tag: string) => void;
   onNameClick?: (name: string) => void;
-  onWatchFilm?: (stageId: string) => void;
 }
 
 export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
@@ -34,7 +34,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   onChange,
   onTagClick,
   onNameClick,
-  onWatchFilm,
 }) => {
   const isMobile = useIsMobile();
   const [viewportWidth, setViewportWidth] = useState(
@@ -45,9 +44,19 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [imageError, setImageError] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
+
+  const {
+    scale,
+    offset,
+    reset: resetZoom,
+    containerRef,
+    isZoomed,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useLightboxZoom(isMobile);
 
   const displayUrl = useMemo(
     () => getLightboxDisplayUrl(photo.publicId, viewportWidth),
@@ -72,6 +81,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, []);
 
   useEffect(() => {
+    resetZoom();
     setShowDetails(false);
     setImageError(false);
 
@@ -93,7 +103,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [photo.id, displayUrl]);
+  }, [photo.id, displayUrl, resetZoom]);
 
   useEffect(() => {
     preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
@@ -115,28 +125,14 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, goPrev, goNext]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStart.current = {
-      x: e.touches[0]?.clientX ?? 0,
-      y: e.touches[0]?.clientY ?? 0,
-    };
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStart.current) return;
-    const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStart.current.x;
-    const dy = (e.changedTouches[0]?.clientY ?? 0) - touchStart.current.y;
-    touchStart.current = null;
-
-    if (dy > 70 && dy > Math.abs(dx) * 1.2) {
-      onClose();
-      return;
-    }
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 0) goPrev();
-      else goNext();
-    }
-  };
+  const onSwipe = useCallback(
+    (result: { direction: 'left' | 'right' | 'down' | null }) => {
+      if (result.direction === 'down') onClose();
+      if (result.direction === 'right') goPrev();
+      if (result.direction === 'left') goNext();
+    },
+    [onClose, goPrev, goNext]
+  );
 
   const handleShare = async () => {
     const url = buildPhotoShareUrl(photo.id, filter);
@@ -197,6 +193,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
             {currentIndex + 1} / {allPhotos.length}
           </span>
           <div className="flex items-center gap-1 md:gap-2">
+            {isZoomed && isMobile && (
+              <button
+                type="button"
+                onClick={resetZoom}
+                className="rounded-lg px-3 py-1.5 text-sm text-[var(--photo-gold-light)] hover:bg-white/10"
+              >
+                還原
+              </button>
+            )}
             {!isMobile && (
               <button
                 type="button"
@@ -234,11 +239,13 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       </header>
 
       <div
-        className="relative flex min-h-0 flex-1 items-center justify-center px-1"
+        ref={containerRef}
+        className="relative flex min-h-0 flex-1 touch-none items-center justify-center overflow-hidden px-1"
         onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={(event) => handleTouchEnd(event, onSwipe)}
       >
-        {currentIndex > 0 && (
+        {currentIndex > 0 && !isZoomed && (
           <>
             <button
               type="button"
@@ -257,7 +264,14 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           </>
         )}
 
-        <div className={`relative flex ${imageMaxH} max-w-full items-center justify-center photo-lightbox-vignette`}>
+        <div
+          className={`relative flex ${imageMaxH} max-w-full items-center justify-center photo-lightbox-vignette`}
+          style={{
+            transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${scale})`,
+            transition: isZoomed ? undefined : 'transform 0.2s ease-out',
+            willChange: isZoomed ? 'transform' : undefined,
+          }}
+        >
           {!imageLoaded && !imageError && (
             <>
               <img
@@ -287,7 +301,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               }}
               decoding="async"
               fetchPriority="high"
-              className={`${imageMaxH} max-w-full object-contain`}
+              className={`${imageMaxH} max-w-full object-contain select-none`}
               draggable={false}
             />
           </AnimatePresence>
@@ -298,7 +312,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           )}
         </div>
 
-        {currentIndex < allPhotos.length - 1 && (
+        {currentIndex < allPhotos.length - 1 && !isZoomed && (
           <>
             <button
               type="button"
@@ -323,16 +337,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs tabular-nums md:text-sm">
             {photo.time}
           </span>
-          {onWatchFilm && (
-            <button
-              type="button"
-              onClick={() => onWatchFilm(photo.stageId)}
-              className="flex items-center gap-1 rounded-full border border-[#B08D55]/40 bg-[#B08D55]/15 px-3 py-1 text-xs text-[#F5E6C8]"
-            >
-              <span aria-hidden>▶</span>
-              影片中觀看
-            </button>
-          )}
           {isMobile && (
             <button
               type="button"
@@ -441,7 +445,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
         {isMobile && (
           <p className="text-center text-[10px] text-white/25">
-            左右滑動換張 · 下滑關閉
+            {isZoomed ? '雙指縮放 · 拖移查看 · 雙擊或點還原' : '雙指或雙擊縮放 · 左右滑動換張 · 下滑關閉'}
           </p>
         )}
       </footer>
