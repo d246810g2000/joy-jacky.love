@@ -8,6 +8,8 @@ interface PhotoChapterRailProps {
   onSelect: (stageId: string) => void;
 }
 
+const DRAG_THRESHOLD_PX = 10;
+
 export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   items,
   activeStageId,
@@ -17,6 +19,8 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   const [dragging, setDragging] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const lastIndexRef = useRef<number | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = useRef(false);
 
   const activeIndex = items.findIndex((item) => item.id === activeStageId);
   const activeItem = items.find((item) => item.id === activeStageId) ?? items[0];
@@ -25,46 +29,58 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
     items.find((item) => item.id === (previewId ?? activeStageId)) ?? items[0];
   const previewMarker = getStageFilmMarker(previewItem?.id ?? '');
 
-  const selectAtClientY = useCallback(
+  const indexFromClientY = useCallback(
     (clientY: number) => {
       const rail = railRef.current;
-      if (!rail || items.length === 0) return;
+      if (!rail || items.length === 0) return null;
 
       const markers = Array.from(
         rail.querySelectorAll<HTMLElement>('[data-chapter-index]')
       );
-      if (markers.length === 0) return;
+      if (markers.length === 0) return null;
 
-      const index = Number(
-        markers.reduce((closest, marker) => {
-          const closestDistance = Math.abs(
-            closest.getBoundingClientRect().top +
-              closest.getBoundingClientRect().height / 2 -
-              clientY
-          );
-          const markerDistance = Math.abs(
-            marker.getBoundingClientRect().top +
-              marker.getBoundingClientRect().height / 2 -
-              clientY
-          );
-          return markerDistance < closestDistance ? marker : closest;
-        }, markers[0]).dataset.chapterIndex
-      );
-      if (Number.isNaN(index)) return;
+      const closest = markers.reduce((best, marker) => {
+        const bestCenter =
+          best.getBoundingClientRect().top + best.getBoundingClientRect().height / 2;
+        const markerCenter =
+          marker.getBoundingClientRect().top + marker.getBoundingClientRect().height / 2;
+        return Math.abs(markerCenter - clientY) < Math.abs(bestCenter - clientY)
+          ? marker
+          : best;
+      }, markers[0]);
+
+      const index = Number(closest.dataset.chapterIndex);
+      return Number.isNaN(index) ? null : index;
+    },
+    [items.length]
+  );
+
+  const selectIndex = useCallback(
+    (index: number) => {
       if (lastIndexRef.current === index) return;
-
       lastIndexRef.current = index;
       const item = items[index];
       if (!item) return;
-
       setPreviewId(item.id);
       onSelect(item.id);
     },
     [items, onSelect]
   );
 
+  const selectAtClientY = useCallback(
+    (clientY: number) => {
+      const index = indexFromClientY(clientY);
+      if (index == null) return;
+      selectIndex(index);
+    },
+    [indexFromClientY, selectIndex]
+  );
+
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
     event.preventDefault();
+    pointerStartRef.current = { x: event.clientX, y: event.clientY };
+    didDragRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
     setDragging(true);
     lastIndexRef.current = null;
@@ -72,7 +88,14 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
+    if (!dragging || !pointerStartRef.current) return;
+
+    const dx = event.clientX - pointerStartRef.current.x;
+    const dy = event.clientY - pointerStartRef.current.y;
+    if (Math.hypot(dx, dy) >= DRAG_THRESHOLD_PX) {
+      didDragRef.current = true;
+    }
+
     selectAtClientY(event.clientY);
   };
 
@@ -83,14 +106,20 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
     setDragging(false);
     setPreviewId(null);
     lastIndexRef.current = null;
+    pointerStartRef.current = null;
+    didDragRef.current = false;
+  };
+
+  const handleDotClick = (event: React.MouseEvent, index: number) => {
+    event.stopPropagation();
+    if (didDragRef.current) return;
+    selectIndex(index);
   };
 
   if (items.length <= 1) return null;
 
   return (
-    <div
-      className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-12 items-center justify-end pr-1 photo-safe-top photo-safe-bottom"
-    >
+    <div className="pointer-events-none fixed inset-y-0 right-0 z-30 flex w-12 items-center justify-end pr-1 photo-safe-top photo-safe-bottom">
       {dragging && previewItem && (
         <div
           className="pointer-events-none absolute right-11 top-1/2 max-w-[42vw] -translate-y-1/2 rounded-xl border border-white/15 bg-[#141210]/95 px-3 py-2 shadow-xl backdrop-blur-md"
@@ -108,12 +137,12 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
       <div
         ref={railRef}
         role="slider"
-        aria-label="章節時間軸，可長按拖曳快速跳轉"
+        aria-label="章節時間軸，可點擊或長按拖曳快速跳轉"
         aria-valuemin={1}
         aria-valuemax={items.length}
         aria-valuenow={activeIndex + 1}
         aria-valuetext={`${previewItem?.time ?? ''} ${previewItem?.label ?? ''}`}
-        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center gap-1.5 rounded-full border px-1.5 py-2.5 transition ${
+        className={`photo-chapter-rail pointer-events-auto flex touch-none flex-col items-center gap-0.5 rounded-full border px-1.5 py-2.5 transition ${
           dragging
             ? 'border-[var(--photo-accent)]/40 bg-black/80 shadow-lg'
             : 'border-white/10 bg-black/55 backdrop-blur-sm'
@@ -123,31 +152,39 @@ export const PhotoChapterRail: React.FC<PhotoChapterRailProps> = ({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        {items.map((item) => {
+        {items.map((item, index) => {
           const isActive = item.id === activeStageId;
           const marker = getStageFilmMarker(item.id);
           const isPreview = dragging && item.id === previewId;
 
           return (
             <React.Fragment key={item.id}>
-              <span
-                aria-hidden
-                data-chapter-index={items.indexOf(item)}
-                className={`rounded-full transition-all duration-200 ${
-                  isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
-                }`}
-                style={{
-                  backgroundColor:
-                    isActive || isPreview
-                      ? marker?.accent ?? '#e6c896'
-                      : 'rgba(255,255,255,0.28)',
-                  boxShadow:
-                    isActive || isPreview
-                      ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
-                      : undefined,
-                  opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
-                }}
-              />
+              <button
+                type="button"
+                data-chapter-index={index}
+                aria-label={`${item.time} ${item.label}`}
+                aria-current={isActive ? 'step' : undefined}
+                onClick={(event) => handleDotClick(event, index)}
+                className="group flex min-h-[28px] min-w-[28px] items-center justify-center rounded-full p-1.5 transition"
+              >
+                <span
+                  aria-hidden
+                  className={`block rounded-full transition-all duration-200 ${
+                    isActive || isPreview ? 'h-3 w-1.5' : 'h-1.5 w-1.5'
+                  } ${!isActive && !isPreview ? 'group-hover:h-2 group-hover:w-2' : ''}`}
+                  style={{
+                    backgroundColor:
+                      isActive || isPreview
+                        ? marker?.accent ?? '#e6c896'
+                        : 'rgba(255,255,255,0.28)',
+                    boxShadow:
+                      isActive || isPreview
+                        ? `0 0 10px ${marker?.accent ?? '#e6c896'}88`
+                        : undefined,
+                    opacity: dragging && !isActive && !isPreview ? 0.65 : 1,
+                  }}
+                />
+              </button>
               {isActive && !dragging && (
                 <span
                   className="max-h-24 max-w-4 truncate text-[9px] leading-tight tracking-[0.1em] [writing-mode:vertical-rl]"
