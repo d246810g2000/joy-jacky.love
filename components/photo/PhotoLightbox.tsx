@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PhotoFilter, WeddingPhoto } from '../../types';
-import { getBlurUrl, getLightboxDisplayUrl, getOriginalUrl, getThumbUrl } from '../../utils/photoUrls';
+import {
+  getBlurUrl,
+  getLightboxDisplayUrl,
+  getLightboxZoomUrl,
+  getOriginalUrl,
+  getThumbUrl,
+} from '../../utils/photoUrls';
 import {
   isImagePreloaded,
   preloadImageUrl,
@@ -42,6 +48,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [copied, setCopied] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [zoomLoaded, setZoomLoaded] = useState(false);
+  const [zoomLoading, setZoomLoading] = useState(false);
+  const [zoomRequested, setZoomRequested] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
@@ -62,7 +71,13 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     () => getLightboxDisplayUrl(photo.publicId, viewportWidth),
     [photo.publicId, viewportWidth]
   );
-  const isPreloaded = isImagePreloaded(displayUrl);
+  const zoomUrl = useMemo(
+    () => getLightboxZoomUrl(photo.publicId, viewportWidth),
+    [photo.publicId, viewportWidth]
+  );
+  const isDisplayingZoom = isZoomed && zoomLoaded;
+  const imageUrl = isDisplayingZoom ? zoomUrl : displayUrl;
+  const isPreloaded = isImagePreloaded(imageUrl);
 
   const imageMaxH = isMobile ? 'max-h-[72dvh]' : 'max-h-[60dvh]';
 
@@ -84,6 +99,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     resetZoom();
     setShowDetails(false);
     setImageError(false);
+    setZoomLoaded(false);
+    setZoomLoading(false);
+    setZoomRequested(false);
 
     if (isImagePreloaded(displayUrl)) {
       setImageLoaded(true);
@@ -104,6 +122,28 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       cancelled = true;
     };
   }, [photo.id, displayUrl, resetZoom]);
+
+  useEffect(() => {
+    if (!isZoomed || zoomLoaded || zoomRequested) return;
+
+    let cancelled = false;
+    setZoomRequested(true);
+    setZoomLoading(true);
+    preloadImageUrl(zoomUrl)
+      .then(() => {
+        if (!cancelled) setZoomLoaded(true);
+      })
+      .catch(() => {
+        // Keep displaying the initial image if the zoom asset cannot be loaded.
+      })
+      .finally(() => {
+        if (!cancelled) setZoomLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isZoomed, zoomLoaded, zoomRequested, zoomUrl]);
 
   useEffect(() => {
     preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
@@ -288,7 +328,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.img
               key={photo.id}
-              src={displayUrl}
+              src={imageUrl}
               alt={photo.caption || photo.names.join('、') || '婚禮照片'}
               initial={{ opacity: 0 }}
               animate={{ opacity: imageLoaded ? 1 : 0 }}
@@ -305,6 +345,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               draggable={false}
             />
           </AnimatePresence>
+          {zoomLoading && !zoomLoaded && (
+            <div
+              className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/65 px-3 py-1 text-[10px] text-white/70 backdrop-blur-sm"
+              role="status"
+              aria-live="polite"
+            >
+              正在提升畫質…
+            </div>
+          )}
           {imageError && (
             <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/10 bg-black/70 px-4 py-3 text-center text-xs text-white/70">
               照片載入失敗，請稍後重試
