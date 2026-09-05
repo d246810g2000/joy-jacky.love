@@ -2,16 +2,17 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 const TOP_THRESHOLD_PX = 32;
 const BOTTOM_THRESHOLD_PX = 64;
-const DEFAULT_ANCHOR_OFFSET_PX = 24;
+const DEFAULT_ANCHOR_OFFSET_PX = 16;
 const DESKTOP_ANCHOR_OFFSET_PX = 96;
 const SCROLL_RETRY_MS = 80;
 const SCROLL_RETRY_MAX = 40;
-const LAYOUT_SETTLE_MS = 900;
-const USER_SCROLL_RELEASE_PX = 12;
-const USER_SCROLL_DRIFT_PX = 56;
+const LAYOUT_SETTLE_MS = 500;
+const USER_SCROLL_RELEASE_PX = 8;
+const USER_SCROLL_DRIFT_PX = 48;
+const SCROLL_END_DEBOUNCE_MS = 80;
 
 export interface TimelineSyncOptions {
-  /** Distance from scroll container top before a chapter banner counts as active. */
+  /** Banner top must reach this distance from scroll container top to become active. */
   anchorOffset?: number;
 }
 
@@ -33,7 +34,8 @@ function getScrollMetrics(scrollRoot: HTMLElement | null) {
   };
 }
 
-function getMarkerViewportOffset(
+/** Distance from scroll container top to banner marker top edge. */
+function getBannerTop(
   marker: HTMLElement,
   scrollRoot: HTMLElement | null,
   rootTop: number
@@ -41,15 +43,22 @@ function getMarkerViewportOffset(
   return marker.getBoundingClientRect().top - rootTop;
 }
 
-function scrollElementIntoRoot(
-  el: HTMLElement,
+function findStageMarker(stageId: string, markers: Map<string, HTMLElement>): HTMLElement | null {
+  return (
+    markers.get(stageId) ??
+    document.querySelector<HTMLElement>(`[data-stage-marker="${stageId}"]`)
+  );
+}
+
+function scrollMarkerIntoRoot(
+  marker: HTMLElement,
   scrollRoot: HTMLElement,
   behavior: ScrollBehavior = 'smooth',
   anchorOffset = DEFAULT_ANCHOR_OFFSET_PX
 ) {
   const rootTop = scrollRoot.getBoundingClientRect().top;
-  const elTop = el.getBoundingClientRect().top;
-  const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - anchorOffset;
+  const markerTop = marker.getBoundingClientRect().top;
+  const nextTop = scrollRoot.scrollTop + (markerTop - rootTop) - anchorOffset;
   const maxScroll = scrollRoot.scrollHeight - scrollRoot.clientHeight;
   scrollRoot.scrollTo({
     top: Math.min(Math.max(0, nextTop), maxScroll),
@@ -57,6 +66,11 @@ function scrollElementIntoRoot(
   });
 }
 
+/**
+ * Active chapter = last banner whose top edge has crossed the activation line.
+ * If the next banner is still below that line (common with 10-photo previews),
+ * we stay on the previous chapter even when its banner is visible lower on screen.
+ */
 function resolveActiveStage(
   stageIds: string[],
   markers: Map<string, HTMLElement>,
@@ -76,21 +90,27 @@ function resolveActiveStage(
   }
 
   const activationLine = anchorOffset;
+  const bannerTops: { id: string; top: number }[] = [];
 
-  let activeId = stageIds[0];
   for (const id of stageIds) {
     const marker = markers.get(id);
     if (!marker) continue;
-
-    const markerOffset = getMarkerViewportOffset(marker, scrollRoot, rootTop);
-    if (markerOffset <= activationLine) {
-      activeId = id;
-    } else {
-      break;
-    }
+    bannerTops.push({ id, top: getBannerTop(marker, scrollRoot, rootTop) });
   }
 
-  return activeId;
+  if (bannerTops.length === 0) return stageIds[0];
+
+  let lastPassedId = bannerTops[0].id;
+  for (const banner of bannerTops) {
+    if (banner.top <= activationLine) {
+      lastPassedId = banner.id;
+      continue;
+    }
+    // Next banner hasn't reached the activation line yet → previous chapter stays active.
+    return lastPassedId;
+  }
+
+  return lastPassedId;
 }
 
 export function useTimelineSync(
@@ -106,6 +126,8 @@ export function useTimelineSync(
   const lastScrollTopRef = useRef(0);
   const scrollCleanupRef = useRef<(() => void) | null>(null);
   const rafRef = useRef<number | null>(null);
+  const scrollEndTimerRef = useRef<number | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const stageIdsRef = useRef(stageIds);
   const scrollRootRef = useRef(scrollRoot ?? null);
   const anchorOffsetRef = useRef(anchorOffset);
@@ -115,8 +137,6 @@ export function useTimelineSync(
   anchorOffsetRef.current = anchorOffset;
 
   const syncActiveStage = useCallback(() => {
-    if (pendingStageRef.current) return;
-
     const next = resolveActiveStage(
       stageIdsRef.current,
       markersRef.current,
@@ -136,6 +156,16 @@ export function useTimelineSync(
     });
   }, [syncActiveStage]);
 
+  const scheduleScrollEndSync = useCallback(() => {
+    if (scrollEndTimerRef.current != null) {
+      window.clearTimeout(scrollEndTimerRef.current);
+    }
+    scrollEndTimerRef.current = window.setTimeout(() => {
+      scrollEndTimerRef.current = null;
+      syncActiveStage();
+    }, SCROLL_END_DEBOUNCE_MS);
+  }, [syncActiveStage]);
+
   const releasePending = useCallback(() => {
     pendingStageRef.current = null;
     targetScrollTopRef.current = null;
@@ -151,8 +181,8 @@ export function useTimelineSync(
   }, [stageIds, activeStageId]);
 
   useEffect(() => {
-    scheduleSync();
-  }, [stageIds.join(','), scrollRoot, anchorOffset, scheduleSync]);
+    syncActiveStage();
+  }, [stageIds.join(','), scrollRoot, anchorOffset, syncActiveStage]);
 
   useEffect(() => {
     const target = scrollRoot ?? window;
@@ -174,11 +204,42 @@ export function useTimelineSync(
       }
 
       scheduleSync();
+      scheduleScrollEndSync();
+    };
+
+    const onScrollEnd = () => {
+      syncActiveStage();
     };
 
     target.addEventListener('scroll', onScroll, { passive: true });
-    return () => target.removeEventListener('scroll', onScroll);
-  }, [scrollRoot, scheduleSync, releasePending]);
+    target.addEventListener('scrollend', onScrollEnd, { passive: true });
+    return () => {
+      target.removeEventListener('scroll', onScroll);
+      target.removeEventListener('scrollend', onScrollEnd);
+      if (scrollEndTimerRef.current != null) {
+        window.clearTimeout(scrollEndTimerRef.current);
+      }
+    };
+  }, [scrollRoot, scheduleSync, scheduleScrollEndSync, syncActiveStage, releasePending]);
+
+  useEffect(() => {
+    observerRef.current?.disconnect();
+    observerRef.current = new IntersectionObserver(
+      () => {
+        scheduleSync();
+        scheduleScrollEndSync();
+      },
+      {
+        root: scrollRoot ?? null,
+        rootMargin: `-${anchorOffset}px 0px -88% 0px`,
+        threshold: [0, 0.01, 0.25, 0.5, 1],
+      }
+    );
+
+    markersRef.current.forEach((marker) => observerRef.current?.observe(marker));
+
+    return () => observerRef.current?.disconnect();
+  }, [scrollRoot, stageIds.join(','), anchorOffset, scheduleSync, scheduleScrollEndSync]);
 
   useEffect(() => {
     if (!scrollRoot) {
@@ -198,17 +259,23 @@ export function useTimelineSync(
     () => () => {
       scrollCleanupRef.current?.();
       if (rafRef.current != null) window.cancelAnimationFrame(rafRef.current);
+      if (scrollEndTimerRef.current != null) window.clearTimeout(scrollEndTimerRef.current);
     },
     []
   );
 
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
+      const prev = markersRef.current.get(id);
+      if (prev) observerRef.current?.unobserve(prev);
+
       if (el) {
         markersRef.current.set(id, el);
+        observerRef.current?.observe(el);
       } else {
         markersRef.current.delete(id);
       }
+
       scheduleSync();
     },
     [scheduleSync]
@@ -216,7 +283,6 @@ export function useTimelineSync(
 
   const scrollToStage = useCallback(
     (stageId: string) => {
-      setActiveStageId(stageId);
       pendingStageRef.current = stageId;
       scrollCleanupRef.current?.();
 
@@ -241,17 +307,17 @@ export function useTimelineSync(
       };
 
       const performScroll = (behavior: ScrollBehavior) => {
-        const marker = markersRef.current.get(stageId) ?? document.getElementById(`stage-${stageId}`);
+        const marker = findStageMarker(stageId, markersRef.current);
         if (!marker) return false;
 
         if (scrollRoot) {
           const rootTop = scrollRoot.getBoundingClientRect().top;
-          const elTop = marker.getBoundingClientRect().top;
+          const markerTop = marker.getBoundingClientRect().top;
           targetScrollTopRef.current = Math.max(
             0,
-            scrollRoot.scrollTop + (elTop - rootTop) - anchorOffsetRef.current
+            scrollRoot.scrollTop + (markerTop - rootTop) - anchorOffsetRef.current
           );
-          scrollElementIntoRoot(marker, scrollRoot, behavior, anchorOffsetRef.current);
+          scrollMarkerIntoRoot(marker, scrollRoot, behavior, anchorOffsetRef.current);
         } else {
           marker.scrollIntoView({ behavior, block: 'start' });
           targetScrollTopRef.current = window.scrollY || document.documentElement.scrollTop;
@@ -279,6 +345,7 @@ export function useTimelineSync(
 
       const attemptScroll = (attempt = 0) => {
         if (performScroll(attempt === 0 ? 'smooth' : 'auto')) {
+          scheduleSync();
           beginSettling();
           return;
         }
@@ -294,7 +361,7 @@ export function useTimelineSync(
       scrollCleanupRef.current = finishPending;
       attemptScroll();
     },
-    [scrollRoot, syncActiveStage]
+    [scrollRoot, syncActiveStage, scheduleSync]
   );
 
   return { activeStageId, setActiveStageId, registerSection, scrollToStage };
