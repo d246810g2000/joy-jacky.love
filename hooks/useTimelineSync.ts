@@ -1,12 +1,31 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 const BOTTOM_THRESHOLD_PX = 64;
+const SCROLL_RETRY_MS = 80;
+const SCROLL_RETRY_MAX = 40;
+const LAYOUT_SETTLE_MS = 2400;
+
+function scrollElementIntoRoot(
+  el: HTMLElement,
+  scrollRoot: HTMLElement,
+  behavior: ScrollBehavior = 'smooth'
+) {
+  const rootTop = scrollRoot.getBoundingClientRect().top;
+  const elTop = el.getBoundingClientRect().top;
+  const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - 8;
+  const maxScroll = scrollRoot.scrollHeight - scrollRoot.clientHeight;
+  scrollRoot.scrollTo({
+    top: Math.min(Math.max(0, nextTop), maxScroll),
+    behavior,
+  });
+}
 
 export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | null) {
   const [activeStageId, setActiveStageId] = useState(stageIds[0] ?? '');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const pendingStageRef = useRef<string | null>(null);
+  const scrollCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (stageIds.length && !stageIds.includes(activeStageId)) {
@@ -56,6 +75,13 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
     return () => scrollRoot.removeEventListener('scroll', onScroll);
   }, [scrollRoot, stageIds.join(',')]);
 
+  useEffect(
+    () => () => {
+      scrollCleanupRef.current?.();
+    },
+    []
+  );
+
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
       const prev = elementsRef.current.get(id);
@@ -73,30 +99,70 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
 
   const scrollToStage = useCallback(
     (stageId: string) => {
-      const el = document.getElementById(`stage-${stageId}`);
-      if (!el) return;
-
       setActiveStageId(stageId);
       pendingStageRef.current = stageId;
+      scrollCleanupRef.current?.();
+
+      let retryTimer: number | null = null;
+      let settleTimer: number | null = null;
+      let resizeObserver: ResizeObserver | null = null;
+      let correctionCount = 0;
 
       const releasePending = () => {
         pendingStageRef.current = null;
+        resizeObserver?.disconnect();
+        resizeObserver = null;
+        if (retryTimer != null) window.clearTimeout(retryTimer);
+        if (settleTimer != null) window.clearTimeout(settleTimer);
+        scrollCleanupRef.current = null;
       };
 
-      if (scrollRoot) {
-        const rootTop = scrollRoot.getBoundingClientRect().top;
-        const elTop = el.getBoundingClientRect().top;
-        const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - 8;
-        const maxScroll = scrollRoot.scrollHeight - scrollRoot.clientHeight;
-        scrollRoot.scrollTo({
-          top: Math.min(Math.max(0, nextTop), maxScroll),
-          behavior: 'smooth',
-        });
-        window.setTimeout(releasePending, 450);
-      } else {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        window.setTimeout(releasePending, 450);
-      }
+      const performScroll = (behavior: ScrollBehavior) => {
+        const el = document.getElementById(`stage-${stageId}`);
+        if (!el) return false;
+
+        if (scrollRoot) {
+          scrollElementIntoRoot(el, scrollRoot, behavior);
+        } else {
+          el.scrollIntoView({ behavior, block: 'start' });
+        }
+        return true;
+      };
+
+      const correctScroll = () => {
+        if (!pendingStageRef.current || correctionCount > 24) return;
+        correctionCount += 1;
+        performScroll('auto');
+      };
+
+      const beginSettling = () => {
+        if (scrollRoot) {
+          resizeObserver = new ResizeObserver(() => {
+            window.requestAnimationFrame(correctScroll);
+          });
+          resizeObserver.observe(scrollRoot);
+          elementsRef.current.forEach((node) => resizeObserver?.observe(node));
+        }
+
+        settleTimer = window.setTimeout(releasePending, LAYOUT_SETTLE_MS);
+      };
+
+      const attemptScroll = (attempt = 0) => {
+        if (performScroll(attempt === 0 ? 'smooth' : 'auto')) {
+          beginSettling();
+          return;
+        }
+
+        if (attempt >= SCROLL_RETRY_MAX) {
+          releasePending();
+          return;
+        }
+
+        retryTimer = window.setTimeout(() => attemptScroll(attempt + 1), SCROLL_RETRY_MS);
+      };
+
+      scrollCleanupRef.current = releasePending;
+      attemptScroll();
     },
     [scrollRoot]
   );

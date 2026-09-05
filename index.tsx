@@ -9,6 +9,7 @@ import QuizPage from './pages/QuizPage';
 import CheerPage from './pages/CheerPage';
 import PlaylistPage from './pages/PlaylistPage';
 import PhotoPage from './pages/PhotoPage';
+import { VisitCounterProvider } from './components/VisitCounterProvider';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,17 +19,19 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/rsvp" element={<RSVPPage />} />
-        <Route path="/invitation" element={<InvitationCardPage />} />
-        <Route path="/bingo" element={<BingoPage />} />
-        <Route path="/quiz" element={<QuizPage />} />
-        <Route path="/cheer" element={<CheerPage />} />
-        <Route path="/playlist" element={<PlaylistPage />} />
-        <Route path="/photo" element={<PhotoPage />} />
-      </Routes>
-    </BrowserRouter>
+    <VisitCounterProvider>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/rsvp" element={<RSVPPage />} />
+          <Route path="/invitation" element={<InvitationCardPage />} />
+          <Route path="/bingo" element={<BingoPage />} />
+          <Route path="/quiz" element={<QuizPage />} />
+          <Route path="/cheer" element={<CheerPage />} />
+          <Route path="/playlist" element={<PlaylistPage />} />
+          <Route path="/photo" element={<PhotoPage />} />
+        </Routes>
+      </BrowserRouter>
+    </VisitCounterProvider>
   </React.StrictMode>
 );

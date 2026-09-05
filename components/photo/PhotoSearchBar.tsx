@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearch';
 import type { NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
+import { formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
+import { formatTableLabel } from '../../utils/tableLabels';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -13,6 +15,10 @@ interface PhotoSearchBarProps {
   onSearch: (query: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
+  onDownloadAll?: () => void;
+  onShareFilter?: () => void;
+  downloading?: boolean;
+  downloadProgress?: { done: number; total: number } | null;
   onExpandHandled?: () => void;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
@@ -30,6 +36,10 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   onSearch,
   onOpenDrawer,
   onClearFilter,
+  onDownloadAll,
+  onShareFilter,
+  downloading = false,
+  downloadProgress = null,
   onExpandHandled,
   nameScope = 'person',
   onNameScopeChange,
@@ -40,6 +50,16 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestions = useMemo(
+    () => (query.trim().length > 0 ? searchGuests(query, 5) : []),
+    [query]
+  );
+  const exactTable = useMemo(() => {
+    const trimmed = query.trim();
+    if (!/^\d{1,2}$/.test(trimmed)) return null;
+    const table = Number(trimmed);
+    return table >= 1 && table <= 27 ? table : null;
+  }, [query]);
 
   useEffect(() => {
     if (expanded) {
@@ -68,6 +88,11 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     setQuery('');
   };
 
+  const closeSearch = () => {
+    setExpanded(false);
+    setQuery('');
+  };
+
   return (
     <>
       {expanded && !isDock && (
@@ -91,7 +116,20 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               isDock ? 'mb-2' : 'mb-2'
             }`}
           >
-            <p className="mb-2 px-1 text-[11px] tracking-wide text-white/45">找您的婚禮照片</p>
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+              <div>
+                <p className="text-[13px] font-medium text-white/90">找您的婚禮照片</p>
+                <p className="mt-0.5 text-[10px] text-white/45">輸入姓名或桌號，直接找到相關照片</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeSearch}
+                className="rounded-full px-2 py-1 text-xs text-white/50 active:bg-white/10"
+                aria-label="關閉搜尋"
+              >
+                關閉
+              </button>
+            </div>
             <div className="relative">
               <span
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35"
@@ -108,17 +146,69 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') submit(query);
-                  if (e.key === 'Escape') setExpanded(false);
+                  if (e.key === 'Escape') closeSearch();
                 }}
-                placeholder="輸入姓名或桌號…"
+                placeholder="例如：王小明、6"
                 className="photo-search-input w-full rounded-xl border border-white/10 bg-black/50 py-3 pl-10 pr-4 text-base text-white placeholder:text-white/35 focus:border-[var(--photo-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--photo-accent)]/40"
                 autoComplete="off"
                 enterKeyHint="search"
               />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-white/45 active:bg-white/10"
+                  aria-label="清除搜尋文字"
+                >
+                  ×
+                </button>
+              )}
             </div>
+            {(suggestions.length > 0 || exactTable != null) && (
+              <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-black/25">
+                {exactTable != null && (
+                  <button
+                    type="button"
+                    onClick={() => submit(String(exactTable))}
+                    className="flex w-full items-center gap-3 border-b border-white/8 px-3 py-2.5 text-left active:bg-white/10"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--photo-accent)]/20 text-sm text-[var(--photo-gold-light)]">
+                      {exactTable}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-white/90">
+                        {formatTableLabel(exactTable)}
+                      </span>
+                      <span className="block text-[10px] text-white/45">查看這桌的全部照片</span>
+                    </span>
+                  </button>
+                )}
+                {suggestions.map((guest) => (
+                  <button
+                    key={guest.id}
+                    type="button"
+                    onClick={() => submit(guest.name)}
+                    className="flex w-full items-center gap-3 border-b border-white/8 px-3 py-2.5 text-left last:border-0 active:bg-white/10"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/8 text-xs text-white/65">
+                      {guest.name.slice(0, 1)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-white/90">{guest.name}</span>
+                      <span className="block truncate text-[10px] text-white/45">
+                        {formatGuestSubtitle(guest)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {recent.length > 0 && (
               <div className="mt-2.5">
-                <p className="mb-1.5 px-1 text-[10px] text-white/35">最近搜尋</p>
+                <div className="mb-1.5 flex items-center justify-between px-1">
+                  <p className="text-[10px] text-white/35">最近搜尋</p>
+                  <span className="text-[10px] text-white/25">點一下快速套用</span>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {recent.map((r) => (
                     <button
@@ -154,9 +244,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
 
         <div
           className={`photo-search-bar flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-xl ${
-            hasFilter
-              ? 'border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/8'
-              : 'border-white/12 bg-[#141210]/92'
+            hasFilter ? 'border-[var(--photo-accent)]/35 !bg-[rgba(176,141,85,0.12)]' : ''
           } ${showNameScope ? 'mt-2' : ''}`}
         >
           <button
@@ -177,19 +265,47 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
             <div className="min-w-0 flex-1">
               {hasFilter && filterLabel ? (
                 <>
-                  <p className="truncate text-sm font-medium text-white/95">{filterLabel}</p>
+                  <p className="photo-search-primary truncate text-sm font-medium">{filterLabel}</p>
                   {resultCount != null && (
-                    <p className="text-[10px] text-white/45">{resultCount} 張照片</p>
+                    <p className="photo-search-secondary text-[10px]">{resultCount} 張照片</p>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-white/75">搜尋姓名或桌號</p>
-                  <p className="text-[10px] text-white/35">點擊輸入，快速找到您的照片</p>
+                  <p className="photo-search-primary text-sm">搜尋姓名或桌號</p>
+                  <p className="photo-search-secondary text-[10px]">點擊輸入，快速找到您的照片</p>
                 </>
               )}
             </div>
           </button>
+          {hasFilter && onShareFilter && (
+            <button
+              type="button"
+              onClick={onShareFilter}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 active:bg-white/10"
+              aria-label="分享篩選連結"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </button>
+          )}
+          {hasFilter && onDownloadAll && resultCount != null && resultCount > 0 && (
+            <button
+              type="button"
+              onClick={onDownloadAll}
+              disabled={downloading}
+              className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-xl border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/15 px-2.5 text-[11px] font-medium text-[var(--photo-gold-light)] active:bg-[var(--photo-accent)]/25 disabled:opacity-60"
+              aria-label="下載全部篩選照片"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+              </svg>
+              {downloading && downloadProgress
+                ? `${downloadProgress.done}/${downloadProgress.total}`
+                : '下載'}
+            </button>
+          )}
           {hasFilter && onClearFilter && (
             <button
               type="button"

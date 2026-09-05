@@ -4,6 +4,7 @@ import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
 import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { NameSearchScope } from '../../types';
 import {
   PHOTO_THEME,
@@ -18,12 +19,17 @@ interface PhotoCommandDockProps {
   welcomeTitle?: string;
   resultCount: number | null;
   hasFilter: boolean;
+  loading?: boolean;
   filterLabel?: string | null;
   autoExpandSearch?: boolean;
   onExpandSearchHandled?: () => void;
   onSearch: (query: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
+  onDownloadAll?: () => void;
+  onShareFilter?: () => void;
+  downloading?: boolean;
+  downloadProgress?: { done: number; total: number } | null;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
@@ -37,17 +43,23 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   welcomeTitle,
   resultCount,
   hasFilter,
+  loading = false,
   filterLabel,
   autoExpandSearch,
   onExpandSearchHandled,
   onSearch,
   onOpenDrawer,
   onClearFilter,
+  onDownloadAll,
+  onShareFilter,
+  downloading,
+  downloadProgress,
   nameScope,
   onNameScopeChange,
   guestTable,
   showNameScope = false,
 }) => {
+  const isMobile = useIsMobile();
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
 
   useEffect(() => {
@@ -64,23 +76,23 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
 
   return (
     <header
-      className="photo-command-dock shrink-0 border-b border-white/10 bg-[var(--photo-bg)]/95 backdrop-blur-xl photo-safe-top"
+      className="photo-command-dock shrink-0 border-b border-white/10 photo-safe-top"
       aria-label="相簿控制區"
     >
       <div className="px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
           <Link
             to="/"
-            className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1.5 text-[11px] text-white/80"
+            className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
           >
             ← 喜帖
           </Link>
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate font-serif text-sm text-white/95">
+            <p className="photo-dock-title truncate font-serif text-sm">
               {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
             </p>
             {!welcomeTitle && (
-              <p className="mt-0.5 truncate text-[10px] tracking-wide text-white/40">
+              <p className="photo-dock-tagline mt-0.5 truncate text-[10px] tracking-wide">
                 {PHOTO_THEME.tagline}
               </p>
             )}
@@ -89,7 +101,16 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         </div>
       </div>
 
-      {!hasFilter && (
+      {loading ? (
+        <div className="space-y-2 border-y border-white/8 px-3 py-2.5" aria-label="相簿載入中">
+          <div className="photo-skeleton-dark h-8 rounded-xl" />
+          <div className="flex gap-1.5 overflow-hidden">
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="photo-skeleton-dark h-7 w-20 shrink-0 rounded-full" />
+            ))}
+          </div>
+        </div>
+      ) : !hasFilter && (
         <PhotoInlineFilm
           startSec={startSec}
           title={filmTitle}
@@ -103,7 +124,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
 
       {navItems.length > 0 && (
         <PhotoTimelineNav
-          variant="dock"
+          variant={isMobile ? 'default' : 'dock'}
           items={navItems}
           activeStageId={activeStageId}
           onSelect={onStageSelect}
@@ -122,6 +143,10 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           onSearch={onSearch}
           onOpenDrawer={onOpenDrawer}
           onClearFilter={onClearFilter}
+          onDownloadAll={onDownloadAll}
+          onShareFilter={onShareFilter}
+          downloading={downloading}
+          downloadProgress={downloadProgress}
           nameScope={nameScope}
           onNameScopeChange={onNameScopeChange}
           guestTable={guestTable}
