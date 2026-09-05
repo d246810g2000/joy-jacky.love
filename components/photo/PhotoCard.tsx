@@ -15,6 +15,7 @@ interface PhotoCardProps {
   onTagClick?: (tag: string) => void;
   onNameClick?: (name: string) => void;
   dark?: boolean;
+  compact?: boolean;
 }
 
 const MAX_NAME_CHIPS = 2;
@@ -26,12 +27,27 @@ function chipLabel(items: string[], max: number) {
   return { visible, hidden };
 }
 
+function buildTagSummary(tableTags: string[], hashTags: string[]) {
+  const allTags = [...tableTags, ...hashTags];
+  if (allTags.length === 0) return null;
+
+  const primary = allTags[0];
+  const extra = allTags.length - 1;
+  return {
+    primary,
+    extra,
+    allTags,
+    label: extra > 0 ? `${primary} +${extra}` : primary,
+  };
+}
+
 export const PhotoCard: React.FC<PhotoCardProps> = ({
   photo,
   onClick,
   onTagClick,
   onNameClick,
   dark = false,
+  compact = false,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [gridWidth, setGridWidth] = useState(800);
@@ -50,9 +66,16 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const tableTags = photo.tables.map((t) => formatTableTag(t));
   const hashTags = photo.tags.map((t) => `#${t}`);
   const allTags = [...tableTags, ...hashTags];
+  const tagSummary = buildTagSummary(tableTags, hashTags);
 
-  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(photo.names, MAX_NAME_CHIPS);
-  const { visible: visibleTags, hidden: hiddenTags } = chipLabel(allTags, MAX_TAG_CHIPS);
+  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(
+    photo.names,
+    compact ? 1 : MAX_NAME_CHIPS
+  );
+  const { visible: visibleTags, hidden: hiddenTags } = chipLabel(
+    allTags,
+    compact ? 0 : MAX_TAG_CHIPS
+  );
 
   const nameChipClass = dark
     ? 'rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/12 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-light)] hover:bg-[var(--photo-accent)]/22'
@@ -61,6 +84,10 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const tagChipClass = dark
     ? 'rounded-full border border-white/12 bg-white/6 px-2 py-0.5 text-[10px] text-white/72 hover:bg-white/10'
     : 'rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
+
+  const tagSummaryClass = dark
+    ? 'block w-full truncate rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-left text-[10px] text-white/68 hover:bg-white/10'
+    : 'block w-full truncate rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-left text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
 
   const moreChipClass = dark
     ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/45'
@@ -111,7 +138,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
       {hasMeta && (
         <div className="space-y-1 px-2.5 py-2">
           {photo.names.length > 0 && (
-            <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+            <div className={`flex items-center gap-1 ${compact ? 'min-w-0' : 'flex-nowrap overflow-hidden'}`}>
               {visibleNames.map((name) => (
                 <button
                   key={name}
@@ -120,40 +147,56 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onNameClick?.(name);
                   }}
-                  className={`${nameChipClass} max-w-[46%] truncate`}
+                  className={`${nameChipClass} ${compact ? 'min-w-0 flex-1 truncate text-left' : 'max-w-[46%] truncate'}`}
                 >
                   {name}
                 </button>
               ))}
               {hiddenNames > 0 && (
-                <span className={moreChipClass} title={photo.names.slice(MAX_NAME_CHIPS).join('、')}>
+                <span className={moreChipClass} title={photo.names.slice(compact ? 1 : MAX_NAME_CHIPS).join('、')}>
                   +{hiddenNames}
                 </span>
               )}
             </div>
           )}
 
-          {allTags.length > 0 && (
-            <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-              {visibleTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTagClick?.(tag.replace(/^#/, ''));
-                  }}
-                  className={`${tagChipClass} max-w-[38%] truncate`}
-                >
-                  {tag}
-                </button>
-              ))}
-              {hiddenTags > 0 && (
-                <span className={moreChipClass} title={allTags.slice(MAX_TAG_CHIPS).join(' ')}>
-                  +{hiddenTags}
-                </span>
-              )}
-            </div>
+          {compact ? (
+            tagSummary && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tagSummary.primary.replace(/^#/, ''));
+                }}
+                className={tagSummaryClass}
+                title={tagSummary.allTags.join(' · ')}
+              >
+                {tagSummary.label}
+              </button>
+            )
+          ) : (
+            allTags.length > 0 && (
+              <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                {visibleTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTagClick?.(tag.replace(/^#/, ''));
+                    }}
+                    className={`${tagChipClass} max-w-[38%] truncate`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+                {hiddenTags > 0 && (
+                  <span className={moreChipClass} title={allTags.slice(MAX_TAG_CHIPS).join(' ')}>
+                    +{hiddenTags}
+                  </span>
+                )}
+              </div>
+            )
           )}
         </div>
       )}

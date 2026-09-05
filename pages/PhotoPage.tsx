@@ -9,6 +9,7 @@ import { PhotoSearchBar } from '../components/photo/PhotoSearchBar';
 import { PhotoFilterDrawer } from '../components/photo/PhotoFilterDrawer';
 import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
+import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
 import {
   EMPTY_FILTER,
   filterPhotos,
@@ -456,8 +457,15 @@ const PhotoPage: React.FC = () => {
 
           <div
             ref={galleryRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
           >
+            {!isFiltered && !loading && navItems.length > 1 && (
+              <PhotoChapterRail
+                items={navItems}
+                activeStageId={activeStageId}
+                onSelect={handleStageSelect}
+              />
+            )}
             {loading ? (
               <GridSkeleton compact />
             ) : (
