@@ -16,6 +16,15 @@ interface PhotoCardProps {
   dark?: boolean;
 }
 
+const MAX_NAME_CHIPS = 2;
+const MAX_TAG_CHIPS = 3;
+
+function chipLabel(items: string[], max: number) {
+  const visible = items.slice(0, max);
+  const hidden = items.length - visible.length;
+  return { visible, hidden };
+}
+
 export const PhotoCard: React.FC<PhotoCardProps> = ({
   photo,
   onClick,
@@ -38,9 +47,25 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const srcSet = getGridSrcSet(photo.publicId);
 
   const tableTags = photo.tables.map((t) => `#第${t}桌`);
-  const displayTags = [...tableTags, ...photo.tags.slice(0, 2).map((t) => `#${t}`)];
-  const displayNames = photo.names.slice(0, 3);
-  const overlayNames = photo.names.slice(0, 2).join(' · ');
+  const hashTags = photo.tags.map((t) => `#${t}`);
+  const allTags = [...tableTags, ...hashTags];
+
+  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(photo.names, MAX_NAME_CHIPS);
+  const { visible: visibleTags, hidden: hiddenTags } = chipLabel(allTags, MAX_TAG_CHIPS);
+
+  const nameChipClass = dark
+    ? 'rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/12 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-light)] hover:bg-[var(--photo-accent)]/22'
+    : 'rounded-full border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-dark)] hover:bg-[var(--photo-accent)]/20';
+
+  const tagChipClass = dark
+    ? 'rounded-full border border-white/12 bg-white/6 px-2 py-0.5 text-[10px] text-white/72 hover:bg-white/10'
+    : 'rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
+
+  const moreChipClass = dark
+    ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/45'
+    : 'shrink-0 rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-[10px] text-[#2C3E50]/45';
+
+  const hasMeta = photo.names.length > 0 || allTags.length > 0;
 
   return (
     <article
@@ -79,62 +104,58 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
           <span className="photo-time-badge absolute right-2 top-2 font-mono text-[11px] tabular-nums">
             {photo.time}
           </span>
-          {dark && overlayNames && (
-            <p className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-2.5 pb-2 pt-8 text-[11px] text-white/85">
-              {overlayNames}
-            </p>
-          )}
         </div>
       </button>
 
-      <div className="space-y-2 p-3">
-        {displayNames.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {displayNames.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNameClick?.(name);
-                }}
-                className="rounded-full border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--photo-gold-dark)] hover:bg-[var(--photo-accent)]/20"
-              >
-                {name}
-              </button>
-            ))}
-            {photo.names.length > 3 && (
-              <span className="self-center text-[10px] text-[#2C3E50]/50">
-                +{photo.names.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-        {photo.caption && (
-          <p
-            className={`line-clamp-2 text-sm leading-relaxed ${
-              dark ? 'text-white/75' : 'text-[#2C3E50]'
-            }`}
-          >
-            {photo.caption}
-          </p>
-        )}
-        <div className="flex flex-wrap gap-1.5">
-          {displayTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTagClick?.(tag.replace(/^#/, ''));
-              }}
-              className="rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[11px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40"
-            >
-              {tag.startsWith('#') ? tag : `#${tag}`}
-            </button>
-          ))}
+      {hasMeta && (
+        <div className="space-y-1 px-2.5 py-2">
+          {photo.names.length > 0 && (
+            <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+              {visibleNames.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNameClick?.(name);
+                  }}
+                  className={`${nameChipClass} max-w-[46%] truncate`}
+                >
+                  {name}
+                </button>
+              ))}
+              {hiddenNames > 0 && (
+                <span className={moreChipClass} title={photo.names.slice(MAX_NAME_CHIPS).join('、')}>
+                  +{hiddenNames}
+                </span>
+              )}
+            </div>
+          )}
+
+          {allTags.length > 0 && (
+            <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+              {visibleTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTagClick?.(tag.replace(/^#/, ''));
+                  }}
+                  className={`${tagChipClass} max-w-[38%] truncate`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {hiddenTags > 0 && (
+                <span className={moreChipClass} title={allTags.slice(MAX_TAG_CHIPS).join(' ')}>
+                  +{hiddenTags}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </article>
   );
 };
