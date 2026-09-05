@@ -38,8 +38,6 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
 
   return (
     <motion.header
-      ref={headerRef}
-      data-stage-marker={stage.id}
       initial={{ opacity: 0, y: compact ? 12 : 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10%' }}
@@ -54,6 +52,12 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
         boxShadow: `0 0 48px color-mix(in srgb, ${accent} 12%, transparent)`,
       }}
     >
+      <div
+        ref={headerRef}
+        data-stage-marker={stage.id}
+        className="pointer-events-none absolute left-0 top-0 h-px w-px"
+        aria-hidden
+      />
       {compact && (
         <div
           className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
