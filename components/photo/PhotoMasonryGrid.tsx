@@ -16,6 +16,7 @@ interface PhotoMasonryGridProps {
   onTagClick: (tag: string) => void;
   onNameClick?: (name: string) => void;
   onWatchVideo: (stageId: string) => void;
+  onEnterChapter?: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   filterLabel?: string | null;
   onDownloadAll?: () => void;
@@ -50,6 +51,7 @@ function StageSection({
   onTagClick,
   onNameClick,
   onWatchVideo,
+  onEnterChapter,
   registerSection,
   compactHeaders = false,
 }: {
@@ -59,6 +61,7 @@ function StageSection({
   onTagClick: (tag: string) => void;
   onNameClick?: (name: string) => void;
   onWatchVideo: (stageId: string) => void;
+  onEnterChapter?: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   compactHeaders?: boolean;
 }) {
@@ -81,8 +84,7 @@ function StageSection({
         visibleCount={hasPreviewMore ? visible.length : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
-        hasPreviewMore={hasPreviewMore}
-        onExpandPhotos={() => setExpanded(true)}
+        onExpandPhotos={() => onEnterChapter?.(stage.id)}
         compact={compactHeaders}
       />
       <motion.div
@@ -261,6 +263,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           onTagClick={onTagClick}
           onNameClick={onNameClick}
           onWatchVideo={onWatchVideo}
+          onEnterChapter={onEnterChapter}
           registerSection={registerSection}
           compactHeaders={compactHeaders}
         />
