@@ -5,6 +5,8 @@ import { PhotoCard } from './PhotoCard';
 import { PhotoStageHeader } from './PhotoStageHeader';
 import { FILTER_PAGE_SIZE, STAGE_PAGE_SIZE, usePhotoBatch } from '../../hooks/usePhotoBatch';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import type { NameSearchScope } from '../../types';
+import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 
 interface PhotoMasonryGridProps {
   stages: WeddingStage[];
@@ -18,6 +20,10 @@ interface PhotoMasonryGridProps {
   filterLabel?: string | null;
   onClearFilter?: () => void;
   compactHeaders?: boolean;
+  nameScope?: NameSearchScope;
+  onNameScopeChange?: (scope: NameSearchScope) => void;
+  guestTable?: number | null;
+  showNameScope?: boolean;
 }
 
 function LoadMoreSkeleton() {
@@ -131,6 +137,10 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   filterLabel,
   onClearFilter,
   compactHeaders = false,
+  nameScope,
+  onNameScopeChange,
+  guestTable,
+  showNameScope = false,
 }) => {
   const filterTotal = filteredPhotos?.length ?? 0;
   const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(
@@ -152,19 +162,29 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
 
     return (
       <section className={`px-4 ${bottomPad} ${topPad} md:px-8`} aria-live="polite">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-serif text-xl text-white/95">{filterLabel ?? '搜尋結果'}</h2>
-            <p className="mt-1 text-sm text-white/50">找到 {filteredPhotos.length} 張照片</p>
+        <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] tracking-wide text-[var(--photo-gold-light)]/80">搜尋結果</p>
+              <h2 className="font-serif mt-1 text-xl text-white/95">{filterLabel ?? '搜尋結果'}</h2>
+              <p className="mt-1 text-sm text-white/50">找到 {filteredPhotos.length} 張照片</p>
+            </div>
+            {onClearFilter && (
+              <button
+                type="button"
+                onClick={onClearFilter}
+                className="shrink-0 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-[var(--photo-gold-light)] active:bg-white/10"
+              >
+                清除 · 回時間軸
+              </button>
+            )}
           </div>
-          {onClearFilter && (
-            <button
-              type="button"
-              onClick={onClearFilter}
-              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-[#e6c896] backdrop-blur-sm hover:bg-white/10"
-            >
-              清除篩選 · 回到時間軸
-            </button>
+          {showNameScope && onNameScopeChange && nameScope && (
+            <PhotoNameScopeBar
+              scope={nameScope}
+              onScopeChange={onNameScopeChange}
+              guestTable={guestTable}
+            />
           )}
         </div>
 
@@ -225,6 +245,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           compactHeaders={compactHeaders}
         />
       ))}
+      {compactHeaders && <div className="h-[45vh] shrink-0" aria-hidden />}
     </div>
   );
 };

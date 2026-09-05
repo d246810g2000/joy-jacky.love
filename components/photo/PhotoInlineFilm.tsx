@@ -40,27 +40,29 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
         <button
           type="button"
           onClick={handleExpand}
-          className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition active:bg-white/5"
+          className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition active:bg-white/5"
           aria-expanded={false}
         >
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm text-white"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs text-white"
             style={{ background: `${accent}99`, boxShadow: `0 0 20px ${accent}44` }}
             aria-hidden
           >
             ▶
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-[13px] font-medium text-white">
               {clockTime && (
                 <span className="font-mono text-[var(--photo-gold-light)]">{clockTime}</span>
               )}
               {clockTime && <span className="mx-1.5 text-white/30">·</span>}
               <span>{title}</span>
             </p>
-            <p className="mt-0.5 text-[11px] text-white/45">影片 {filmTime} · 點擊展開</p>
+            <p className="mt-0.5 text-[10px] text-white/40">影片 {filmTime}</p>
           </div>
-          <span className="shrink-0 text-[10px] text-white/40">展開 ▾</span>
+          <span className="shrink-0 rounded-full border border-white/10 px-2 py-0.5 text-[10px] text-[var(--photo-gold-light)]">
+            展開
+          </span>
         </button>
       ) : (
         <AnimatePresence initial={false}>

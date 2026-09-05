@@ -46,8 +46,8 @@ export const PhotoFilterDrawer: React.FC<PhotoFilterDrawerProps> = ({
     onChange({
       ...EMPTY_FILTER,
       name: guest.name,
-      table: guest.table,
       query: guest.name,
+      nameScope: 'person',
     });
     onClose();
   };

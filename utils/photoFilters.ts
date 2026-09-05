@@ -5,6 +5,7 @@ export const EMPTY_FILTER: PhotoFilter = {
   query: '',
   table: null,
   name: null,
+  nameScope: 'person',
   category: null,
   tag: null,
 };
@@ -36,6 +37,33 @@ export function parseRelationFromTag(tag: string): string | null {
   return cleaned || null;
 }
 
+export function guestTableForName(name: string): number | null {
+  const lower = name.toLowerCase();
+  const guest = GUEST_INDEX.guests.find((g) => g.name.toLowerCase() === lower);
+  return guest?.table ?? null;
+}
+
+function nameInPhoto(photo: WeddingPhoto, nameLower: string): boolean {
+  return photo.names.some((n) => n.toLowerCase().includes(nameLower));
+}
+
+function tablesForNameQuery(nameLower: string): number[] {
+  const tables = new Set<number>();
+  for (const g of GUEST_INDEX.guests) {
+    if (g.name.toLowerCase().includes(nameLower) && g.table != null) {
+      tables.add(g.table);
+    }
+  }
+  return [...tables];
+}
+
+function matchesName(photo: WeddingPhoto, name: string, scope: PhotoFilter['nameScope']): boolean {
+  const nameLower = name.toLowerCase();
+  if (nameInPhoto(photo, nameLower)) return true;
+  if (scope === 'person') return false;
+  return tablesForNameQuery(nameLower).some((t) => photo.tables.includes(t));
+}
+
 export function filterPhotos(stages: WeddingStage[], filter: PhotoFilter): WeddingPhoto[] {
   const all = stages.flatMap((s) => s.photos);
   if (isFilterEmpty(filter)) return all;
@@ -56,18 +84,7 @@ export function isFilterEmpty(filter: PhotoFilter): boolean {
 function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
   if (filter.table != null && !photo.tables.includes(filter.table)) return false;
 
-  if (filter.name) {
-    const nameLower = filter.name.toLowerCase();
-    const inNames = photo.names.some((n) => n.toLowerCase().includes(nameLower));
-    if (!inNames) {
-      const guestMatches = GUEST_INDEX.guests.some(
-        (g) =>
-          g.name.toLowerCase().includes(nameLower) &&
-          (g.table == null || photo.tables.includes(g.table))
-      );
-      if (!guestMatches) return false;
-    }
-  }
+  if (filter.name && !matchesName(photo, filter.name, filter.nameScope)) return false;
 
   if (filter.category && filter.category !== 'all') {
     const cat = PHOTO_CATEGORIES.find((c) => c.id === filter.category);
@@ -94,7 +111,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
     }
   }
 
-  if (filter.query.trim()) {
+  if (filter.query.trim() && !filter.name) {
     const q = filter.query.trim().toLowerCase();
     const tableNum = parseInt(q, 10);
     const tableMatch = !Number.isNaN(tableNum) && photo.tables.includes(tableNum);
@@ -123,7 +140,11 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
 }
 
 export function filterLabel(filter: PhotoFilter): string | null {
-  if (filter.name) return `「${filter.name}」的照片`;
+  if (filter.name) {
+    const scope =
+      filter.nameScope === 'table' ? '（含同桌）' : '';
+    return `「${filter.name}」的照片${scope}`;
+  }
   if (filter.table != null) return `第 ${filter.table} 桌的照片`;
   if (filter.tag) return filter.tag.startsWith('#') ? filter.tag : `#${filter.tag}`;
   if (filter.category && filter.category !== 'all') {

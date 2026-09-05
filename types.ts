@@ -30,10 +30,14 @@ export interface WeddingStage {
   photos: WeddingPhoto[];
 }
 
+/** 姓名搜尋範圍：僅標記本人，或含同桌賓客照片 */
+export type NameSearchScope = 'person' | 'table';
+
 export interface PhotoFilter {
   query: string;
   table: number | null;
   name: string | null;
+  nameScope: NameSearchScope;
   category: string | null;
   tag: string | null;
 }

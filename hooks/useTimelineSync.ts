@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+const BOTTOM_THRESHOLD_PX = 64;
+
 export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | null) {
   const [activeStageId, setActiveStageId] = useState(stageIds[0] ?? '');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
+  const pendingStageRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (stageIds.length && !stageIds.includes(activeStageId)) {
@@ -14,6 +17,8 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
+        if (pendingStageRef.current) return;
+
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
@@ -33,6 +38,23 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
 
     return () => observerRef.current?.disconnect();
   }, [stageIds.join(','), scrollRoot]);
+
+  useEffect(() => {
+    if (!scrollRoot || stageIds.length === 0) return;
+
+    const onScroll = () => {
+      if (pendingStageRef.current) return;
+      const nearBottom =
+        scrollRoot.scrollTop + scrollRoot.clientHeight >=
+        scrollRoot.scrollHeight - BOTTOM_THRESHOLD_PX;
+      if (nearBottom) {
+        setActiveStageId(stageIds[stageIds.length - 1]);
+      }
+    };
+
+    scrollRoot.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollRoot.removeEventListener('scroll', onScroll);
+  }, [scrollRoot, stageIds.join(',')]);
 
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
@@ -54,15 +76,27 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
       const el = document.getElementById(`stage-${stageId}`);
       if (!el) return;
 
+      setActiveStageId(stageId);
+      pendingStageRef.current = stageId;
+
+      const releasePending = () => {
+        pendingStageRef.current = null;
+      };
+
       if (scrollRoot) {
         const rootTop = scrollRoot.getBoundingClientRect().top;
         const elTop = el.getBoundingClientRect().top;
         const nextTop = scrollRoot.scrollTop + (elTop - rootTop) - 8;
-        scrollRoot.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+        const maxScroll = scrollRoot.scrollHeight - scrollRoot.clientHeight;
+        scrollRoot.scrollTo({
+          top: Math.min(Math.max(0, nextTop), maxScroll),
+          behavior: 'smooth',
+        });
+        window.setTimeout(releasePending, 450);
       } else {
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(releasePending, 450);
       }
-      setActiveStageId(stageId);
     },
     [scrollRoot]
   );

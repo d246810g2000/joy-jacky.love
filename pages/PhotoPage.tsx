@@ -13,6 +13,7 @@ import {
   EMPTY_FILTER,
   filterPhotos,
   filterLabel,
+  guestTableForName,
   isFilterEmpty,
 } from '../utils/photoFilters';
 import { getLightboxUrl } from '../utils/photoUrls';
@@ -24,7 +25,7 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
 import { useIsMobile } from '../hooks/useIsMobile';
-import type { PhotoFilter, WeddingPhoto } from '../types';
+import type { NameSearchScope, PhotoFilter, WeddingPhoto } from '../types';
 
 function GridSkeleton({ compact = false }: { compact?: boolean }) {
   return (
@@ -108,6 +109,9 @@ const PhotoPage: React.FC = () => {
 
   const displayPhotos = filteredPhotos ?? allPhotos;
   const currentFilterLabel = filterLabel(filter);
+  const nameGuestTable =
+    filter.table ?? (filter.name ? guestTableForName(filter.name) : null);
+  const showNameScope = isFiltered && !!filter.name;
 
   const welcomeTitle = tableParam
     ? `第 ${tableParam} 桌的照片`
@@ -278,13 +282,20 @@ const PhotoPage: React.FC = () => {
   };
 
   const handleNameClick = (name: string) => {
-    const next: PhotoFilter = { ...EMPTY_FILTER, name, query: name };
+    const next: PhotoFilter = { ...EMPTY_FILTER, name, query: name, nameScope: 'person' };
     setFilter(next);
     setSelectedPhoto(null);
     syncUrl(next);
   };
 
   const handleFilterChange = (next: PhotoFilter) => {
+    setFilter(next);
+    syncUrl(next);
+  };
+
+  const handleNameScopeChange = (scope: NameSearchScope) => {
+    if (!filter.name) return;
+    const next = { ...filter, nameScope: scope };
     setFilter(next);
     syncUrl(next);
   };
@@ -296,7 +307,7 @@ const PhotoPage: React.FC = () => {
     if (!Number.isNaN(tableNum) && String(tableNum) === trimmed) {
       handleFilterChange({ ...EMPTY_FILTER, table: tableNum, query: trimmed });
     } else {
-      handleFilterChange({ ...EMPTY_FILTER, name: trimmed, query: trimmed });
+      handleFilterChange({ ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' });
     }
   };
 
@@ -349,6 +360,10 @@ const PhotoPage: React.FC = () => {
             onSearch={handleQuickSearch}
             onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
+            nameScope={filter.nameScope}
+            onNameScopeChange={handleNameScopeChange}
+            guestTable={nameGuestTable}
+            showNameScope={showNameScope}
           />
 
           {welcomeMsg && isFiltered && (
@@ -383,6 +398,10 @@ const PhotoPage: React.FC = () => {
                 filterLabel={currentFilterLabel}
                 onClearFilter={handleClearFilter}
                 compactHeaders
+                nameScope={filter.nameScope}
+                onNameScopeChange={handleNameScopeChange}
+                guestTable={nameGuestTable}
+                showNameScope={false}
               />
             )}
           </div>
@@ -444,6 +463,10 @@ const PhotoPage: React.FC = () => {
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
           onClearFilter={handleClearFilter}
+          nameScope={filter.nameScope}
+          onNameScopeChange={handleNameScopeChange}
+          guestTable={nameGuestTable}
+          showNameScope={showNameScope}
         />
       )}
 
@@ -457,6 +480,10 @@ const PhotoPage: React.FC = () => {
         onSearch={handleQuickSearch}
         onOpenDrawer={() => setDrawerOpen(true)}
         onClearFilter={handleClearFilter}
+        nameScope={filter.nameScope}
+        onNameScopeChange={handleNameScopeChange}
+        guestTable={nameGuestTable}
+        showNameScope={showNameScope}
       />
         </>
       )}
