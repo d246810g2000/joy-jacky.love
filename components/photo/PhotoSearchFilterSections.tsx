@@ -106,7 +106,7 @@ export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps>
       )}
 
       <section className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5">
-        <h2 className="mb-2 text-sm font-medium text-white/90">搜尋新人</h2>
+        <h2 className="mb-2 text-sm font-medium text-white/90">搜尋姓名</h2>
         <div className="flex gap-3">
           {featuredGuests.map((guest) => (
             <button
