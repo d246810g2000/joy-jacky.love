@@ -10,7 +10,14 @@ import { GuestBook } from './components/GuestBook';
 import { Lightbox } from './components/Lightbox';
 import { BackgroundMusic } from './components/BackgroundMusic';
 import { LoadingScreen } from './components/LoadingScreen';
-import { APP_CONTENT, WEDDING_PHOTOS, BACKGROUND_IMAGE, THREADS_POST_IMAGE, BINGO_SHOW_ON_HOME_KEY } from './constants';
+import {
+  APP_CONTENT,
+  WEDDING_PHOTOS,
+  BACKGROUND_IMAGE,
+  THREADS_POST_IMAGE,
+  BINGO_SHOW_ON_HOME_KEY,
+  ALBUM_HERO_COVER_IDS,
+} from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Photo } from './types';
 import { useIsMobile } from './hooks/useIsMobile';
@@ -110,6 +117,7 @@ const GamepadIcon = () => (
 
 import { useModalHistory } from './hooks/useModalHistory';
 import { useVisitCount } from './components/VisitCounterProvider';
+import { getGridUrl } from './utils/photoUrls';
 function App() {
   const navigate = useNavigate();
   const visitCount = useVisitCount();
@@ -124,9 +132,19 @@ function App() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
   const [displayCount, setDisplayCount] = useState(0);
+  const [albumHeroIndex, setAlbumHeroIndex] = useState(0);
+  const albumHeroPublicId =
+    ALBUM_HERO_COVER_IDS[albumHeroIndex] ?? ALBUM_HERO_COVER_IDS[0];
 
   // New State for Collapsible Nav
   const [isNavExpanded, setIsNavExpanded] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setAlbumHeroIndex((index) => (index + 1) % ALBUM_HERO_COVER_IDS.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, []);
 
   // Ref to ignore scroll events when clicking nav items
   const isNavigatingRef = useRef(false);
@@ -752,8 +770,9 @@ function App() {
               <div className="grid md:grid-cols-5">
                 <div className="md:col-span-2 relative min-h-[200px] md:min-h-[260px] overflow-hidden">
                   <img
-                    src="https://res.cloudinary.com/djqnqxzha/image/upload/f_auto,q_auto,w_800/wedding_20260530/260530-57.jpg"
-                    alt="婚禮相簿預覽"
+                    key={albumHeroPublicId}
+                    src={getGridUrl(albumHeroPublicId, 800)}
+                    alt="張家銘與李謦伊的婚禮相簿預覽"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
                   />
