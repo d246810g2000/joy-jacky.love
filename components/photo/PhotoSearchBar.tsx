@@ -25,6 +25,7 @@ interface PhotoSearchBarProps {
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
+  featuredGuestPhotos?: Record<string, string | undefined>;
   showNameScope?: boolean;
 }
 
@@ -47,6 +48,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   nameScope = 'person',
   onNameScopeChange,
   guestTable,
+  featuredGuestPhotos,
   showNameScope = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -214,6 +216,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
             ) : (
               <PhotoSearchFilterSections
                 featuredGuests={featuredGuests}
+                featuredGuestPhotos={featuredGuestPhotos}
                 recent={recent}
                 onSubmit={submit}
                 onSubmitTag={submitTag}
@@ -354,6 +357,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
             <div className="mt-3 max-h-[42vh] overflow-y-auto pr-1">
               <PhotoSearchFilterSections
                 featuredGuests={featuredGuests}
+                featuredGuestPhotos={featuredGuestPhotos}
                 recent={[]}
                 onSubmit={submit}
                 onSubmitTag={submitTag}

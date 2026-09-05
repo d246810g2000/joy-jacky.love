@@ -17,6 +17,10 @@ export const getBlurUrl = (publicId: string) =>
 export const getThumbUrl = (publicId: string, width = 96) =>
   buildUrl(publicId, `f_auto,q_auto:eco,w_${width},h_${width},c_fill`);
 
+/** 搜尋姓名頭像 — 由 Cloudinary 自動裁切臉部 */
+export const getFaceAvatarUrl = (publicId: string, size = 160) =>
+  buildUrl(publicId, `f_auto,q_auto:good,w_${size},h_${size},c_fill,g_face`);
+
 /** 燈箱初始畫面 — 足夠清晰，但不先下載放大用的大檔案 */
 export function getLightboxDisplayUrl(publicId: string, viewportWidth = 1200): string {
   const width =
