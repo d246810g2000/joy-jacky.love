@@ -627,6 +627,13 @@ const RSVPPage: React.FC = () => {
                                     height: '14.68%'
                                 } as any}
                             >
+                                <motion.span
+                                    animate={{ opacity: [0.6, 1, 0.6] }}
+                                    transition={{ duration: 2.5, repeat: Infinity }}
+                                    className="font-serif text-[#8E3535] text-xs md:text-sm tracking-[0.2em] font-medium"
+                                >
+                                    點擊加入 LINE 好友
+                                </motion.span>
                             </a>
                         </motion.div>
                     </div>

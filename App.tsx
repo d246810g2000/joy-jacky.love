@@ -707,7 +707,7 @@ function App() {
                   </div>
                   <h3 className="font-serif text-2xl md:text-3xl text-[#2C3E50] mb-3">找回您的婚禮瞬間</h3>
                   <p className="text-stone-500 text-sm leading-relaxed mb-6 max-w-lg">
-                    支援桌號 1–27、姓名與親友關係搜尋。掃描桌卡 QR 亦可直達專屬照片，並可下載原檔、分享給親友。
+                    支援桌號 1–27、姓名與親友關係搜尋。可下載原檔、分享給親友。
                   </p>
                   <span className="inline-flex items-center gap-2 self-start rounded-full bg-[#B08D55] px-6 py-2.5 text-sm font-semibold text-white group-hover:bg-[#9a7849] transition-colors">
                     進入婚禮相簿
@@ -942,6 +942,13 @@ function App() {
                       }}
                       title="點擊加入 LINE 官方帳號"
                     >
+                      <motion.span
+                        animate={{ opacity: [0.6, 1, 0.6], y: [0, -1, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        className="font-serif text-[#8E3535] text-[10px] md:text-[13px] tracking-[0.2em] font-medium"
+                      >
+                        點擊加入 LINE 好友
+                      </motion.span>
                     </a>
                   </div>
                 </motion.div>
