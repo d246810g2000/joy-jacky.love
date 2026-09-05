@@ -431,6 +431,7 @@ const PhotoPage: React.FC = () => {
             onStageSelect={handleStageSelect}
             welcomeTitle={welcomeTitle}
             hasFilter={isFiltered}
+            onClearFilter={handleClearFilter}
             loading={loading}
           />
 
@@ -471,7 +472,6 @@ const PhotoPage: React.FC = () => {
                 onWatchVideo={openVideo}
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
-                onClearFilter={handleClearFilter}
                 onDownloadAll={handleDownloadAll}
                 onShareFilter={handleShareFilter}
                 downloading={downloading}
@@ -510,12 +510,22 @@ const PhotoPage: React.FC = () => {
         </>
       ) : (
         <>
-      <Link
-        to="/"
-        className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
-      >
-        ← 返回喜帖
-      </Link>
+      {isFiltered ? (
+        <button
+          type="button"
+          onClick={handleClearFilter}
+          className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
+        >
+          ← 返回相簿
+        </button>
+      ) : (
+        <Link
+          to="/"
+          className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
+        >
+          ← 返回喜帖
+        </Link>
+      )}
 
       <PhotoHero
         coverPublicId={heroCoverId}
@@ -565,7 +575,6 @@ const PhotoPage: React.FC = () => {
           onWatchVideo={openVideo}
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
-          onClearFilter={handleClearFilter}
           onDownloadAll={handleDownloadAll}
           onShareFilter={handleShareFilter}
           downloading={downloading}
