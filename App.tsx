@@ -1039,7 +1039,7 @@ function App() {
 
       {/* Floating RSVP Button (Bottom Left) */}
       <div
-        className={`fixed bottom-8 left-8 z-50 transition-all duration-500 ease-out ${showRSVPButton && !isGuestBookExpanded && !showNav ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
+        className={`fixed bottom-8 left-8 z-50 transition-all duration-500 ease-out ${showRSVPButton && activeSection !== 'photos' && !isGuestBookExpanded && !showNav ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'}`}
       >
         <Link
           to="/rsvp"
