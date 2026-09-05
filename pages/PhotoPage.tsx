@@ -526,6 +526,7 @@ const PhotoPage: React.FC = () => {
       ) : (
         <Link
           to="/"
+          onClick={() => sessionStorage.setItem('home_return_section', 'photos')}
           className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
         >
           ← 返回喜帖
