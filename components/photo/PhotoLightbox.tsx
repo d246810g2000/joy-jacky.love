@@ -10,6 +10,8 @@ import {
 } from '../../utils/photoUrls';
 import { buildPhotoShareUrl, buildPhotoShareTitle } from '../../hooks/usePhotoDeepLink';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { getStageFilmMarker } from '../../utils/weddingFilm';
+import { PHOTO_THEME } from '../../utils/photoTheme';
 
 const FILMSTRIP_WINDOW = 15;
 
@@ -138,6 +140,8 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
   const blurUrl = getBlurUrl(photo.publicId);
   const lightboxUrl = getLightboxUrl(photo.publicId);
+  const stageMarker = getStageFilmMarker(photo.stageId);
+  const stageLabel = stageMarker?.label ?? '';
 
   return (
     <motion.div
@@ -150,40 +154,50 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       aria-label="照片燈箱"
     >
       {isMobile && (
-        <div className="flex shrink-0 justify-center pt-[max(0.5rem,env(safe-area-inset-top))]">
-          <div className="h-1 w-10 rounded-full bg-white/25" aria-hidden />
+        <div className="flex shrink-0 flex-col items-center pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="photo-lightbox-drag-hint h-1 w-10 rounded-full" aria-hidden />
         </div>
       )}
 
-      <header className="flex shrink-0 items-center justify-between px-4 py-2 md:py-3 md:pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <span className="text-sm text-white/80">
-          {currentIndex + 1} / {allPhotos.length}
-        </span>
-        <div className="flex items-center gap-1 md:gap-2">
-          {!isMobile && (
+      <header className="flex shrink-0 flex-col gap-1 px-4 py-2 md:py-3 md:pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-white/80">
+            {currentIndex + 1} / {allPhotos.length}
+          </span>
+          <div className="flex items-center gap-1 md:gap-2">
+            {!isMobile && (
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
+              >
+                下載
+              </button>
+            )}
             <button
               type="button"
-              onClick={handleDownload}
+              onClick={handleShare}
               className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
             >
-              下載
+              {copied ? '已複製' : '分享'}
             </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 hover:bg-white/10"
+              aria-label="關閉"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-white/55">
+          {stageLabel && (
+            <span className="text-[var(--photo-gold-light)]">{stageLabel}</span>
           )}
-          <button
-            type="button"
-            onClick={handleShare}
-            className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
-          >
-            {copied ? '已複製' : '分享'}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 hover:bg-white/10"
-            aria-label="關閉"
-          >
-            ✕
-          </button>
+          <span className="font-mono tabular-nums">{photo.time}</span>
+          <span className="text-white/30">·</span>
+          <span className="italic text-white/45">{PHOTO_THEME.lightboxMotto}</span>
         </div>
       </header>
 
@@ -383,7 +397,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
         )}
 
         {isMobile && (
-          <p className="text-center text-[10px] text-white/30">下滑關閉 · 左右滑動切換</p>
+          <p className="text-center text-[10px] text-white/25">下滑關閉</p>
         )}
       </footer>
     </motion.div>
