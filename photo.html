@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Joy & Jacky 婚禮邀請函</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/joy-jacky.love/favicon.png" />
+    <link rel="apple-touch-icon" href="/joy-jacky.love/apple-touch-icon.png" />
+    <link rel="manifest" href="/joy-jacky.love/manifest.json" />
+    <meta name="theme-color" content="#8E3535" />
+
+    <!-- Open Graph / Facebook / LINE -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://d246810g2000.github.io/joy-jacky.love" />
+    <meta property="og:title" content="Joy & Jacky 婚禮邀請函" />
+    <meta property="og:description" content="在時間的畫布上，我們即將用愛畫上最燦爛的一筆。誠摯邀請您共襄盛舉。" />
+    <meta property="og:image" content="/joy-jacky.love/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Joy & Jacky 婚禮邀請函" />
+    <meta property="twitter:description" content="在時間的畫布上，我們即將用愛畫上最燦爛的一筆。誠摯邀請您共襄盛舉。" />
+    <meta property="twitter:image" content="/og-image.png" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Noto+Serif+TC:wght@300;400;500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-color: #fdfbf7;
+        --text-primary: #2c3e50;
+        --text-secondary: #b08d55;
+      }
+      
+      html, body {
+        /* Hide scrollbar for Firefox */
+        scrollbar-width: none;
+        /* Hide scrollbar for IE and Edge */
+        -ms-overflow-style: none;
+        
+        /* Mobile Optimizations */
+        overscroll-behavior-y: none; /* Prevent Android glow / bounce */
+        touch-action: pan-y; /* Improve scroll performance */
+        -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
+      }
+
+      body {
+        font-family: 'Inter', 'Noto Serif TC', sans-serif;
+        background-color: transparent; /* Changed to transparent to show fixed bg */
+        color: var(--text-primary);
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Fixed Global Background: Left Pink, Right Blue, NO GRID */
+      .bg-grid-fixed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -10;
+        /* Main Gradient: Pink (#fff0f5) to Blue (#f0f9ff) */
+        background: linear-gradient(90deg, #fff0f5 0%, #f0f9ff 100%);
+        pointer-events: none;
+      }
+
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      ::-webkit-scrollbar {
+        display: none;
+      }
+
+      .font-serif {
+        font-family: 'Playfair Display', 'Noto Serif TC', serif;
+      }
+      .font-display {
+        font-family: 'Cinzel', serif;
+      }
+      .font-script {
+        font-family: 'Great Vibes', cursive;
+      }
+      /* Elegant Traditional Chinese Font Remapping */
+      .font-hand-cn {
+        font-family: 'Noto Serif TC', serif;
+      }
+      /* Calligraphy Chinese Font Remapping */
+      .font-calligraphy {
+        font-family: 'Noto Serif TC', serif;
+      }
+      
+      /* Sparkle/Texture Overlay - Optimized for performance */
+      .bg-noise {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.15; /* Reduced from 0.6 to improve performance */
+        background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+        /* Removed mix-blend-mode: overlay as it is extremely heavy on mobile GPUs */
+      }
+      
+      /* Utilities */
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      }
+      
+      .mask-image-b {
+        mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+      }
+
+      /* Photo gallery page */
+      .photo-page {
+        --photo-bg: #0c0b0a;
+        --photo-border: rgba(255,255,255,0.1);
+        --photo-accent: #B08D55;
+        --photo-gold-light: #e6c896;
+        --photo-gold-dark: #8B6F3E;
+        --photo-ink: #f5f0e8;
+        --photo-warm-glow: rgba(176, 141, 85, 0.15);
+        --stage-glow: #B08D55;
+      }
+
+      .photo-page-immersive {
+        color: #f5f0e8;
+      }
+
+      /* 相簿頁隱藏喜帖淺色背景，避免 header 白字疊在粉藍漸層上 */
+      .photo-page-immersive ~ .bg-grid-fixed,
+      .photo-page-immersive ~ .bg-noise,
+      body:has(.photo-page-immersive) .bg-grid-fixed,
+      body:has(.photo-page-immersive) .bg-noise {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .photo-command-dock {
+        background: rgba(12, 11, 10, 0.98);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      .photo-command-dock .photo-dock-title {
+        color: rgba(245, 240, 232, 0.98);
+      }
+
+      .photo-command-dock .photo-dock-tagline {
+        color: rgba(230, 200, 150, 0.72);
+      }
+
+      .photo-command-dock .photo-dock-back {
+        color: rgba(245, 240, 232, 0.92);
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .photo-search-bar {
+        background: rgba(18, 16, 14, 0.96);
+        border-color: rgba(255, 255, 255, 0.14);
+      }
+
+      .photo-search-bar .photo-search-primary {
+        color: rgba(245, 240, 232, 0.92);
+      }
+
+      .photo-search-bar .photo-search-secondary {
+        color: rgba(230, 200, 150, 0.62);
+      }
+
+      .photo-ambient-glow {
+        background:
+          radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--stage-glow) 12%, transparent), transparent 70%),
+          radial-gradient(ellipse 60% 40% at 80% 100%, color-mix(in srgb, var(--stage-glow) 8%, transparent), transparent);
+        transition: background 1.2s ease;
+      }
+
+      .photo-timeline-nav {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        background: rgba(12, 11, 10, 0.88);
+        backdrop-filter: blur(16px);
+      }
+
+      .photo-hero-kenburns {
+        animation: photo-kenburns 24s ease-in-out infinite alternate;
+      }
+      @keyframes photo-kenburns {
+        from { transform: scale(1); }
+        to { transform: scale(1.06); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .photo-hero-kenburns { animation: none; }
+      }
+
+      .photo-film-grain {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+      }
+
+      .photo-film-vignette::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        inset: -20%;
+        box-shadow: inset 0 0 80px 20px rgba(0,0,0,0.5);
+      }
+
+      .photo-lightbox-vignette::before {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        inset: -30%;
+        box-shadow: inset 0 0 100px 30px rgba(0,0,0,0.45);
+        z-index: 1;
+      }
+
+      .photo-skeleton-dark {
+        background: linear-gradient(
+          90deg,
+          rgba(255,255,255,0.04) 0%,
+          rgba(255,255,255,0.08) 50%,
+          rgba(255,255,255,0.04) 100%
+        );
+        background-size: 200% 100%;
+        animation: photo-shimmer 1.4s ease-in-out infinite;
+      }
+
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .photo-masonry {
+        column-count: 2;
+        column-gap: 12px;
+      }
+      @media (min-width: 768px) {
+        .photo-masonry { column-count: 3; }
+      }
+      @media (min-width: 1024px) {
+        .photo-masonry { column-count: 4; }
+      }
+
+      .photo-skeleton {
+        background: linear-gradient(
+          90deg,
+          #F5F0E8 0%,
+          #EDE6DA 50%,
+          #F5F0E8 100%
+        );
+        background-size: 200% 100%;
+        animation: photo-shimmer 1.4s ease-in-out infinite;
+      }
+      @keyframes photo-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .photo-skeleton { animation: none; }
+      }
+
+      .photo-safe-bottom {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+      }
+      .photo-safe-top {
+        padding-top: max(0px, env(safe-area-inset-top));
+      }
+
+      .photo-card-vignette {
+        position: absolute;
+        inset: 0;
+        box-shadow: inset 0 0 40px 8px rgba(0,0,0,0.35);
+        background: radial-gradient(ellipse at center, transparent 55%, rgba(20,12,8,0.25) 100%);
+        pointer-events: none;
+      }
+
+      .photo-time-badge {
+        border-radius: 9999px;
+        border: 1px solid color-mix(in srgb, var(--photo-gold-light) 35%, transparent);
+        background: rgba(0,0,0,0.55);
+        color: var(--photo-gold-light);
+        padding: 0.125rem 0.5rem;
+        backdrop-filter: blur(6px);
+      }
+
+      .photo-lightbox-drag-hint {
+        background: rgba(255,255,255,0.25);
+        animation: photo-drag-pulse 2.4s ease-in-out infinite;
+      }
+      @keyframes photo-drag-pulse {
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 0.7; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .photo-lightbox-drag-hint { animation: none; opacity: 0.5; }
+        .photo-skeleton-dark { animation: none; }
+      }
+
+      .photo-search-panel {
+        background: linear-gradient(165deg, rgba(30,26,22,0.98) 0%, rgba(14,12,10,0.98) 100%);
+      }
+    </style>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-B7O_v2tI.js"></script>
+  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
+  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-react-IGMW92H_.js">
+</head>
+  <body>
+    <!-- Persistent Gradient Background -->
+    <div class="bg-grid-fixed"></div>
+    <div class="bg-noise"></div>
+    <div id="root"></div>
+    <script>
+      // GitHub Pages SPA 路由處理
+      // 處理從 404.html 重定向過來的路徑
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          // 從完整 URL 中提取路徑部分
+          try {
+            var url = new URL(redirect);
+            var basePath = '/joy-jacky.love';
+            var path = url.pathname;
+            
+            // 去掉 base path 前綴
+            if (path.startsWith(basePath)) {
+              path = path.slice(basePath.length);
+            }
+            
+            // 如果路徑存在且不是根路徑，則更新瀏覽器歷史記錄
+            if (path && path !== '/' && path !== '/index.html') {
+              var newPath = basePath + path + url.search + url.hash;
+              history.replaceState(null, null, newPath);
+            }
+          } catch (e) {
+            console.warn('無法處理重定向 URL:', redirect, e);
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
