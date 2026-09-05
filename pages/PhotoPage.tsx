@@ -21,7 +21,11 @@ import { formatTableFilterTitle } from '../utils/tableLabels';
 import { getLightboxDisplayUrl } from '../utils/photoUrls';
 import { getStageFilmMarker, getStageFilmStart } from '../utils/weddingFilm';
 import { addRecentSearch } from '../utils/photoRecentSearch';
-import { useTimelineSync } from '../hooks/useTimelineSync';
+import {
+  DEFAULT_ANCHOR_OFFSET_PX,
+  DESKTOP_ANCHOR_OFFSET_PX,
+  useTimelineSync,
+} from '../hooks/useTimelineSync';
 import { usePhotoDeepLink, shareFilterLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
@@ -129,14 +133,18 @@ const PhotoPage: React.FC = () => {
     : null;
   const { activeStageId, scrollToStage, registerSection } = useTimelineSync(
     stageIds,
-    useDockLayout && !isFiltered ? galleryEl : null
+    useDockLayout && !isFiltered ? galleryEl : null,
+    {
+      anchorOffset: useDockLayout ? DEFAULT_ANCHOR_OFFSET_PX : DESKTOP_ANCHOR_OFFSET_PX,
+    }
   );
 
   useEffect(() => {
-    if (filmStageRequest && activeStageId === filmStageRequest) {
+    if (!filmStageRequest || chapterFocusId) return;
+    if (activeStageId !== filmStageRequest) {
       setFilmStageRequest(null);
     }
-  }, [activeStageId, filmStageRequest]);
+  }, [activeStageId, filmStageRequest, chapterFocusId]);
 
   useEffect(() => {
     if (!chapterFocusId) return;
