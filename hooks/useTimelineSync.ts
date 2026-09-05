@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 const TOP_THRESHOLD_PX = 48;
 const BOTTOM_THRESHOLD_PX = 64;
-const REFERENCE_VIEWPORT_RATIO = 0.2;
+// The active chapter should change when its banner reaches the content top,
+// not merely when it enters the lower part of the viewport.
+const ACTIVE_STAGE_OFFSET_PX = 48;
 const SCROLL_RETRY_MS = 80;
 const SCROLL_RETRY_MAX = 40;
 const LAYOUT_SETTLE_MS = 2400;
@@ -54,14 +56,14 @@ function resolveActiveStage(
     return stageIds[stageIds.length - 1];
   }
 
-  const referenceY = rootTop + viewportHeight * REFERENCE_VIEWPORT_RATIO;
+  const referenceY = rootTop + ACTIVE_STAGE_OFFSET_PX;
 
   let activeId = stageIds[0];
   for (const id of stageIds) {
     const el = elements.get(id);
     if (!el) continue;
     const rect = el.getBoundingClientRect();
-    if (rect.top <= referenceY + 16) {
+    if (rect.top <= referenceY) {
       activeId = id;
     } else {
       break;
