@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+const TOP_THRESHOLD_PX = 48;
 const BOTTOM_THRESHOLD_PX = 64;
+const REFERENCE_VIEWPORT_RATIO = 0.2;
 const SCROLL_RETRY_MS = 80;
 const SCROLL_RETRY_MAX = 40;
 const LAYOUT_SETTLE_MS = 2400;
@@ -20,12 +22,87 @@ function scrollElementIntoRoot(
   });
 }
 
+function resolveActiveStage(
+  stageIds: string[],
+  elements: Map<string, HTMLElement>,
+  scrollRoot: HTMLElement | null
+): string | null {
+  if (stageIds.length === 0) return null;
+
+  let scrollTop: number;
+  let viewportHeight: number;
+  let scrollHeight: number;
+  let rootTop: number;
+
+  if (scrollRoot) {
+    scrollTop = scrollRoot.scrollTop;
+    viewportHeight = scrollRoot.clientHeight;
+    scrollHeight = scrollRoot.scrollHeight;
+    rootTop = scrollRoot.getBoundingClientRect().top;
+  } else {
+    scrollTop = window.scrollY || document.documentElement.scrollTop;
+    viewportHeight = window.innerHeight;
+    scrollHeight = document.documentElement.scrollHeight;
+    rootTop = 0;
+  }
+
+  if (scrollTop <= TOP_THRESHOLD_PX) {
+    return stageIds[0];
+  }
+
+  if (scrollTop + viewportHeight >= scrollHeight - BOTTOM_THRESHOLD_PX) {
+    return stageIds[stageIds.length - 1];
+  }
+
+  const referenceY = rootTop + viewportHeight * REFERENCE_VIEWPORT_RATIO;
+
+  let activeId = stageIds[0];
+  for (const id of stageIds) {
+    const el = elements.get(id);
+    if (!el) continue;
+    const rect = el.getBoundingClientRect();
+    if (rect.top <= referenceY + 16) {
+      activeId = id;
+    } else {
+      break;
+    }
+  }
+
+  return activeId;
+}
+
 export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | null) {
   const [activeStageId, setActiveStageId] = useState(stageIds[0] ?? '');
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const elementsRef = useRef<Map<string, HTMLElement>>(new Map());
   const pendingStageRef = useRef<string | null>(null);
   const scrollCleanupRef = useRef<(() => void) | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const stageIdsRef = useRef(stageIds);
+  const scrollRootRef = useRef(scrollRoot ?? null);
+
+  stageIdsRef.current = stageIds;
+  scrollRootRef.current = scrollRoot ?? null;
+
+  const syncActiveStage = useCallback(() => {
+    if (pendingStageRef.current) return;
+
+    const next = resolveActiveStage(
+      stageIdsRef.current,
+      elementsRef.current,
+      scrollRootRef.current
+    );
+    if (next) {
+      setActiveStageId((prev) => (prev === next ? prev : next));
+    }
+  }, []);
+
+  const scheduleSync = useCallback(() => {
+    if (rafRef.current != null) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
+      syncActiveStage();
+    });
+  }, [syncActiveStage]);
 
   useEffect(() => {
     if (stageIds.length && !stageIds.includes(activeStageId)) {
@@ -34,67 +111,49 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
   }, [stageIds, activeStageId]);
 
   useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (pendingStageRef.current) return;
-
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        const top = visible[0];
-        if (top?.target instanceof HTMLElement && top.target.dataset.stageId) {
-          setActiveStageId(top.target.dataset.stageId);
-        }
-      },
-      {
-        root: scrollRoot ?? null,
-        rootMargin: scrollRoot ? '-8% 0px -45% 0px' : '-20% 0px -55% 0px',
-        threshold: [0, 0.25, 0.5, 0.75, 1],
-      }
-    );
-
-    elementsRef.current.forEach((el) => observerRef.current?.observe(el));
-
-    return () => observerRef.current?.disconnect();
-  }, [stageIds.join(','), scrollRoot]);
+    scheduleSync();
+  }, [stageIds.join(','), scrollRoot, scheduleSync]);
 
   useEffect(() => {
-    if (!scrollRoot || stageIds.length === 0) return;
+    const target = scrollRoot ?? window;
+    const onScroll = () => scheduleSync();
 
-    const onScroll = () => {
-      if (pendingStageRef.current) return;
-      const nearBottom =
-        scrollRoot.scrollTop + scrollRoot.clientHeight >=
-        scrollRoot.scrollHeight - BOTTOM_THRESHOLD_PX;
-      if (nearBottom) {
-        setActiveStageId(stageIds[stageIds.length - 1]);
-      }
-    };
+    target.addEventListener('scroll', onScroll, { passive: true });
+    return () => target.removeEventListener('scroll', onScroll);
+  }, [scrollRoot, scheduleSync]);
 
-    scrollRoot.addEventListener('scroll', onScroll, { passive: true });
-    return () => scrollRoot.removeEventListener('scroll', onScroll);
-  }, [scrollRoot, stageIds.join(',')]);
+  useEffect(() => {
+    if (!scrollRoot) {
+      const onResize = () => scheduleSync();
+      window.addEventListener('resize', onResize, { passive: true });
+      return () => window.removeEventListener('resize', onResize);
+    }
+
+    const resizeObserver = new ResizeObserver(() => scheduleSync());
+    resizeObserver.observe(scrollRoot);
+    elementsRef.current.forEach((node) => resizeObserver.observe(node));
+
+    return () => resizeObserver.disconnect();
+  }, [scrollRoot, stageIds.join(','), scheduleSync]);
 
   useEffect(
     () => () => {
       scrollCleanupRef.current?.();
+      if (rafRef.current != null) window.cancelAnimationFrame(rafRef.current);
     },
     []
   );
 
   const registerSection = useCallback(
     (id: string) => (el: HTMLElement | null) => {
-      const prev = elementsRef.current.get(id);
-      if (prev) observerRef.current?.unobserve(prev);
-
       if (el) {
         elementsRef.current.set(id, el);
-        observerRef.current?.observe(el);
       } else {
         elementsRef.current.delete(id);
       }
+      scheduleSync();
     },
-    []
+    [scheduleSync]
   );
 
   const scrollToStage = useCallback(
@@ -115,6 +174,7 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
         if (retryTimer != null) window.clearTimeout(retryTimer);
         if (settleTimer != null) window.clearTimeout(settleTimer);
         scrollCleanupRef.current = null;
+        syncActiveStage();
       };
 
       const performScroll = (behavior: ScrollBehavior) => {
@@ -164,7 +224,7 @@ export function useTimelineSync(stageIds: string[], scrollRoot?: HTMLElement | n
       scrollCleanupRef.current = releasePending;
       attemptScroll();
     },
-    [scrollRoot]
+    [scrollRoot, syncActiveStage]
   );
 
   return { activeStageId, setActiveStageId, registerSection, scrollToStage };

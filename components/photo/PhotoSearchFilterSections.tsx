@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import type { GuestRecord } from '../../types';
 import {
+  getGuestRelationsForSide,
   PHOTO_SEARCH_SIDES,
   POPULAR_TAGS,
-  RSVP_RELATIONS,
 } from '../../utils/photoFilters';
 import { listTableOptions } from '../../utils/tableLabels';
 import { getFaceAvatarUrl } from '../../utils/photoUrls';
@@ -150,7 +150,7 @@ export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps>
           hint={relationTitle}
           previewCount={relationPreview}
           expandLabel="更多關係"
-          items={RSVP_RELATIONS}
+          items={getGuestRelationsForSide(key)}
           getKey={(relation) => `${key}-${relation}`}
           renderItem={(relation) => (
             <button
