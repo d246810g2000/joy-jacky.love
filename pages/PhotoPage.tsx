@@ -17,7 +17,7 @@ import {
   isFilterEmpty,
 } from '../utils/photoFilters';
 import { formatTableFilterTitle } from '../utils/tableLabels';
-import { getLightboxUrl } from '../utils/photoUrls';
+import { getLightboxDisplayUrl } from '../utils/photoUrls';
 import { getStageFilmMarker, getStageFilmStart } from '../utils/weddingFilm';
 import { addRecentSearch } from '../utils/photoRecentSearch';
 import { useTimelineSync } from '../hooks/useTimelineSync';
@@ -270,7 +270,7 @@ const PhotoPage: React.FC = () => {
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (!ogImage) return;
     if (selectedPhoto) {
-      ogImage.setAttribute('content', getLightboxUrl(selectedPhoto.publicId));
+      ogImage.setAttribute('content', getLightboxDisplayUrl(selectedPhoto.publicId));
     }
   }, [selectedPhoto]);
 

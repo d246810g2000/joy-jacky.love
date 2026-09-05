@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PhotoFilter, WeddingPhoto } from '../../types';
+import { getBlurUrl, getLightboxDisplayUrl, getOriginalUrl, getThumbUrl } from '../../utils/photoUrls';
 import {
-  getBlurUrl,
-  getLightboxUrl,
-  getOriginalUrl,
-  getThumbUrl,
-  prefetchPhoto,
-} from '../../utils/photoUrls';
+  isImagePreloaded,
+  preloadImageUrl,
+  preloadLightboxNeighbors,
+} from '../../utils/photoPreload';
 import { buildPhotoShareUrl, buildPhotoShareTitle } from '../../hooks/usePhotoDeepLink';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
@@ -38,6 +37,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   onWatchFilm,
 }) => {
   const isMobile = useIsMobile();
+  const [viewportWidth, setViewportWidth] = useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth : 1200)
+  );
   const [copied, setCopied] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(false);
@@ -45,6 +47,12 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
+
+  const displayUrl = useMemo(
+    () => getLightboxDisplayUrl(photo.publicId, viewportWidth),
+    [photo.publicId, viewportWidth]
+  );
+  const isPreloaded = isImagePreloaded(displayUrl);
 
   const imageMaxH = isMobile ? 'max-h-[72dvh]' : 'max-h-[60dvh]';
 
@@ -57,8 +65,43 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [allPhotos, currentIndex, onChange]);
 
   useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    setShowDetails(false);
+
+    if (isImagePreloaded(displayUrl)) {
+      setImageLoaded(true);
+      return;
+    }
+
     setImageLoaded(false);
-  }, [photo.id]);
+    let cancelled = false;
+    preloadImageUrl(displayUrl)
+      .then(() => {
+        if (!cancelled) setImageLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setImageLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [photo.id, displayUrl]);
+
+  useEffect(() => {
+    preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
+  }, [allPhotos, currentIndex, viewportWidth]);
+
+  useEffect(() => {
+    if (!showFilmstrip) return;
+    const el = filmstripRef.current?.querySelector(`[data-photo-id="${photo.id}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [photo.id, showFilmstrip]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -69,20 +112,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, goPrev, goNext]);
-
-  useEffect(() => {
-    const prev = allPhotos[currentIndex - 1];
-    const next = allPhotos[currentIndex + 1];
-    [prev, next].forEach((p) => {
-      if (p) prefetchPhoto(p.publicId);
-    });
-  }, [currentIndex, allPhotos]);
-
-  useEffect(() => {
-    if (!showFilmstrip) return;
-    const el = filmstripRef.current?.querySelector(`[data-photo-id="${photo.id}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [photo.id, showFilmstrip]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = {
@@ -140,9 +169,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const filmstripPhotos = allPhotos.slice(windowStart, windowEnd);
 
   const blurUrl = getBlurUrl(photo.publicId);
-  const lightboxUrl = getLightboxUrl(photo.publicId);
   const stageMarker = getStageFilmMarker(photo.stageId);
   const stageLabel = stageMarker?.label ?? '';
+  const imageTransition = isPreloaded ? { duration: 0.12 } : { duration: 0.22 };
 
   return (
     <motion.div
@@ -172,7 +201,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 onClick={handleDownload}
                 className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
               >
-                下載
+                下載原圖
               </button>
             )}
             <button
@@ -240,16 +269,18 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               </div>
             </>
           )}
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout" initial={false}>
             <motion.img
               key={photo.id}
-              src={lightboxUrl}
+              src={displayUrl}
               alt={photo.caption || photo.names.join('、') || '婚禮照片'}
               initial={{ opacity: 0 }}
               animate={{ opacity: imageLoaded ? 1 : 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={imageTransition}
               onLoad={() => setImageLoaded(true)}
+              decoding="async"
+              fetchPriority="high"
               className={`${imageMaxH} max-w-full object-contain`}
               draggable={false}
             />
@@ -398,7 +429,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
         )}
 
         {isMobile && (
-          <p className="text-center text-[10px] text-white/25">下滑關閉</p>
+          <p className="text-center text-[10px] text-white/25">
+            左右滑動換張 · 下滑關閉
+          </p>
         )}
       </footer>
     </motion.div>
