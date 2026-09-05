@@ -418,7 +418,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
           </div>
         )}
 
-        {showNameScope && onNameScopeChange && (
+        {!isDock && showNameScope && onNameScopeChange && (
           <PhotoNameScopeBar
             scope={nameScope}
             onScopeChange={onNameScopeChange}
@@ -428,42 +428,51 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
         )}
 
         <div
-          className={`photo-search-bar flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-xl ${
-            hasFilter ? 'border-[var(--photo-accent)]/35 !bg-[rgba(176,141,85,0.12)]' : ''
-          } ${showNameScope ? 'mt-2' : ''}`}
+          className={
+            isDock
+              ? 'fixed bottom-4 right-4 z-40 photo-safe-bottom'
+              : `photo-search-bar flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-xl ${
+                  hasFilter ? 'border-[var(--photo-accent)]/35 !bg-[rgba(176,141,85,0.12)]' : ''
+                } ${showNameScope ? 'mt-2' : ''}`
+          }
         >
           <button
             type="button"
             onClick={() => setExpanded(true)}
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left active:bg-white/5"
+            className={
+              isDock
+                ? 'relative flex h-14 w-14 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)] text-white shadow-[0_8px_28px_rgba(0,0,0,0.45)] transition active:scale-95'
+                : 'flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 py-2 text-left active:bg-white/5'
+            }
+            aria-label="搜尋照片"
           >
-            <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                hasFilter ? 'bg-[var(--photo-accent)]/25 text-[var(--photo-gold-light)]' : 'bg-white/8 text-white/50'
-              }`}
-              aria-hidden
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-              </svg>
-            </span>
-            <div className="min-w-0 flex-1">
-              {hasFilter && filterLabel ? (
-                <>
-                  <p className="photo-search-primary truncate text-sm font-medium">{filterLabel}</p>
-                  {resultCount != null && (
-                    <p className="photo-search-secondary text-[10px]">{resultCount} 張照片</p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="photo-search-primary text-sm">搜尋姓名或桌號</p>
-                  <p className="photo-search-secondary text-[10px]">點擊輸入，快速找到您的照片</p>
-                </>
-              )}
-            </div>
+            <svg className={isDock ? 'h-6 w-6' : 'h-4 w-4'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            </svg>
+            {!isDock && (
+              <div className="min-w-0 flex-1">
+                {hasFilter && filterLabel ? (
+                  <>
+                    <p className="photo-search-primary truncate text-sm font-medium">{filterLabel}</p>
+                    {resultCount != null && (
+                      <p className="photo-search-secondary text-[10px]">{resultCount} 張照片</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="photo-search-primary text-sm">搜尋姓名或桌號</p>
+                    <p className="photo-search-secondary text-[10px]">點擊輸入，快速找到您的照片</p>
+                  </>
+                )}
+              </div>
+            )}
+            {isDock && hasFilter && resultCount != null && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-[#0c0b0a] bg-[#d9a85f] px-1 text-[9px] font-medium text-[#20170f]">
+                {resultCount > 99 ? '99+' : resultCount}
+              </span>
+            )}
           </button>
-          {hasFilter && onShareFilter && (
+          {!isDock && hasFilter && onShareFilter && (
             <button
               type="button"
               onClick={onShareFilter}
@@ -475,7 +484,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               </svg>
             </button>
           )}
-          {hasFilter && onDownloadAll && resultCount != null && resultCount > 0 && (
+          {!isDock && hasFilter && onDownloadAll && resultCount != null && resultCount > 0 && (
             <button
               type="button"
               onClick={onDownloadAll}
@@ -491,7 +500,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 : '下載'}
             </button>
           )}
-          {hasFilter && onClearFilter && (
+          {!isDock && hasFilter && onClearFilter && (
             <button
               type="button"
               onClick={onClearFilter}
@@ -503,7 +512,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               </svg>
             </button>
           )}
-          <button
+          {!isDock && <button
             type="button"
             onClick={onOpenDrawer}
             className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 active:bg-white/10"
@@ -517,7 +526,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 {resultCount > 99 ? '99+' : resultCount}
               </span>
             )}
-          </button>
+          </button>}
         </div>
       </div>
     </>
