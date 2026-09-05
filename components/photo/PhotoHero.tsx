@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { getBlurUrl, getLightboxUrl } from '../../utils/photoUrls';
+import { getBlurUrl, getHeroCoverUrl } from '../../utils/photoUrls';
 import { APP_CONTENT } from '../../constants';
 import { PHOTO_THEME } from '../../utils/photoTheme';
 
@@ -22,7 +22,7 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
   onQuickSearch,
 }) => {
   const [coverLoaded, setCoverLoaded] = useState(false);
-  const coverUrl = getLightboxUrl(coverPublicId);
+  const coverUrl = getHeroCoverUrl(coverPublicId);
   const blurUrl = getBlurUrl(coverPublicId);
 
   if (compact) {
