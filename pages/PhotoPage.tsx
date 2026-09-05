@@ -267,6 +267,15 @@ const PhotoPage: React.FC = () => {
       'content',
       '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
     );
+    document.querySelector('meta[property="og:url"]')?.setAttribute(
+      'content',
+      `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/album`
+    );
+    document.querySelector('meta[property="twitter:title"]')?.setAttribute('content', 'Joy & Jacky 婚禮相簿');
+    document.querySelector('meta[property="twitter:description"]')?.setAttribute(
+      'content',
+      '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
+    );
 
     if (tableParam) {
       const tableNum = parseInt(tableParam, 10);
