@@ -2,10 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
-import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import type { NameSearchScope } from '../../types';
 import {
   PHOTO_THEME,
   readFilmExpanded,
@@ -17,23 +15,9 @@ interface PhotoCommandDockProps {
   activeStageId: string;
   onStageSelect: (stageId: string) => void;
   welcomeTitle?: string;
-  resultCount: number | null;
   hasFilter: boolean;
-  loading?: boolean;
-  filterLabel?: string | null;
-  autoExpandSearch?: boolean;
-  onExpandSearchHandled?: () => void;
-  onSearch: (query: string) => void;
-  onOpenDrawer: () => void;
   onClearFilter?: () => void;
-  onDownloadAll?: () => void;
-  onShareFilter?: () => void;
-  downloading?: boolean;
-  downloadProgress?: { done: number; total: number } | null;
-  nameScope?: NameSearchScope;
-  onNameScopeChange?: (scope: NameSearchScope) => void;
-  guestTable?: number | null;
-  showNameScope?: boolean;
+  loading?: boolean;
 }
 
 export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
@@ -41,23 +25,9 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   activeStageId,
   onStageSelect,
   welcomeTitle,
-  resultCount,
   hasFilter,
-  loading = false,
-  filterLabel,
-  autoExpandSearch,
-  onExpandSearchHandled,
-  onSearch,
-  onOpenDrawer,
   onClearFilter,
-  onDownloadAll,
-  onShareFilter,
-  downloading,
-  downloadProgress,
-  nameScope,
-  onNameScopeChange,
-  guestTable,
-  showNameScope = false,
+  loading = false,
 }) => {
   const isMobile = useIsMobile();
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
@@ -81,12 +51,23 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
     >
       <div className="px-3 pb-2 pt-2">
         <div className="flex items-center justify-between gap-2">
-          <Link
-            to="/"
-            className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
-          >
-            ← 喜帖
-          </Link>
+          {hasFilter && onClearFilter ? (
+            <button
+              type="button"
+              onClick={onClearFilter}
+              className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
+            >
+              ← 相簿
+            </button>
+          ) : (
+            <Link
+              to="/"
+              onClick={() => sessionStorage.setItem('home_return_section', 'photos')}
+              className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
+            >
+              ← 喜帖
+            </Link>
+          )}
           <div className="min-w-0 flex-1 text-center">
             <p className="photo-dock-title truncate font-serif text-sm">
               {welcomeTitle ?? 'Joy & Jacky 婚禮相簿'}
@@ -122,9 +103,9 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      {navItems.length > 0 && (
+      {!isMobile && navItems.length > 0 && (
         <PhotoTimelineNav
-          variant={isMobile ? 'default' : 'dock'}
+          variant="dock"
           items={navItems}
           activeStageId={activeStageId}
           onSelect={onStageSelect}
@@ -132,27 +113,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      <div className="border-t border-white/8 px-3 py-1.5">
-        <PhotoSearchBar
-          variant="dock"
-          resultCount={resultCount}
-          hasFilter={hasFilter}
-          filterLabel={filterLabel}
-          autoExpand={autoExpandSearch}
-          onExpandHandled={onExpandSearchHandled}
-          onSearch={onSearch}
-          onOpenDrawer={onOpenDrawer}
-          onClearFilter={onClearFilter}
-          onDownloadAll={onDownloadAll}
-          onShareFilter={onShareFilter}
-          downloading={downloading}
-          downloadProgress={downloadProgress}
-          nameScope={nameScope}
-          onNameScopeChange={onNameScopeChange}
-          guestTable={guestTable}
-          showNameScope={showNameScope}
-        />
-      </div>
     </header>
   );
 };
