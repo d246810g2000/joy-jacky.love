@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearch';
 import type { GuestRecord, NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
@@ -55,6 +55,8 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchHistoryRef = useRef(false);
+  const isDock = variant === 'dock';
   const suggestions = useMemo(
     () => (query.trim().length > 0 ? searchGuests(query, 5) : []),
     [query]
@@ -71,6 +73,41 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     return table >= 1 && table <= 27 ? table : null;
   }, [query]);
 
+  const openSearch = useCallback(() => {
+    setExpanded(true);
+    if (isDock && !searchHistoryRef.current) {
+      window.history.pushState(
+        { ...(window.history.state ?? {}), photoSearch: true },
+        '',
+        window.location.href
+      );
+      searchHistoryRef.current = true;
+    }
+  }, [isDock]);
+
+  const closeSearch = useCallback(
+    (fromPopState = false) => {
+      const shouldRestoreHistory = isDock && searchHistoryRef.current;
+      searchHistoryRef.current = false;
+      setExpanded(false);
+      setQuery('');
+      if (shouldRestoreHistory && !fromPopState) {
+        window.history.back();
+      }
+    },
+    [isDock]
+  );
+
+  useEffect(() => {
+    if (!isDock) return;
+    const handlePopState = () => {
+      if (!searchHistoryRef.current) return;
+      closeSearch(true);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [closeSearch, isDock]);
+
   useEffect(() => {
     if (expanded) {
       setRecent(getRecentSearches());
@@ -80,27 +117,19 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
 
   useEffect(() => {
     if (autoExpand) {
-      setExpanded(true);
+      openSearch();
       onExpandHandled?.();
     }
-  }, [autoExpand, onExpandHandled]);
+  }, [autoExpand, onExpandHandled, openSearch]);
 
   if (hidden) return null;
-
-  const isDock = variant === 'dock';
 
   const submit = (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
     addRecentSearch(trimmed);
     onSearch(trimmed);
-    setExpanded(false);
-    setQuery('');
-  };
-
-  const closeSearch = () => {
-    setExpanded(false);
-    setQuery('');
+    closeSearch();
   };
 
   const submitTag = (tag: string) => {
@@ -108,8 +137,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     if (!cleanTag) return;
     addRecentSearch(cleanTag);
     onTagSearch?.(cleanTag);
-    setExpanded(false);
-    setQuery('');
+    closeSearch();
   };
 
   const selectTable = (table: number) => {
@@ -119,8 +147,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     } else {
       onSearch(String(table));
     }
-    setExpanded(false);
-    setQuery('');
+    closeSearch();
   };
 
   return (
@@ -230,7 +257,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
       {expanded && !isDock && (
         <div
           className="fixed inset-0 z-40 bg-black/50"
-          onClick={() => setExpanded(false)}
+          onClick={() => closeSearch()}
           aria-hidden
         />
       )}
@@ -395,7 +422,7 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
         >
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={openSearch}
             className={
               isDock
                 ? 'relative flex h-12 w-12 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)] text-white shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition active:scale-95'
