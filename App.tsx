@@ -109,8 +109,10 @@ const GamepadIcon = () => (
 );
 
 import { useModalHistory } from './hooks/useModalHistory';
+import { useVisitCount } from './components/VisitCounterProvider';
 function App() {
   const navigate = useNavigate();
+  const visitCount = useVisitCount();
   // Check session storage to skip loading if already visited
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
     return !sessionStorage.getItem('hasVisited');
@@ -121,7 +123,6 @@ function App() {
   const [activeSection, setActiveSection] = useState('timeline');
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isGuestBookExpanded, setIsGuestBookExpanded] = useState(false);
-  const [visitCount, setVisitCount] = useState<number | null>(null);
   const [displayCount, setDisplayCount] = useState(0);
 
   // New State for Collapsible Nav
@@ -354,44 +355,6 @@ function App() {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  // --- Visit Counter Logic ---
-  useEffect(() => {
-    const fetchVisitCount = async () => {
-      if (!APP_CONTENT.googleScriptUrl || !APP_CONTENT.googleScriptUrl.startsWith('http')) {
-        return;
-      }
-      try {
-        const hasCounted = sessionStorage.getItem('has_counted_visit');
-        const action = hasCounted ? 'get_visit' : 'visit';
-        
-        const separator = APP_CONTENT.googleScriptUrl.includes('?') ? '&' : '?';
-        const url = `${APP_CONTENT.googleScriptUrl}${separator}action=${action}&t=${Date.now()}`;
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          redirect: 'follow',
-        });
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("text/html")) {
-          throw new Error("HTML_RESPONSE");
-        }
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data && typeof data.count === 'number') {
-            setVisitCount(data.count);
-            sessionStorage.setItem('has_counted_visit', 'true');
-          }
-        }
-      } catch (error) {
-        console.warn("Failed to fetch/update visit count:", error);
-      }
-    };
-
-    fetchVisitCount();
   }, []);
 
   // --- Visit Counter Dynamic Rolling Animation ---
