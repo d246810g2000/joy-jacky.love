@@ -42,6 +42,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   );
   const [copied, setCopied] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [showFilmstrip, setShowFilmstrip] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -72,6 +73,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
   useEffect(() => {
     setShowDetails(false);
+    setImageError(false);
 
     if (isImagePreloaded(displayUrl)) {
       setImageLoaded(true);
@@ -256,7 +258,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
         )}
 
         <div className={`relative flex ${imageMaxH} max-w-full items-center justify-center photo-lightbox-vignette`}>
-          {!imageLoaded && (
+          {!imageLoaded && !imageError && (
             <>
               <img
                 src={blurUrl}
@@ -279,12 +281,21 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               exit={{ opacity: 0 }}
               transition={imageTransition}
               onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                setImageError(true);
+                setImageLoaded(false);
+              }}
               decoding="async"
               fetchPriority="high"
               className={`${imageMaxH} max-w-full object-contain`}
               draggable={false}
             />
           </AnimatePresence>
+          {imageError && (
+            <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/10 bg-black/70 px-4 py-3 text-center text-xs text-white/70">
+              照片載入失敗，請稍後重試
+            </div>
+          )}
         </div>
 
         {currentIndex < allPhotos.length - 1 && (

@@ -146,7 +146,7 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
     >
       <div
         ref={navRef}
-        className={`no-scrollbar flex gap-1.5 overflow-x-auto ${
+        className={`no-scrollbar flex snap-x snap-mandatory gap-1.5 overflow-x-auto ${
           variant === 'dock' ? 'px-3 py-2' : 'px-3 py-2.5 md:justify-center md:px-6 md:py-3'
         }`}
       >
@@ -160,8 +160,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
               ref={isActive ? activeRef : undefined}
               type="button"
               onClick={() => onSelect(item.id)}
+              aria-current={isActive ? 'step' : undefined}
               title={isDock ? `${item.time} ${item.label}` : undefined}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
+              className={`shrink-0 snap-center rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
                 isDock ? 'py-1.5' : 'md:px-4 md:py-2 md:text-sm'
               } ${
                 isActive
@@ -178,7 +179,10 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
               }
             >
               {isDock ? (
-                <span className="font-medium">{item.label}</span>
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="font-mono text-[10px] tabular-nums opacity-75">{item.time}</span>
+                  <span>{item.label}</span>
+                </span>
               ) : (
                 <>
                   <span className="font-mono font-medium tabular-nums">{item.time}</span>

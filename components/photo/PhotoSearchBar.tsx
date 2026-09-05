@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { addRecentSearch, getRecentSearches } from '../../utils/photoRecentSearch';
 import type { NameSearchScope } from '../../types';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
+import { formatGuestSubtitle, searchGuests } from '../../utils/guestIndex';
+import { formatTableLabel } from '../../utils/tableLabels';
 
 interface PhotoSearchBarProps {
   resultCount: number | null;
@@ -48,6 +50,16 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestions = useMemo(
+    () => (query.trim().length > 0 ? searchGuests(query, 5) : []),
+    [query]
+  );
+  const exactTable = useMemo(() => {
+    const trimmed = query.trim();
+    if (!/^\d{1,2}$/.test(trimmed)) return null;
+    const table = Number(trimmed);
+    return table >= 1 && table <= 27 ? table : null;
+  }, [query]);
 
   useEffect(() => {
     if (expanded) {
@@ -76,6 +88,11 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
     setQuery('');
   };
 
+  const closeSearch = () => {
+    setExpanded(false);
+    setQuery('');
+  };
+
   return (
     <>
       {expanded && !isDock && (
@@ -99,7 +116,20 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
               isDock ? 'mb-2' : 'mb-2'
             }`}
           >
-            <p className="mb-2 px-1 text-[11px] tracking-wide text-white/45">找您的婚禮照片</p>
+            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+              <div>
+                <p className="text-[13px] font-medium text-white/90">找您的婚禮照片</p>
+                <p className="mt-0.5 text-[10px] text-white/45">輸入姓名或桌號，直接找到相關照片</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeSearch}
+                className="rounded-full px-2 py-1 text-xs text-white/50 active:bg-white/10"
+                aria-label="關閉搜尋"
+              >
+                關閉
+              </button>
+            </div>
             <div className="relative">
               <span
                 className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/35"
@@ -116,17 +146,69 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') submit(query);
-                  if (e.key === 'Escape') setExpanded(false);
+                  if (e.key === 'Escape') closeSearch();
                 }}
-                placeholder="輸入姓名或桌號…"
+                placeholder="例如：王小明、6"
                 className="photo-search-input w-full rounded-xl border border-white/10 bg-black/50 py-3 pl-10 pr-4 text-base text-white placeholder:text-white/35 focus:border-[var(--photo-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--photo-accent)]/40"
                 autoComplete="off"
                 enterKeyHint="search"
               />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-white/45 active:bg-white/10"
+                  aria-label="清除搜尋文字"
+                >
+                  ×
+                </button>
+              )}
             </div>
+            {(suggestions.length > 0 || exactTable != null) && (
+              <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-black/25">
+                {exactTable != null && (
+                  <button
+                    type="button"
+                    onClick={() => submit(String(exactTable))}
+                    className="flex w-full items-center gap-3 border-b border-white/8 px-3 py-2.5 text-left active:bg-white/10"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--photo-accent)]/20 text-sm text-[var(--photo-gold-light)]">
+                      {exactTable}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-white/90">
+                        {formatTableLabel(exactTable)}
+                      </span>
+                      <span className="block text-[10px] text-white/45">查看這桌的全部照片</span>
+                    </span>
+                  </button>
+                )}
+                {suggestions.map((guest) => (
+                  <button
+                    key={guest.id}
+                    type="button"
+                    onClick={() => submit(guest.name)}
+                    className="flex w-full items-center gap-3 border-b border-white/8 px-3 py-2.5 text-left last:border-0 active:bg-white/10"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/8 text-xs text-white/65">
+                      {guest.name.slice(0, 1)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm text-white/90">{guest.name}</span>
+                      <span className="block truncate text-[10px] text-white/45">
+                        {formatGuestSubtitle(guest)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             {recent.length > 0 && (
               <div className="mt-2.5">
-                <p className="mb-1.5 px-1 text-[10px] text-white/35">最近搜尋</p>
+                <div className="mb-1.5 flex items-center justify-between px-1">
+                  <p className="text-[10px] text-white/35">最近搜尋</p>
+                  <span className="text-[10px] text-white/25">點一下快速套用</span>
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {recent.map((r) => (
                     <button

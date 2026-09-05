@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GuestRecord, PhotoFilter } from '../../types';
-import { TABLE_OPTIONS } from '../../utils/tableLabels';
+import { listTableOptions } from '../../utils/tableLabels';
 import {
   EMPTY_FILTER,
   PHOTO_CATEGORIES,
@@ -26,6 +26,7 @@ export const PhotoFilterDrawer: React.FC<PhotoFilterDrawerProps> = ({
   resultCount,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const tableOptions = listTableOptions();
 
   useEffect(() => {
     if (open) {
@@ -150,7 +151,7 @@ export const PhotoFilterDrawer: React.FC<PhotoFilterDrawerProps> = ({
             <div className="mt-6">
               <p className="mb-3 text-xs tracking-wider text-white/50 uppercase">快速選桌</p>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {TABLE_OPTIONS.map(({ table, name }) => (
+                {tableOptions.map(({ table, name }) => (
                   <button
                     key={table}
                     type="button"
