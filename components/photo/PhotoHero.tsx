@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getBlurUrl, getHeroCoverUrl } from '../../utils/photoUrls';
 import { APP_CONTENT } from '../../constants';
@@ -6,6 +6,7 @@ import { PHOTO_THEME } from '../../utils/photoTheme';
 
 interface PhotoHeroProps {
   coverPublicId: string;
+  coverPublicIds?: string[];
   compact?: boolean;
   welcomeTitle?: string;
   onScrollDown: () => void;
@@ -15,6 +16,7 @@ interface PhotoHeroProps {
 
 export const PhotoHero: React.FC<PhotoHeroProps> = ({
   coverPublicId,
+  coverPublicIds = [],
   compact = false,
   welcomeTitle,
   onScrollDown,
@@ -22,8 +24,23 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
   onQuickSearch,
 }) => {
   const [coverLoaded, setCoverLoaded] = useState(false);
-  const coverUrl = getHeroCoverUrl(coverPublicId);
-  const blurUrl = getBlurUrl(coverPublicId);
+  const heroIds = coverPublicIds.length > 0 ? coverPublicIds : [coverPublicId];
+  const [activeCoverIndex, setActiveCoverIndex] = useState(0);
+  const activeCoverId = heroIds[activeCoverIndex] ?? coverPublicId;
+  const coverUrl = getHeroCoverUrl(activeCoverId);
+  const blurUrl = getBlurUrl(activeCoverId);
+
+  useEffect(() => {
+    setCoverLoaded(false);
+  }, [activeCoverId]);
+
+  useEffect(() => {
+    if (heroIds.length < 2 || compact) return;
+    const timer = window.setInterval(() => {
+      setActiveCoverIndex((index) => (index + 1) % heroIds.length);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [compact, heroIds.length]);
 
   if (compact) {
     return (

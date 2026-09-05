@@ -84,6 +84,16 @@ const PhotoPage: React.FC = () => {
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
+  const heroCoverIds = useMemo(
+    () =>
+      allPhotos
+        .filter((photo) =>
+          photo.names.some((name) => name === '張家銘' || name === '李謦伊')
+        )
+        .slice(0, 8)
+        .map((photo) => photo.publicId),
+    [allPhotos]
+  );
 
   const navItems = useMemo(
     () =>
@@ -477,6 +487,7 @@ const PhotoPage: React.FC = () => {
 
       <PhotoHero
         coverPublicId={heroCoverId}
+        coverPublicIds={heroCoverIds}
         compact={skipHero}
         welcomeTitle={welcomeTitle}
         onScrollDown={handleScrollDown}
