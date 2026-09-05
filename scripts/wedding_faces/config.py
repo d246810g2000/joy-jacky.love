@@ -1,13 +1,17 @@
 from pathlib import Path
 from typing import Dict, List, Optional
+import os
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PRIVATE_DATA_DIR = Path(
+    os.getenv("WEDDING_PRIVATE_DATA_DIR", str(PROJECT_ROOT / "data"))
+).expanduser()
 PHOTO_SOURCE = Path("/Users/d246810g2000/Downloads/20260530家銘&謦伊 婚禮記錄")
 META_DIR = PROJECT_ROOT / "data" / "photo_meta"
 CROPS_DIR = PROJECT_ROOT / "data" / "face_crops"
 EMB_DIR = PROJECT_ROOT / "data" / "face_embeddings"
-GUEST_CSV = PROJECT_ROOT / "data" / "guest.csv"
-PHOTOS_JSON = PROJECT_ROOT / "data" / "photos.json"
+GUEST_CSV = PRIVATE_DATA_DIR / "guest.csv"
+PHOTOS_JSON = PRIVATE_DATA_DIR / "photos.json"
 
 AUTO_THRESHOLD = 0.75
 SUGGEST_THRESHOLD = 0.55

@@ -168,7 +168,7 @@ def main():
 
     content = f"""import type {{ WeddingStage }} from '../types';
 
-/** Auto-generated from photos.json + cloudinary_map — do not edit by hand */
+/** Public derived album manifest — do not store private face metadata here. */
 export const WEDDING_STAGES: WeddingStage[] = [
 {stages_joined}
 ];
