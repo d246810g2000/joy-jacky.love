@@ -18,27 +18,14 @@ interface PhotoCardProps {
   compact?: boolean;
 }
 
-const MAX_NAME_CHIPS = 2;
-const MAX_TAG_CHIPS = 3;
+const MAX_NAME_CHIPS = 3;
+const MAX_TABLE_CHIPS = 2;
+const MAX_HASH_TAG_CHIPS = 2;
 
 function chipLabel(items: string[], max: number) {
   const visible = items.slice(0, max);
   const hidden = items.length - visible.length;
   return { visible, hidden };
-}
-
-function buildTagSummary(tableTags: string[], hashTags: string[]) {
-  const allTags = [...tableTags, ...hashTags];
-  if (allTags.length === 0) return null;
-
-  const primary = allTags[0];
-  const extra = allTags.length - 1;
-  return {
-    primary,
-    extra,
-    allTags,
-    label: extra > 0 ? `${primary} +${extra}` : primary,
-  };
 }
 
 export const PhotoCard: React.FC<PhotoCardProps> = ({
@@ -65,16 +52,12 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 
   const tableTags = photo.tables.map((t) => formatTableTag(t));
   const hashTags = photo.tags.map((t) => `#${t}`);
-  const allTags = [...tableTags, ...hashTags];
-  const tagSummary = buildTagSummary(tableTags, hashTags);
 
-  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(
-    photo.names,
-    compact ? 1 : MAX_NAME_CHIPS
-  );
-  const { visible: visibleTags, hidden: hiddenTags } = chipLabel(
-    allTags,
-    compact ? 0 : MAX_TAG_CHIPS
+  const { visible: visibleNames, hidden: hiddenNames } = chipLabel(photo.names, MAX_NAME_CHIPS);
+  const { visible: visibleTables, hidden: hiddenTables } = chipLabel(tableTags, MAX_TABLE_CHIPS);
+  const { visible: visibleHashTags, hidden: hiddenHashTags } = chipLabel(
+    hashTags,
+    MAX_HASH_TAG_CHIPS
   );
 
   const nameChipClass = dark
@@ -85,15 +68,18 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     ? 'rounded-full border border-white/12 bg-white/6 px-2 py-0.5 text-[10px] text-white/72 hover:bg-white/10'
     : 'rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
 
-  const tagSummaryClass = dark
-    ? 'block w-full truncate rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-left text-[10px] text-white/68 hover:bg-white/10'
-    : 'block w-full truncate rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-left text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
-
   const moreChipClass = dark
     ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/45'
     : 'shrink-0 rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-[10px] text-[#2C3E50]/45';
 
-  const hasMeta = photo.names.length > 0 || allTags.length > 0;
+  const chipRowClass = compact
+    ? 'flex min-w-0 flex-wrap items-center gap-1'
+    : 'flex flex-nowrap items-center gap-1 overflow-hidden';
+
+  const nameChipSizeClass = 'max-w-[31%] truncate';
+
+  const hasMeta =
+    photo.names.length > 0 || tableTags.length > 0 || hashTags.length > 0;
 
   return (
     <article
@@ -138,7 +124,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
       {hasMeta && (
         <div className="space-y-1 px-2.5 py-2">
           {photo.names.length > 0 && (
-            <div className={`flex items-center gap-1 ${compact ? 'min-w-0' : 'flex-nowrap overflow-hidden'}`}>
+            <div className={chipRowClass}>
               {visibleNames.map((name) => (
                 <button
                   key={name}
@@ -147,56 +133,63 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onNameClick?.(name);
                   }}
-                  className={`${nameChipClass} ${compact ? 'min-w-0 flex-1 truncate text-left' : 'max-w-[46%] truncate'}`}
+                  className={`${nameChipClass} ${nameChipSizeClass}`}
                 >
                   {name}
                 </button>
               ))}
               {hiddenNames > 0 && (
-                <span className={moreChipClass} title={photo.names.slice(compact ? 1 : MAX_NAME_CHIPS).join('、')}>
+                <span className={moreChipClass} title={photo.names.slice(MAX_NAME_CHIPS).join('、')}>
                   +{hiddenNames}
                 </span>
               )}
             </div>
           )}
 
-          {compact ? (
-            tagSummary && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTagClick?.(tagSummary.primary.replace(/^#/, ''));
-                }}
-                className={tagSummaryClass}
-                title={tagSummary.allTags.join(' · ')}
-              >
-                {tagSummary.label}
-              </button>
-            )
-          ) : (
-            allTags.length > 0 && (
-              <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-                {visibleTags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTagClick?.(tag.replace(/^#/, ''));
-                    }}
-                    className={`${tagChipClass} max-w-[38%] truncate`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-                {hiddenTags > 0 && (
-                  <span className={moreChipClass} title={allTags.slice(MAX_TAG_CHIPS).join(' ')}>
-                    +{hiddenTags}
-                  </span>
-                )}
-              </div>
-            )
+          {tableTags.length > 0 && (
+            <div className={chipRowClass}>
+              {visibleTables.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTagClick?.(tag.replace(/^#/, ''));
+                  }}
+                  className={`${tagChipClass} max-w-[48%] truncate`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {hiddenTables > 0 && (
+                <span className={moreChipClass} title={tableTags.slice(MAX_TABLE_CHIPS).join(' ')}>
+                  +{hiddenTables}
+                </span>
+              )}
+            </div>
+          )}
+
+          {hashTags.length > 0 && (
+            <div className={chipRowClass}>
+              {visibleHashTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTagClick?.(tag.replace(/^#/, ''));
+                  }}
+                  className={`${tagChipClass} max-w-[48%] truncate`}
+                >
+                  {tag}
+                </button>
+              ))}
+              {hiddenHashTags > 0 && (
+                <span className={moreChipClass} title={hashTags.slice(MAX_HASH_TAG_CHIPS).join(' ')}>
+                  +{hiddenHashTags}
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}
