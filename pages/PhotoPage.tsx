@@ -6,7 +6,6 @@ import { PhotoHero } from '../components/photo/PhotoHero';
 import { PhotoTimelineNav } from '../components/photo/PhotoTimelineNav';
 import { PhotoMasonryGrid } from '../components/photo/PhotoMasonryGrid';
 import { PhotoSearchBar } from '../components/photo/PhotoSearchBar';
-import { PhotoFilterDrawer } from '../components/photo/PhotoFilterDrawer';
 import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
 import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
@@ -16,6 +15,7 @@ import {
   filterLabel,
   guestTableForName,
   isFilterEmpty,
+  buildFilterFromSearchQuery,
 } from '../utils/photoFilters';
 import { formatTableFilterTitle } from '../utils/tableLabels';
 import { getLightboxDisplayUrl } from '../utils/photoUrls';
@@ -69,7 +69,6 @@ const PhotoPage: React.FC = () => {
   const skipHero = !!(tableParam || nameParam);
 
   const [filter, setFilter] = useState<PhotoFilter>(EMPTY_FILTER);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null);
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
@@ -84,6 +83,17 @@ const PhotoPage: React.FC = () => {
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
+  const featuredGuestPhotos = useMemo(() => {
+    const names = ['李謦伊', '張家銘'];
+    return Object.fromEntries(
+      names.map((name) => [
+        name,
+        allPhotos.find(
+          (photo) => photo.names.length === 1 && photo.names[0] === name
+        )?.publicId,
+      ])
+    );
+  }, [allPhotos]);
   const heroCoverIds = useMemo(
     () =>
       allPhotos
@@ -268,6 +278,15 @@ const PhotoPage: React.FC = () => {
       'content',
       '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
     );
+    document.querySelector('meta[property="og:url"]')?.setAttribute(
+      'content',
+      `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/album`
+    );
+    document.querySelector('meta[property="twitter:title"]')?.setAttribute('content', 'Joy & Jacky 婚禮相簿');
+    document.querySelector('meta[property="twitter:description"]')?.setAttribute(
+      'content',
+      '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
+    );
 
     if (tableParam) {
       const tableNum = parseInt(tableParam, 10);
@@ -317,7 +336,7 @@ const PhotoPage: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, [skipHero, useDockLayout]);
 
-  useBodyScrollLock(drawerOpen || !!selectedPhoto);
+  useBodyScrollLock(!!selectedPhoto);
 
   useEffect(() => {
     if (isFiltered) syncUrl(filter, selectedPhoto?.id ?? null);
@@ -356,13 +375,11 @@ const PhotoPage: React.FC = () => {
 
   const handleQuickSearch = (query: string) => {
     addRecentSearch(query);
-    const trimmed = query.trim();
-    const tableNum = parseInt(trimmed, 10);
-    if (!Number.isNaN(tableNum) && String(tableNum) === trimmed) {
-      handleFilterChange({ ...EMPTY_FILTER, table: tableNum, query: trimmed });
-    } else {
-      handleFilterChange({ ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' });
-    }
+    handleFilterChange(buildFilterFromSearchQuery(query));
+  };
+
+  const handleTableSelect = (table: number) => {
+    handleFilterChange({ ...EMPTY_FILTER, table, query: String(table) });
   };
 
   const handleScrollDown = () => {
@@ -418,23 +435,9 @@ const PhotoPage: React.FC = () => {
             activeStageId={activeStageId}
             onStageSelect={handleStageSelect}
             welcomeTitle={welcomeTitle}
-            resultCount={isFiltered ? displayPhotos.length : null}
             hasFilter={isFiltered}
-            loading={loading}
-            filterLabel={currentFilterLabel}
-            autoExpandSearch={expandSearch}
-            onExpandSearchHandled={() => setExpandSearch(false)}
-            onSearch={handleQuickSearch}
-            onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
-            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
-            onShareFilter={isFiltered ? handleShareFilter : undefined}
-            downloading={downloading}
-            downloadProgress={downloadProgress}
-            nameScope={filter.nameScope}
-            onNameScopeChange={handleNameScopeChange}
-            guestTable={nameGuestTable}
-            showNameScope={showNameScope}
+            loading={loading}
           />
 
           {welcomeMsg && isFiltered && (
@@ -474,7 +477,6 @@ const PhotoPage: React.FC = () => {
                 onWatchVideo={openVideo}
                 registerSection={registerSection}
                 filterLabel={currentFilterLabel}
-                onClearFilter={handleClearFilter}
                 onDownloadAll={handleDownloadAll}
                 onShareFilter={handleShareFilter}
                 downloading={downloading}
@@ -487,15 +489,49 @@ const PhotoPage: React.FC = () => {
               />
             )}
           </div>
+
+          <PhotoSearchBar
+            variant="dock"
+            hidden={!!selectedPhoto || !!videoState}
+            resultCount={isFiltered ? displayPhotos.length : null}
+            hasFilter={isFiltered}
+            filterLabel={currentFilterLabel}
+            autoExpand={expandSearch}
+            onExpandHandled={() => setExpandSearch(false)}
+            onSearch={handleQuickSearch}
+            onTagSearch={handleTagClick}
+            onTableSelect={handleTableSelect}
+            onClearFilter={handleClearFilter}
+            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
+            onShareFilter={isFiltered ? handleShareFilter : undefined}
+            downloading={downloading}
+            downloadProgress={downloadProgress}
+            nameScope={filter.nameScope}
+            onNameScopeChange={handleNameScopeChange}
+            guestTable={nameGuestTable}
+            featuredGuestPhotos={featuredGuestPhotos}
+            showNameScope={false}
+          />
         </>
       ) : (
         <>
-      <Link
-        to="/"
-        className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
-      >
-        ← 返回喜帖
-      </Link>
+      {isFiltered ? (
+        <button
+          type="button"
+          onClick={handleClearFilter}
+          className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
+        >
+          ← 返回相簿
+        </button>
+      ) : (
+        <Link
+          to="/"
+          onClick={() => sessionStorage.setItem('home_return_section', 'photos')}
+          className="fixed left-4 top-4 z-40 rounded-full border border-white/15 bg-black/40 px-3 py-2 text-xs text-white/85 shadow-sm backdrop-blur-md photo-safe-top hover:bg-black/55"
+        >
+          ← 返回喜帖
+        </Link>
+      )}
 
       <PhotoHero
         coverPublicId={heroCoverId}
@@ -545,7 +581,6 @@ const PhotoPage: React.FC = () => {
           onWatchVideo={openVideo}
           registerSection={registerSection}
           filterLabel={currentFilterLabel}
-          onClearFilter={handleClearFilter}
           onDownloadAll={handleDownloadAll}
           onShareFilter={handleShareFilter}
           downloading={downloading}
@@ -565,7 +600,8 @@ const PhotoPage: React.FC = () => {
         autoExpand={expandSearch}
         onExpandHandled={() => setExpandSearch(false)}
         onSearch={handleQuickSearch}
-        onOpenDrawer={() => setDrawerOpen(true)}
+        onTagSearch={handleTagClick}
+        onTableSelect={handleTableSelect}
         onClearFilter={handleClearFilter}
         onDownloadAll={handleDownloadAll}
         onShareFilter={handleShareFilter}
@@ -574,18 +610,11 @@ const PhotoPage: React.FC = () => {
         nameScope={filter.nameScope}
         onNameScopeChange={handleNameScopeChange}
         guestTable={nameGuestTable}
+        featuredGuestPhotos={featuredGuestPhotos}
         showNameScope={showNameScope}
       />
         </>
       )}
-
-      <PhotoFilterDrawer
-        open={drawerOpen}
-        filter={filter}
-        onChange={handleFilterChange}
-        onClose={() => setDrawerOpen(false)}
-        resultCount={isFiltered ? displayPhotos.length : undefined}
-      />
 
       {shareNotice && (
         <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
@@ -621,15 +650,9 @@ const PhotoPage: React.FC = () => {
                 `${window.location.pathname}${window.location.search}#${p.id}`
               );
             }}
-            onTagClick={(tag) => {
-              closeLightbox();
-              handleTagClick(tag);
-              setDrawerOpen(false);
-            }}
             onNameClick={(name) => {
               closeLightbox();
               handleNameClick(name);
-              setDrawerOpen(false);
             }}
           />
         )}

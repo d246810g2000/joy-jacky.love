@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { PhotoFilter } from '../types';
 import { EMPTY_FILTER, filterLabel } from '../utils/photoFilters';
+import { ALBUM_ROUTE } from '../constants';
 
 interface UsePhotoDeepLinkOptions {
   filter: PhotoFilter;
@@ -11,7 +12,7 @@ interface UsePhotoDeepLinkOptions {
 
 function photoPageBase(): string {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  return `${window.location.origin}${base}/photo`;
+  return `${window.location.origin}${base}${ALBUM_ROUTE}`;
 }
 
 function filterToSearchParams(filter: PhotoFilter): URLSearchParams {

@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PhotoFilter, WeddingPhoto } from '../../types';
-import { getBlurUrl, getLightboxDisplayUrl, getOriginalUrl, getThumbUrl } from '../../utils/photoUrls';
+import {
+  getBlurUrl,
+  getLightboxDisplayUrl,
+  getLightboxZoomUrl,
+  getOriginalUrl,
+  getThumbUrl,
+} from '../../utils/photoUrls';
 import {
   isImagePreloaded,
   preloadImageUrl,
@@ -12,7 +18,6 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLightboxZoom } from '../../hooks/useLightboxZoom';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
-import { formatTableTag } from '../../utils/tableLabels';
 
 const FILMSTRIP_WINDOW = 15;
 
@@ -22,7 +27,6 @@ interface PhotoLightboxProps {
   filter?: PhotoFilter;
   onClose: () => void;
   onChange: (photo: WeddingPhoto) => void;
-  onTagClick?: (tag: string) => void;
   onNameClick?: (name: string) => void;
 }
 
@@ -32,7 +36,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   filter,
   onClose,
   onChange,
-  onTagClick,
   onNameClick,
 }) => {
   const isMobile = useIsMobile();
@@ -42,8 +45,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [copied, setCopied] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [showFilmstrip, setShowFilmstrip] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [zoomLoaded, setZoomLoaded] = useState(false);
+  const [zoomLoading, setZoomLoading] = useState(false);
+  const zoomRequestedRef = useRef(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
@@ -62,7 +66,13 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     () => getLightboxDisplayUrl(photo.publicId, viewportWidth),
     [photo.publicId, viewportWidth]
   );
-  const isPreloaded = isImagePreloaded(displayUrl);
+  const zoomUrl = useMemo(
+    () => getLightboxZoomUrl(photo.publicId, viewportWidth),
+    [photo.publicId, viewportWidth]
+  );
+  const isDisplayingZoom = isZoomed && zoomLoaded;
+  const imageUrl = isDisplayingZoom ? zoomUrl : displayUrl;
+  const isPreloaded = isImagePreloaded(imageUrl);
 
   const imageMaxH = isMobile ? 'max-h-[72dvh]' : 'max-h-[60dvh]';
 
@@ -82,8 +92,10 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
   useEffect(() => {
     resetZoom();
-    setShowDetails(false);
     setImageError(false);
+    setZoomLoaded(false);
+    setZoomLoading(false);
+    zoomRequestedRef.current = false;
 
     if (isImagePreloaded(displayUrl)) {
       setImageLoaded(true);
@@ -106,14 +118,35 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [photo.id, displayUrl, resetZoom]);
 
   useEffect(() => {
+    if (!isZoomed || zoomLoaded || zoomRequestedRef.current) return;
+
+    let cancelled = false;
+    zoomRequestedRef.current = true;
+    setZoomLoading(true);
+    preloadImageUrl(zoomUrl)
+      .then(() => {
+        if (!cancelled) setZoomLoaded(true);
+      })
+      .catch(() => {
+        // Keep displaying the initial image if the zoom asset cannot be loaded.
+      })
+      .finally(() => {
+        if (!cancelled) setZoomLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isZoomed, zoomLoaded, zoomUrl]);
+
+  useEffect(() => {
     preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
   }, [allPhotos, currentIndex, viewportWidth]);
 
   useEffect(() => {
-    if (!showFilmstrip) return;
     const el = filmstripRef.current?.querySelector(`[data-photo-id="${photo.id}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [photo.id, showFilmstrip]);
+  }, [photo.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -158,9 +191,6 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     a.rel = 'noopener noreferrer';
     a.click();
   };
-
-  const tableTags = photo.tables.map((t) => formatTableTag(t));
-  const allTags = [...tableTags, ...photo.tags.map((t) => `#${t}`)];
 
   const windowStart = Math.max(0, currentIndex - FILMSTRIP_WINDOW);
   const windowEnd = Math.min(allPhotos.length, currentIndex + FILMSTRIP_WINDOW + 1);
@@ -288,7 +318,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.img
               key={photo.id}
-              src={displayUrl}
+              src={imageUrl}
               alt={photo.caption || photo.names.join('、') || '婚禮照片'}
               initial={{ opacity: 0 }}
               animate={{ opacity: imageLoaded ? 1 : 0 }}
@@ -305,6 +335,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               draggable={false}
             />
           </AnimatePresence>
+          {zoomLoading && !zoomLoaded && (
+            <div
+              className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/65 px-3 py-1 text-[10px] text-white/70 backdrop-blur-sm"
+              role="status"
+              aria-live="polite"
+            >
+              正在提升畫質…
+            </div>
+          )}
           {imageError && (
             <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/10 bg-black/70 px-4 py-3 text-center text-xs text-white/70">
               照片載入失敗，請稍後重試
@@ -350,7 +389,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
 
         {photo.names.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {(showDetails ? photo.names : photo.names.slice(0, 4)).map((name) => (
+            {photo.names.slice(0, 4).map((name) => (
               <button
                 key={name}
                 type="button"
@@ -360,58 +399,15 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 {name}
               </button>
             ))}
-            {!showDetails && photo.names.length > 4 && (
-              <button
-                type="button"
-                onClick={() => setShowDetails(true)}
-                className="text-xs text-white/40"
-              >
+            {photo.names.length > 4 && (
+              <span className="text-xs text-white/40">
                 +{photo.names.length - 4}
-              </button>
+              </span>
             )}
           </div>
         )}
 
-        {showDetails && (
-          <>
-            {photo.caption && <p className="text-sm text-white/85">{photo.caption}</p>}
-            <div className="flex flex-wrap gap-1.5">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => onTagClick?.(tag.replace(/^#/, ''))}
-                  className="rounded-full border border-white/20 bg-white/5 px-2.5 py-0.5 text-xs"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        {!showDetails && (photo.caption || allTags.length > 0) && isMobile && (
-          <button
-            type="button"
-            onClick={() => setShowDetails(true)}
-            className="text-xs text-white/40"
-          >
-            更多資訊 ▾
-          </button>
-        )}
-
-        {isMobile ? (
-          <button
-            type="button"
-            onClick={() => setShowFilmstrip((v) => !v)}
-            className="text-xs text-white/45"
-          >
-            {showFilmstrip ? '隱藏縮圖' : `查看縮圖 (${allPhotos.length})`}
-          </button>
-        ) : null}
-
-        {(showFilmstrip || !isMobile) && (
-          <div ref={filmstripRef} className="no-scrollbar flex gap-2 overflow-x-auto py-1">
+        <div ref={filmstripRef} className="no-scrollbar flex gap-2 overflow-x-auto py-1">
             {windowStart > 0 && (
               <span className="flex h-12 w-5 shrink-0 items-center justify-center text-xs text-white/40">
                 …
@@ -426,6 +422,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 className={`h-12 w-12 shrink-0 overflow-hidden rounded-lg border-2 md:h-14 md:w-14 ${
                   p.id === photo.id ? 'border-[#B08D55]' : 'border-transparent opacity-60'
                 }`}
+                aria-label={`查看第 ${windowStart + filmstripPhotos.indexOf(p) + 1} 張照片`}
               >
                 <img
                   src={getThumbUrl(p.publicId)}
@@ -440,8 +437,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
                 …
               </span>
             )}
-          </div>
-        )}
+        </div>
 
         {isMobile && (
           <p className="text-center text-[10px] text-white/25">

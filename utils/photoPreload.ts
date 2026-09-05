@@ -4,7 +4,7 @@ import { getBlurUrl, getLightboxDisplayUrl } from './photoUrls';
 const loaded = new Set<string>();
 const inflight = new Map<string, Promise<void>>();
 
-export const LIGHTBOX_PREFETCH_RADIUS = 3;
+export const LIGHTBOX_PREFETCH_RADIUS = 2;
 
 export function preloadImageUrl(url: string): Promise<void> {
   if (loaded.has(url)) return Promise.resolve();
@@ -55,8 +55,13 @@ export function preloadLightboxNeighbors(
 ): void {
   if (centerIndex < 0 || photos.length === 0) return;
 
-  const start = Math.max(0, centerIndex - radius);
-  const end = Math.min(photos.length, centerIndex + radius + 1);
+  const saveData =
+    typeof navigator !== 'undefined' &&
+    'connection' in navigator &&
+    Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+  const effectiveRadius = saveData ? Math.min(radius, 1) : radius;
+  const start = Math.max(0, centerIndex - effectiveRadius);
+  const end = Math.min(photos.length, centerIndex + effectiveRadius + 1);
 
   for (let i = start; i < end; i += 1) {
     const photo = photos[i];
