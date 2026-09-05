@@ -39,7 +39,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={`photo-stage-header relative overflow-hidden rounded-2xl border border-white/10 ${
-        compact ? 'mb-4 py-4 pl-5 pr-4' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
+        compact ? 'mb-3 py-3 pl-4 pr-3' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
       }`}
       style={{
         background: compact
@@ -62,23 +62,33 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
         aria-hidden
       />
 
-      <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className={`relative flex flex-col ${
+        compact ? 'gap-1' : 'gap-4 md:flex-row md:items-end md:justify-between'
+      }`}>
         <div className="min-w-0">
-          <p className="text-xs tracking-wide text-white/45">
+          <p className={`tracking-wide text-white/45 ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {compact ? chapterLabel(index, stageLabel) : `CHAPTER ${String(index + 1).padStart(2, '0')}`}
           </p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <div className={`mt-1 flex min-w-0 items-baseline gap-x-2 ${compact ? 'flex-nowrap' : 'flex-wrap gap-y-1 md:gap-x-3'}`}>
             <span
-              className="font-mono text-xl font-light tabular-nums md:text-3xl"
+              className={`shrink-0 font-mono font-light tabular-nums ${
+                compact ? 'text-lg' : 'text-xl md:text-3xl'
+              }`}
               style={{ color: accent }}
             >
               {stage.time}
             </span>
-            <h2 className="font-serif text-xl text-white md:text-3xl">{stageLabel}</h2>
+            <h2 className={`min-w-0 truncate font-serif text-white ${
+              compact ? 'text-lg' : 'text-xl md:text-3xl'
+            }`}>{stageLabel}</h2>
           </div>
           {(stage.description || marker?.description) && (
-            <div className="mt-2">
-              {descOpen || !isMobile ? (
+            <div className={compact ? 'mt-1' : 'mt-2'}>
+              {compact ? (
+                <p className="truncate text-xs leading-relaxed text-white/55">
+                  {stage.description || marker?.description}
+                </p>
+              ) : descOpen || !isMobile ? (
                 <p className="max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
                   {stage.description || marker?.description}
                 </p>
@@ -93,7 +103,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
               )}
             </div>
           )}
-          <p className="mt-2 text-xs text-white/40">{countLabel}</p>
+          <p className={`text-white/40 ${compact ? 'mt-1 text-[10px]' : 'mt-2 text-xs'}`}>{countLabel}</p>
         </div>
 
         {!compact && (
