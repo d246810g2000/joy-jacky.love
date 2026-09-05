@@ -1,5 +1,6 @@
 import React from 'react';
 import type { NameSearchScope } from '../../types';
+import { formatTableLabel } from '../../utils/tableLabels';
 
 interface PhotoNameScopeBarProps {
   scope: NameSearchScope;
@@ -39,7 +40,7 @@ export const PhotoNameScopeBar: React.FC<PhotoNameScopeBarProps> = ({
           : 'border-white/12 bg-white/5 text-white/55 active:bg-white/10'
       }`}
     >
-      含同桌{guestTable != null ? ` · 第 ${guestTable} 桌` : ''}
+      含同桌{guestTable != null ? ` · ${formatTableLabel(guestTable)}` : ''}
     </button>
   </div>
 );

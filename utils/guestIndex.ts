@@ -1,5 +1,6 @@
 import guestCsvRaw from '../data/guest.csv?raw';
 import type { GuestRecord } from '../types';
+import { formatTableLabel, initTableLabels } from './tableLabels';
 
 function parseCsvLine(line: string): string[] {
   const result: string[] = [];
@@ -89,6 +90,7 @@ export function buildGuestIndex(guests: GuestRecord[]): GuestIndex {
 }
 
 export const GUEST_RECORDS = parseGuestCsv(guestCsvRaw);
+initTableLabels(GUEST_RECORDS);
 export const GUEST_INDEX = buildGuestIndex(GUEST_RECORDS);
 
 export function searchGuests(query: string, limit = 8): GuestRecord[] {
@@ -117,7 +119,7 @@ export function searchGuests(query: string, limit = 8): GuestRecord[] {
 
 export function formatGuestSubtitle(guest: GuestRecord): string {
   const parts: string[] = [];
-  if (guest.table != null) parts.push(`第 ${guest.table} 桌`);
+  if (guest.table != null) parts.push(formatTableLabel(guest.table));
   if (guest.side) parts.push(guest.side);
   if (guest.relation) parts.push(guest.relation);
   return parts.join(' · ');

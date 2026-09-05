@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { GuestRecord, PhotoFilter } from '../../types';
+import { TABLE_OPTIONS } from '../../utils/tableLabels';
 import {
   EMPTY_FILTER,
   PHOTO_CATEGORIES,
@@ -148,19 +149,22 @@ export const PhotoFilterDrawer: React.FC<PhotoFilterDrawerProps> = ({
 
             <div className="mt-6">
               <p className="mb-3 text-xs tracking-wider text-white/50 uppercase">快速選桌</p>
-              <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
-                {Array.from({ length: 27 }, (_, i) => i + 1).map((n) => (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {TABLE_OPTIONS.map(({ table, name }) => (
                   <button
-                    key={n}
+                    key={table}
                     type="button"
-                    onClick={() => applyTable(n)}
-                    className={`rounded-lg py-2 text-sm ${
-                      filter.table === n
+                    onClick={() => applyTable(table)}
+                    className={`rounded-xl px-2 py-2 text-left ${
+                      filter.table === table
                         ? 'bg-[#B08D55] text-white'
                         : 'bg-white/5 hover:bg-white/10'
                     }`}
                   >
-                    {n}
+                    <span className="block text-sm font-medium tabular-nums">{table}</span>
+                    {name && (
+                      <span className="mt-0.5 block truncate text-[10px] text-white/70">{name}</span>
+                    )}
                   </button>
                 ))}
               </div>

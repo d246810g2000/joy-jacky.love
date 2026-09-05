@@ -7,6 +7,7 @@ import {
   getResponsiveGridWidth,
   GRID_SIZES,
 } from '../../utils/photoUrls';
+import { formatTableTag } from '../../utils/tableLabels';
 
 interface PhotoCardProps {
   photo: WeddingPhoto;
@@ -46,7 +47,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const blurUrl = getBlurUrl(photo.publicId);
   const srcSet = getGridSrcSet(photo.publicId);
 
-  const tableTags = photo.tables.map((t) => `#第${t}桌`);
+  const tableTags = photo.tables.map((t) => formatTableTag(t));
   const hashTags = photo.tags.map((t) => `#${t}`);
   const allTags = [...tableTags, ...hashTags];
 

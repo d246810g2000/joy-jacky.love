@@ -16,11 +16,12 @@ import {
   guestTableForName,
   isFilterEmpty,
 } from '../utils/photoFilters';
+import { formatTableFilterTitle } from '../utils/tableLabels';
 import { getLightboxUrl } from '../utils/photoUrls';
 import { getStageFilmMarker, getStageFilmStart } from '../utils/weddingFilm';
 import { addRecentSearch } from '../utils/photoRecentSearch';
 import { useTimelineSync } from '../hooks/useTimelineSync';
-import { usePhotoDeepLink } from '../hooks/usePhotoDeepLink';
+import { usePhotoDeepLink, shareFilterLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
@@ -73,7 +74,7 @@ const PhotoPage: React.FC = () => {
   const [videoState, setVideoState] = useState<VideoState | null>(null);
   const [showNav, setShowNav] = useState(skipHero);
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
-  const [expandSearch, setExpandSearch] = useState(false);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [expandThroughIndex, setExpandThroughIndex] = useState<number | null>(null);
   const scrolledToResults = useRef(false);
   const pendingScrollStage = useRef<string | null>(null);
@@ -141,7 +142,7 @@ const PhotoPage: React.FC = () => {
   const showNameScope = isFiltered && !!filter.name;
 
   const welcomeTitle = tableParam
-    ? `第 ${tableParam} 桌的照片`
+    ? formatTableFilterTitle(parseInt(tableParam, 10))
     : nameParam
       ? `「${nameParam}」的照片`
       : undefined;
@@ -248,8 +249,14 @@ const PhotoPage: React.FC = () => {
       '沿著婚禮影片時間軸，重溫照片與影像交織的每個精彩瞬間。輸入姓名或桌號，秒找屬於您的照片。'
     );
 
-    if (tableParam) setWelcomeMsg(`為您顯示第 ${tableParam} 桌的照片`);
-    else if (nameParam) setWelcomeMsg(`為您顯示「${nameParam}」的照片`);
+    if (tableParam) {
+      const tableNum = parseInt(tableParam, 10);
+      setWelcomeMsg(
+        Number.isNaN(tableNum)
+          ? `為您顯示第 ${tableParam} 桌的照片`
+          : `為您顯示${formatTableFilterTitle(tableNum)}`
+      );
+    } else if (nameParam) setWelcomeMsg(`為您顯示「${nameParam}」的照片`);
 
     return () => {
       document.title = prevTitle;
@@ -353,6 +360,18 @@ const PhotoPage: React.FC = () => {
     downloadAll(filteredPhotos, currentFilterLabel ?? '婚禮照片');
   }, [filteredPhotos, currentFilterLabel, downloadAll]);
 
+  const handleShareFilter = useCallback(async () => {
+    if (!isFiltered) return;
+    try {
+      const result = await shareFilterLink(filter);
+      setShareNotice(result === 'shared' ? '已開啟分享' : '連結已複製，可貼到群組給親友');
+      window.setTimeout(() => setShareNotice(null), 2800);
+    } catch {
+      setShareNotice('分享失敗，請稍後再試');
+      window.setTimeout(() => setShareNotice(null), 2800);
+    }
+  }, [filter, isFiltered]);
+
   const hideSearchBar = !!selectedPhoto || !!videoState || useDockLayout;
 
   if (error) {
@@ -393,6 +412,7 @@ const PhotoPage: React.FC = () => {
             onOpenDrawer={() => setDrawerOpen(true)}
             onClearFilter={handleClearFilter}
             onDownloadAll={isFiltered ? handleDownloadAll : undefined}
+            onShareFilter={isFiltered ? handleShareFilter : undefined}
             downloading={downloading}
             downloadProgress={downloadProgress}
             nameScope={filter.nameScope}
@@ -433,6 +453,7 @@ const PhotoPage: React.FC = () => {
                 filterLabel={currentFilterLabel}
                 onClearFilter={handleClearFilter}
                 onDownloadAll={handleDownloadAll}
+                onShareFilter={handleShareFilter}
                 downloading={downloading}
                 downloadProgress={downloadProgress}
                 compactHeaders
@@ -503,6 +524,7 @@ const PhotoPage: React.FC = () => {
           filterLabel={currentFilterLabel}
           onClearFilter={handleClearFilter}
           onDownloadAll={handleDownloadAll}
+          onShareFilter={handleShareFilter}
           downloading={downloading}
           downloadProgress={downloadProgress}
           expandThroughIndex={expandThroughIndex}
@@ -524,6 +546,7 @@ const PhotoPage: React.FC = () => {
         onOpenDrawer={() => setDrawerOpen(true)}
         onClearFilter={handleClearFilter}
         onDownloadAll={handleDownloadAll}
+        onShareFilter={handleShareFilter}
         downloading={downloading}
         downloadProgress={downloadProgress}
         nameScope={filter.nameScope}
@@ -541,6 +564,12 @@ const PhotoPage: React.FC = () => {
         onClose={() => setDrawerOpen(false)}
         resultCount={isFiltered ? displayPhotos.length : undefined}
       />
+
+      {shareNotice && (
+        <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
+          {shareNotice}
+        </div>
+      )}
 
       {downloadError && (
         <div className="fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-red-400/30 bg-[#1a1210]/95 px-4 py-3 text-center text-sm text-red-200 shadow-xl backdrop-blur-md photo-safe-bottom">
