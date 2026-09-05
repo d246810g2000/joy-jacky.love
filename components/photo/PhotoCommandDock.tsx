@@ -4,8 +4,8 @@ import { PhotoInlineFilm } from './PhotoInlineFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
 import { PhotoSearchBar } from './PhotoSearchBar';
 import { getStageFilmMarker } from '../../utils/weddingFilm';
+import type { NameSearchScope } from '../../types';
 import {
-  chapterLabel,
   PHOTO_THEME,
   readFilmExpanded,
   writeFilmExpanded,
@@ -24,6 +24,10 @@ interface PhotoCommandDockProps {
   onSearch: (query: string) => void;
   onOpenDrawer: () => void;
   onClearFilter?: () => void;
+  nameScope?: NameSearchScope;
+  onNameScopeChange?: (scope: NameSearchScope) => void;
+  guestTable?: number | null;
+  showNameScope?: boolean;
 }
 
 export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
@@ -39,6 +43,10 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   onSearch,
   onOpenDrawer,
   onClearFilter,
+  nameScope,
+  onNameScopeChange,
+  guestTable,
+  showNameScope = false,
 }) => {
   const [filmExpanded, setFilmExpanded] = useState(readFilmExpanded);
 
@@ -53,8 +61,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   const clockTime = activeItem?.time;
   const startSec = marker?.startSec ?? 0;
   const filmTime = marker?.filmTime ?? '00:00';
-  const chapterSubtitle =
-    marker?.description ?? PHOTO_THEME.tagline;
 
   return (
     <header
@@ -81,16 +87,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           </div>
           <div className="w-[52px]" aria-hidden />
         </div>
-
-        {!hasFilter && activeItem && (
-          <p className="mt-2 text-center text-[11px] text-white/50">
-            <span className="text-[var(--photo-gold-light)]">
-              {chapterLabel(activeIndex >= 0 ? activeIndex : 0, filmTitle)}
-            </span>
-            <span className="mx-1.5 text-white/25">·</span>
-            <span className="line-clamp-1">{chapterSubtitle}</span>
-          </p>
-        )}
       </div>
 
       {!hasFilter && (
@@ -115,7 +111,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
         />
       )}
 
-      <div className="border-t border-white/8 px-3 py-2">
+      <div className="border-t border-white/8 px-3 py-1.5">
         <PhotoSearchBar
           variant="dock"
           resultCount={resultCount}
@@ -126,6 +122,10 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           onSearch={onSearch}
           onOpenDrawer={onOpenDrawer}
           onClearFilter={onClearFilter}
+          nameScope={nameScope}
+          onNameScopeChange={onNameScopeChange}
+          guestTable={guestTable}
+          showNameScope={showNameScope}
         />
       </div>
     </header>
