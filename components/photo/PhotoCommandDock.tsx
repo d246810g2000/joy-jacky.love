@@ -62,6 +62,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           ) : (
             <Link
               to="/"
+              onClick={() => sessionStorage.setItem('home_return_section', 'photos')}
               className="photo-dock-back rounded-full border px-2.5 py-1.5 text-[11px]"
             >
               ← 喜帖

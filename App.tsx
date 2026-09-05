@@ -288,6 +288,21 @@ function App() {
 
   useEffect(() => {
     if (!isInitialLoading) {
+      const returnSection = sessionStorage.getItem('home_return_section');
+      if (returnSection) {
+        sessionStorage.removeItem('home_return_section');
+        const scrollTicks = [30, 80, 150, 300, 600, 1000, 1500];
+        const timers = scrollTicks.map(delay =>
+          setTimeout(() => {
+            document.getElementById(returnSection)?.scrollIntoView({
+              behavior: 'auto',
+              block: 'start',
+            });
+          }, delay)
+        );
+        return () => timers.forEach(clearTimeout);
+      }
+
       const savedScrollY = sessionStorage.getItem('home_scroll_y');
       if (savedScrollY) {
         const y = parseInt(savedScrollY, 10);
