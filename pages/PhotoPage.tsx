@@ -23,7 +23,6 @@ import { addRecentSearch } from '../utils/photoRecentSearch';
 import { useTimelineSync } from '../hooks/useTimelineSync';
 import { usePhotoDeepLink, shareFilterLink } from '../hooks/usePhotoDeepLink';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
-import { useModalHistory } from '../hooks/useModalHistory';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
 import { usePhotoBulkDownload } from '../hooks/usePhotoBulkDownload';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -165,7 +164,16 @@ const PhotoPage: React.FC = () => {
 
   const closeVideo = useCallback(() => setVideoState(null), []);
 
-  useModalHistory(!!selectedPhoto, closeLightbox);
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const handleBack = () => {
+      closeLightbox();
+    };
+
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
+  }, [selectedPhoto, closeLightbox]);
 
   const openVideo = useCallback(
     (stageId: string) => {
@@ -196,8 +204,8 @@ const PhotoPage: React.FC = () => {
 
   const openPhoto = useCallback((photo: WeddingPhoto) => {
     setSelectedPhoto(photo);
-    window.history.replaceState(
-      null,
+    window.history.pushState(
+      { photoLightbox: true },
       '',
       `${window.location.pathname}${window.location.search}#${photo.id}`
     );
@@ -217,7 +225,16 @@ const PhotoPage: React.FC = () => {
     const hash = window.location.hash.replace(/^#/, '');
     if (hash && !selectedPhoto) {
       const photo = allPhotos.find((p) => p.id === hash);
-      if (photo) setSelectedPhoto(photo);
+      if (photo) {
+        const albumPath = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState({ photoPage: true }, '', albumPath);
+        window.history.pushState(
+          { photoLightbox: true },
+          '',
+          `${albumPath}#${photo.id}`
+        );
+        setSelectedPhoto(photo);
+      }
     }
   }, [data, allPhotos, selectedPhoto]);
 
@@ -415,6 +432,7 @@ const PhotoPage: React.FC = () => {
             welcomeTitle={welcomeTitle}
             resultCount={isFiltered ? displayPhotos.length : null}
             hasFilter={isFiltered}
+            loading={loading}
             filterLabel={currentFilterLabel}
             autoExpandSearch={expandSearch}
             onExpandSearchHandled={() => setExpandSearch(false)}
