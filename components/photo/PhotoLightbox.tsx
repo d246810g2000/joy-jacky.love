@@ -328,7 +328,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               onClick={handleDownload}
               className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70"
             >
-              下載
+              下載原圖
             </button>
           )}
         </div>
