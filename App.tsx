@@ -95,45 +95,20 @@ const MusicNoteIcon = () => (
   </svg>
 );
 
+const CameraIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6 text-[#B08D55]">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+  </svg>
+);
+
 const GamepadIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-5 h-5">
     <path strokeLinecap="round" strokeLinejoin="round" d="M15.25 15a.75.75 0 11-.75-.75.75.75 0 01.75.75zm1.5-2.25a.75.75 0 11-.75-.75.75.75 0 01.75.75zM7.5 12h3m-1.5-1.5v3m-5-2.25C4 9.172 6.015 7.5 8.5 7.5h7c2.485 0 4.5 1.672 4.5 3.75v1.5c0 2.078-2.015 3.75-4.5 3.75h-7C6.015 16.5 4 14.828 4 12.75v-1.5z" />
   </svg>
 );
 
-// --- Custom Hook for Modal History Management ---
-function useModalHistory(isOpen: boolean, close: () => void) {
-  const isBack = useRef(false);
-  const wasOpen = useRef(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Push state when modal opens
-      window.history.pushState(null, '');
-      isBack.current = false;
-      wasOpen.current = true;
-    } else if (wasOpen.current) {
-      // If modal closes and it wasn't due to back navigation, we must pop the history
-      if (!isBack.current) {
-        window.history.back();
-      }
-      wasOpen.current = false;
-      isBack.current = false;
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handlePop = () => {
-      if (isOpen) {
-        isBack.current = true;
-        close();
-      }
-    };
-    window.addEventListener('popstate', handlePop);
-    return () => window.removeEventListener('popstate', handlePop);
-  }, [isOpen, close]);
-}
-
+import { useModalHistory } from './hooks/useModalHistory';
 function App() {
   const navigate = useNavigate();
   // Check session storage to skip loading if already visited
@@ -463,7 +438,7 @@ function App() {
     }, observerOptions);
 
     // 觀察主要區塊
-    const sections = ['timeline', 'location', 'guestbook', 'games'];
+    const sections = ['timeline', 'location', 'guestbook', 'photos', 'games'];
     sections.forEach(id => {
       const el = document.getElementById(id);
       if (el) sectionObserver.observe(el);
@@ -685,6 +660,55 @@ function App() {
           />
         </section>
 
+        {/* 婚禮相簿 — 精選入口 */}
+        <section id="photos" className={`py-20 px-6 border-t border-white/40 ${isMobile ? 'bg-[#FDFBF7]' : 'bg-white/20 backdrop-blur-sm'}`}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+              <div className="space-y-2">
+                <p className="font-display text-[10px] text-[#b08d55] uppercase tracking-[0.4em]">Wedding Gallery</p>
+                <h2 className="font-serif text-3xl md:text-4xl text-[#1a1a1a]">婚禮相簿</h2>
+              </div>
+              <p className="text-[#717171] text-xs max-w-[320px] leading-relaxed font-light">
+                輸入姓名或桌號，秒找屬於您的照片。依時間軸重溫迎賓、二進、敬酒到送客的每個精彩瞬間。
+              </p>
+            </div>
+
+            <Link
+              to="/photo"
+              onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+              className="group block overflow-hidden rounded-2xl border border-[#E8E1D5] bg-white shadow-md hover:shadow-xl transition-all duration-300"
+            >
+              <div className="grid md:grid-cols-5">
+                <div className="md:col-span-2 relative min-h-[200px] md:min-h-[260px] overflow-hidden">
+                  <img
+                    src="https://res.cloudinary.com/djqnqxzha/image/upload/f_auto,q_auto,w_800/disney-v-01.jpg"
+                    alt="婚禮相簿預覽"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-white/10" />
+                </div>
+                <div className="md:col-span-3 p-6 md:p-10 flex flex-col justify-center">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#FDFBF7] border border-[#E8E1D5] flex items-center justify-center">
+                      <CameraIcon />
+                    </div>
+                    <span className="text-xs tracking-[0.2em] text-[#B08D55] uppercase font-display">Photo Album</span>
+                  </div>
+                  <h3 className="font-serif text-2xl md:text-3xl text-[#2C3E50] mb-3">找回您的婚禮瞬間</h3>
+                  <p className="text-stone-500 text-sm leading-relaxed mb-6 max-w-lg">
+                    支援桌號 1–27、姓名與親友關係搜尋。掃描桌卡 QR 亦可直達專屬照片，並可下載原檔、分享給親友。
+                  </p>
+                  <span className="inline-flex items-center gap-2 self-start rounded-full bg-[#B08D55] px-6 py-2.5 text-sm font-semibold text-white group-hover:bg-[#9a7849] transition-colors">
+                    進入婚禮相簿
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+
         <section id="games" className={`py-32 px-6 border-t border-white/40 ${isMobile ? 'bg-stone-50' : 'bg-white/10 backdrop-blur-sm'}`}>
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 border-b border-[#2c3e50]/10 pb-10 gap-6">
@@ -693,12 +717,12 @@ function App() {
                 <h2 className="font-serif text-3xl md:text-4xl text-[#1a1a1a]">婚禮同樂區</h2>
               </div>
               <p className="text-[#717171] text-xs max-w-[280px] leading-relaxed font-light">
-                現場備有精彩有趣的互動遊戲、婚禮應援與專屬歌單，歡迎點擊與我們一起同樂！
+                現場備有婚禮相簿、互動遊戲、婚禮應援與專屬歌單，歡迎點擊與我們一起同樂！
               </p>
             </div>
 
             {/* 遊戲卡片排版 */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
               {/* 卡片 1: 快問快答 */}
               <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
                 <div className="space-y-3 w-full">
@@ -778,6 +802,26 @@ function App() {
                   前往婚禮歌單
                 </Link>
               </div>
+
+              {/* 卡片 5: 婚禮相簿 */}
+              <div className="glass-panel p-4 sm:p-6 md:p-8 rounded-2xl border border-stone-200/50 shadow-md flex flex-col justify-between items-start space-y-4 md:space-y-6 hover:shadow-xl transition-all duration-300">
+                <div className="space-y-3 w-full">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#FDFBF7] border border-[#E8E1D5] flex items-center justify-center">
+                    <CameraIcon />
+                  </div>
+                  <h3 className="font-serif text-base md:text-xl text-stone-800 font-bold">婚禮相簿</h3>
+                  <p className="text-stone-500 text-[10px] md:text-xs leading-relaxed font-light line-clamp-3 lg:line-clamp-none">
+                    📸 輸入姓名或桌號，秒找您的照片。時間軸重溫迎賓到送客，支援下載原檔與分享連結。
+                  </p>
+                </div>
+                <Link
+                  to="/photo"
+                  onClick={() => sessionStorage.setItem('home_scroll_y', String(window.scrollY))}
+                  className="w-full text-center px-3 py-2 sm:px-6 sm:py-2.5 bg-[#B08D55] hover:bg-[#9a7849] active:scale-[0.98] text-white rounded-lg text-[10px] sm:text-xs font-semibold tracking-wider transition-all shadow-sm"
+                >
+                  瀏覽婚禮照片
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -798,6 +842,13 @@ function App() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                 </svg>
                 查看電子喜帖
+              </Link>
+              <Link
+                to="/photo"
+                className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full border border-[#E8E1D5] text-[#B08D55] text-sm tracking-[0.2em] uppercase font-display hover:bg-[#B08D55] hover:text-white hover:border-[#B08D55] transition-all duration-400 shadow-sm hover:shadow-lg group w-full sm:w-auto justify-center"
+              >
+                <CameraIcon />
+                婚禮相簿
               </Link>
             </div>
             <p className="text-stone-500 mb-12 text-sm tracking-wide leading-relaxed font-light">
@@ -942,6 +993,18 @@ function App() {
                       aria-label="RSVP"
                     >
                       <InvitationIcon />
+                    </button>
+
+                    {/* Photo Gallery */}
+                    <button
+                      onClick={() => {
+                        navigate('/photo');
+                        if (isMobile) setIsNavExpanded(false);
+                      }}
+                      className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center rounded-full text-[#B08D55] hover:bg-stone-50 transition-colors duration-300 shrink-0"
+                      aria-label="婚禮相簿"
+                    >
+                      <CameraIcon />
                     </button>
 
                     {/* Left Divider */}

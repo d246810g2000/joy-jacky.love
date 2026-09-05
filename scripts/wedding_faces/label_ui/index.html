@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>婚禮人臉標記</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="nav-group">
+      <button id="btn-prev" type="button" aria-label="上一張">‹</button>
+      <button id="btn-next" type="button" aria-label="下一張">›</button>
+      <button id="btn-finish-photo" type="button" class="btn-ghost" title="將未命名人臉標成不是臉，此張變已標記 (S)">排除未命名 (S)</button>
+      <button id="btn-repredict" type="button" class="btn-ghost" title="重跑此張預測：套用 cluster 分群並自動命名 (R)">重新預測 (R)</button>
+      <button id="btn-draw-face" type="button" class="btn-ghost" title="在照片上拖曳框選漏偵測的臉 (M)">框選臉 (M)</button>
+      <span id="photo-title" class="photo-title">—</span>
+    </div>
+    <div class="nav-group">
+      <select id="mode-select">
+        <option value="pending">待標記</option>
+        <option value="all">全部照片</option>
+        <option value="labeled">已標記</option>
+      </select>
+      <span id="progress-text" class="progress-text">載入中…</span>
+      <button id="btn-propagate" type="button" class="btn-accent">擴散 (P)</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <aside id="cluster-panel" class="cluster-panel hidden">
+      <h3>依 Cluster 標記</h3>
+      <div id="cluster-list" class="cluster-list"></div>
+    </aside>
+
+    <section class="viewer">
+      <div id="photo-stage" class="photo-stage">
+        <img id="photo-img" alt="" />
+        <div id="face-layer" class="face-layer"></div>
+        <div id="draw-layer" class="draw-layer" aria-hidden="true"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bottombar">
+    <div class="photo-scrubber">
+      <span id="scrub-position" class="scrub-position">— / —</span>
+      <input id="photo-scrubber" type="range" min="1" max="1" value="1" aria-label="照片進度" />
+      <div class="scrub-jump">
+        <label for="photo-jump">跳到</label>
+        <input id="photo-jump" type="number" min="1" max="1" inputmode="numeric" aria-label="跳到第幾張" />
+        <span class="scrub-jump-suffix">張</span>
+        <button id="btn-jump" type="button" class="btn-ghost btn-jump">前往</button>
+      </div>
+    </div>
+    <div id="people-strip" class="people-strip"></div>
+    <p id="photo-meta" class="photo-meta"></p>
+  </footer>
+
+  <div id="label-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h3>這是誰？</h3>
+      <button id="btn-not-face" type="button" class="btn-dismiss-top" title="誤判、工作人員、路人等我不想標的臉">不是臉（沒興趣）</button>
+      <input id="guest-search" type="search" placeholder="搜尋賓客姓名、桌號…" autocomplete="off" />
+      <ul id="guest-results" class="guest-results"></ul>
+
+      <div id="custom-label-panel" class="custom-label-panel">
+        <h4>自填姓名（攜眷 / 不在名單）</h4>
+        <label class="field-label" for="custom-name">姓名（選填）</label>
+        <input id="custom-name" type="text" placeholder="知道就填；不知道可留空" autocomplete="off" />
+        <label class="field-label" for="host-search">隨誰出席？</label>
+        <input id="host-search" type="search" placeholder="搜尋正賓，例如：黃耀平" autocomplete="off" />
+        <ul id="host-results" class="guest-results host-results"></ul>
+        <p id="custom-table-hint" class="custom-hint">可只選正賓不填姓名（自動「某某眷」），或自填姓名</p>
+        <button id="btn-custom-label" type="button" class="btn-accent btn-block">確認標記</button>
+      </div>
+
+      <label class="checkbox-row">
+        <input id="apply-cluster" type="checkbox" checked />
+        <span id="apply-cluster-label">套用到同群所有臉孔</span>
+      </label>
+      <div class="modal-actions">
+        <button id="btn-confirm-suggestion" type="button" class="btn-accent hidden">確認建議</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=20"></script>
+</body>
+</html>

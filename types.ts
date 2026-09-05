@@ -1,3 +1,42 @@
+export interface GuestRecord {
+  id: number;
+  name: string;
+  headcount: number | null;
+  side: string;
+  relation: string;
+  table: number | null;
+  tableLabel: string;
+}
+
+export interface WeddingPhoto {
+  id: string;
+  publicId: string;
+  time: string;
+  /** YouTube 影片時間 MM:SS（內部對照，可選） */
+  videoTime?: string;
+  caption: string;
+  tables: number[];
+  tags: string[];
+  names: string[];
+  stageId: string;
+  orientation?: 'landscape' | 'portrait';
+}
+
+export interface WeddingStage {
+  id: string;
+  time: string;
+  title: string;
+  description?: string;
+  photos: WeddingPhoto[];
+}
+
+export interface PhotoFilter {
+  query: string;
+  table: number | null;
+  name: string | null;
+  category: string | null;
+  tag: string | null;
+}
 
 export interface Photo {
   id: string;
