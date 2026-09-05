@@ -17,6 +17,7 @@ interface PhotoMasonryGridProps {
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   filterLabel?: string | null;
   onClearFilter?: () => void;
+  compactHeaders?: boolean;
 }
 
 function LoadMoreSkeleton() {
@@ -41,6 +42,7 @@ function StageSection({
   onNameClick,
   onWatchVideo,
   registerSection,
+  compactHeaders = false,
 }: {
   stage: WeddingStage;
   index: number;
@@ -49,6 +51,7 @@ function StageSection({
   onNameClick?: (name: string) => void;
   onWatchVideo: (stageId: string) => void;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
+  compactHeaders?: boolean;
 }) {
   const isMobile = useIsMobile();
   const total = stage.photos.length;
@@ -60,7 +63,7 @@ function StageSection({
       id={`stage-${stage.id}`}
       ref={registerSection(stage.id)}
       data-stage-id={stage.id}
-      className="scroll-mt-20"
+      className={compactHeaders ? 'scroll-mt-2' : 'scroll-mt-20'}
     >
       <PhotoStageHeader
         stage={stage}
@@ -68,6 +71,7 @@ function StageSection({
         visibleCount={hasMore ? visibleCount : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
+        compact={compactHeaders}
       />
       <motion.div
         initial={isMobile ? undefined : { opacity: 0 }}
@@ -126,6 +130,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   registerSection,
   filterLabel,
   onClearFilter,
+  compactHeaders = false,
 }) => {
   const filterTotal = filteredPhotos?.length ?? 0;
   const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(
@@ -135,16 +140,18 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   );
 
   useEffect(() => {
-    if (isFiltered) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [isFiltered, filterLabel]);
+    if (!isFiltered || compactHeaders) return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [isFiltered, filterLabel, compactHeaders]);
+
+  const bottomPad = compactHeaders ? 'pb-8' : 'pb-32';
+  const topPad = compactHeaders ? 'pt-4' : 'pt-6';
 
   if (isFiltered && filteredPhotos) {
     const visible = filteredPhotos.slice(0, visibleCount);
 
     return (
-      <section className="px-4 pb-32 pt-6 md:px-8" aria-live="polite">
+      <section className={`px-4 ${bottomPad} ${topPad} md:px-8`} aria-live="polite">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-xl text-white/95">{filterLabel ?? '搜尋結果'}</h2>
@@ -204,7 +211,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   }
 
   return (
-    <div className="space-y-14 px-4 pb-32 pt-8 md:px-8">
+    <div className={`space-y-10 px-4 ${bottomPad} ${compactHeaders ? 'pt-4' : 'pt-8'} md:space-y-14 md:px-8`}>
       {stages.map((stage, index) => (
         <StageSection
           key={stage.id}
@@ -215,6 +222,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           onNameClick={onNameClick}
           onWatchVideo={onWatchVideo}
           registerSection={registerSection}
+          compactHeaders={compactHeaders}
         />
       ))}
     </div>

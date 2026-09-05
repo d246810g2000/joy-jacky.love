@@ -10,6 +10,7 @@ interface PhotoStageHeaderProps {
   visibleCount?: number;
   index: number;
   onWatchVideo: (stageId: string) => void;
+  compact?: boolean;
 }
 
 export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
@@ -18,9 +19,10 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
   visibleCount,
   index,
   onWatchVideo,
+  compact = false,
 }) => {
   const isMobile = useIsMobile();
-  const [descOpen, setDescOpen] = useState(!isMobile);
+  const [descOpen, setDescOpen] = useState(!isMobile && !compact);
   const marker = getStageFilmMarker(stage.id);
   const accent = marker?.accent ?? '#B08D55';
   const countLabel =
@@ -34,7 +36,9 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="photo-stage-header relative mb-6 overflow-hidden rounded-2xl border border-white/10 px-5 py-6 md:px-8 md:py-8"
+      className={`photo-stage-header relative overflow-hidden rounded-2xl border border-white/10 ${
+        compact ? 'mb-4 px-4 py-4' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
+      }`}
       style={{
         background: `linear-gradient(135deg, ${accent}18 0%, rgba(20,18,16,0.85) 55%, rgba(12,11,10,0.92) 100%)`,
         boxShadow: `0 0 60px ${accent}15`,
@@ -85,6 +89,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
           )}
         </div>
 
+        {!compact && (
         <button
           type="button"
           onClick={() => onWatchVideo(stage.id)}
@@ -99,6 +104,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
           </span>
           <span>播放這段影片</span>
         </button>
+        )}
       </div>
     </motion.header>
   );
