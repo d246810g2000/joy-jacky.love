@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import App from './App';
 import RSVPPage from './pages/RSVPPage';
 import InvitationCardPage from './pages/InvitationCardPage';
@@ -10,6 +10,12 @@ import CheerPage from './pages/CheerPage';
 import PlaylistPage from './pages/PlaylistPage';
 import PhotoPage from './pages/PhotoPage';
 import { VisitCounterProvider } from './components/VisitCounterProvider';
+import { ALBUM_ROUTE } from './constants';
+
+function LegacyPhotoRedirect() {
+  const location = useLocation();
+  return <Navigate to={`${ALBUM_ROUTE}${location.search}${location.hash}`} replace />;
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -29,7 +35,8 @@ root.render(
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/cheer" element={<CheerPage />} />
           <Route path="/playlist" element={<PlaylistPage />} />
-          <Route path="/photo" element={<PhotoPage />} />
+          <Route path={ALBUM_ROUTE} element={<PhotoPage />} />
+          <Route path="/photo" element={<LegacyPhotoRedirect />} />
         </Routes>
       </BrowserRouter>
     </VisitCounterProvider>
