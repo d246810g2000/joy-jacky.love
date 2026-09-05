@@ -87,7 +87,9 @@ function StageSection({
         visibleCount={hasPreviewMore ? visible.length : undefined}
         index={index}
         onWatchVideo={onWatchVideo}
-        onExpandPhotos={() => onEnterChapter?.(stage.id)}
+        onExpandPhotos={
+          showAllPhotos ? undefined : () => onEnterChapter?.(stage.id)
+        }
         compact={compactHeaders}
         headerRef={registerSection(stage.id)}
       />

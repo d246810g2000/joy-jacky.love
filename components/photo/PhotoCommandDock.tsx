@@ -49,6 +49,12 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
     setFilmExpanded(true);
   }, [filmStageId]);
 
+  useEffect(() => {
+    if (isChapterFocused) {
+      setFilmExpanded(false);
+    }
+  }, [isChapterFocused]);
+
   const displayedStageId = filmStageId ?? activeStageId;
   const marker = getStageFilmMarker(displayedStageId);
   const activeIndex = navItems.findIndex((i) => i.id === displayedStageId);
