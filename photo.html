@@ -464,6 +464,78 @@
         width: 100%;
       }
 
+      .photo-inline-film--split {
+        display: flex;
+        height: 100%;
+        min-height: 0;
+        flex-direction: column;
+        border-bottom: 0;
+      }
+
+      .photo-inline-film--split .photo-inline-film__stage {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem;
+      }
+
+      .photo-inline-film--split .photo-inline-film__frame {
+        width: min(100%, calc((100dvh - 9.5rem) * 16 / 9));
+        max-height: calc(100dvh - 9.5rem);
+      }
+
+      .photo-watch-split__body {
+        min-height: 0;
+      }
+
+      .photo-watch-split__film {
+        flex: 1.2 1 0;
+        min-width: 0;
+      }
+
+      .photo-watch-split__photos {
+        flex: 0.8 1 0;
+        max-width: min(42vw, 520px);
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(14, 12, 10, 0.98), rgba(10, 9, 8, 0.98));
+      }
+
+      .photo-watch-split__photos .photo-masonry {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      @media (min-width: 1280px) {
+        .photo-watch-split__photos .photo-masonry {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 1023px) {
+        .photo-watch-split__body {
+          flex-direction: column;
+        }
+
+        .photo-watch-split__film {
+          flex: 0 0 auto;
+          max-height: 46dvh;
+        }
+
+        .photo-watch-split__photos {
+          flex: 1 1 auto;
+          max-width: none;
+          border-left: 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .photo-inline-film--split .photo-inline-film__frame {
+          width: min(100%, calc(42dvh * 16 / 9));
+          max-height: 42dvh;
+        }
+      }
+
       @media (min-width: 768px) {
         .photo-inline-film--cinema .photo-inline-film__stage {
           display: flex;
@@ -492,7 +564,7 @@
         }
       }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-dBXKi_04.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-DcNQBUA4.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-DUGtFLSZ.js">
 </head>
