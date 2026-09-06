@@ -184,6 +184,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   showNameScope = false,
   omitEndSpacer = false,
 }) => {
+  const isMobile = useIsMobile();
   const filterTotal = filteredPhotos?.length ?? 0;
   const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(
     filterTotal,
