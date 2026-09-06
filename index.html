@@ -254,6 +254,20 @@
       @media (min-width: 1024px) {
         .photo-masonry { column-count: 4; }
       }
+      /* 形象照多為直幅：手機維持 2 欄、桌機加欄提升瀏覽密度 */
+      .photo-masonry--portraits {
+        column-count: 2;
+        column-gap: 10px;
+      }
+      @media (min-width: 640px) {
+        .photo-masonry--portraits { column-count: 3; }
+      }
+      @media (min-width: 1024px) {
+        .photo-masonry--portraits { column-count: 4; column-gap: 14px; }
+      }
+      @media (min-width: 1280px) {
+        .photo-masonry--portraits { column-count: 5; }
+      }
 
       .photo-skeleton {
         background: linear-gradient(
@@ -319,9 +333,9 @@
         overflow: hidden;
       }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-BNjgJyzE.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-C1UBU7DR.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
-  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-react-IGMW92H_.js">
+  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-0OLr2min.js">
 </head>
   <body>
     <!-- Persistent Gradient Background -->
