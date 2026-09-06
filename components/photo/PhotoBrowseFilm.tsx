@@ -18,6 +18,8 @@ interface PhotoBrowseFilmProps {
   className?: string;
   /** 桌機觀影：限制畫幅高度，避免蓋住相簿操作 */
   cinema?: boolean;
+  /** 左影片右照片分欄 */
+  split?: boolean;
 }
 
 export const PhotoBrowseFilm: React.FC<PhotoBrowseFilmProps> = ({
@@ -28,6 +30,7 @@ export const PhotoBrowseFilm: React.FC<PhotoBrowseFilmProps> = ({
   navItems,
   className = '',
   cinema = false,
+  split = false,
 }) => {
   const displayedStageId = filmStageRequest ?? activeStageId;
   const filmPlayerStageId = getFilmStageIdForPlayer(displayedStageId);
@@ -46,7 +49,7 @@ export const PhotoBrowseFilm: React.FC<PhotoBrowseFilmProps> = ({
   const filmTime = marker?.filmTime ?? '00:00';
 
   return (
-    <div className={className}>
+    <div className={`${className} ${split ? 'flex h-full min-h-0 flex-col' : ''}`.trim()}>
       <PhotoInlineFilm
         startSec={startSec}
         title={filmTitle}
@@ -56,6 +59,7 @@ export const PhotoBrowseFilm: React.FC<PhotoBrowseFilmProps> = ({
         expanded={filmExpanded}
         onExpandedChange={onFilmExpandedChange}
         cinema={cinema}
+        split={split}
       />
     </div>
   );

@@ -30,6 +30,7 @@ interface PhotoMasonryGridProps {
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
   showNameScope?: boolean;
+  omitEndSpacer?: boolean;
 }
 
 function LoadMoreSkeleton() {
@@ -170,6 +171,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   onNameScopeChange,
   guestTable,
   showNameScope = false,
+  omitEndSpacer = false,
 }) => {
   const filterTotal = filteredPhotos?.length ?? 0;
   const { visibleCount, sentinelRef, hasMore } = usePhotoBatch(
@@ -249,7 +251,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                   onTagClick={onTagClick}
                   onNameClick={onNameClick}
                   dark
-                  compact
+                  compact={compactHeaders}
                 />
               ))}
             </div>
@@ -282,7 +284,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           compactHeaders={compactHeaders}
         />
       ))}
-      {compactHeaders && <div className="h-[45vh] shrink-0" aria-hidden />}
+      {compactHeaders && !omitEndSpacer && <div className="h-[45vh] shrink-0" aria-hidden />}
     </div>
   );
 };

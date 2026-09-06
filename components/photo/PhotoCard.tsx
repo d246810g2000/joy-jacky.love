@@ -15,18 +15,21 @@ interface PhotoCardProps {
   onTagClick?: (tag: string) => void;
   onNameClick?: (name: string) => void;
   dark?: boolean;
+  /** 手機精簡：限制 chip 數、桌次縮寫；桌機顯示完整標籤 */
   compact?: boolean;
 }
 
-const MAX_NAME_CHIPS = 2;
-const MAX_TABLE_CHIPS = 2;
+const COMPACT_MAX_NAME_CHIPS = 2;
+const COMPACT_MAX_TABLE_CHIPS = 2;
 
 type ExpandedMetaRow = 'names' | 'tables' | null;
 
-function chipLabel<T>(items: T[], max: number) {
+function chipLabel<T>(items: T[], max: number | null) {
+  if (max == null || items.length <= max) {
+    return { visible: items, hidden: 0, hiddenItems: [] as T[] };
+  }
   const visible = items.slice(0, max);
-  const hidden = items.length - visible.length;
-  return { visible, hidden, hiddenItems: items.slice(max) };
+  return { visible, hidden: items.length - visible.length, hiddenItems: items.slice(max) };
 }
 
 export const PhotoCard: React.FC<PhotoCardProps> = ({
@@ -35,6 +38,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   onTagClick,
   onNameClick,
   dark = false,
+  compact = false,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [gridWidth, setGridWidth] = useState(800);
@@ -47,18 +51,27 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  useEffect(() => {
+    setExpandedRow(null);
+  }, [photo.id, compact]);
+
   const gridUrl = getGridUrl(photo.publicId, gridWidth);
   const blurUrl = getBlurUrl(photo.publicId);
   const srcSet = getGridSrcSet(photo.publicId);
 
+  const nameLimit = compact ? COMPACT_MAX_NAME_CHIPS : null;
+  const tableLimit = compact ? COMPACT_MAX_TABLE_CHIPS : null;
+
   const { visible: visibleNames, hidden: hiddenNames, hiddenItems: hiddenNameItems } = chipLabel(
     photo.names,
-    MAX_NAME_CHIPS
+    nameLimit
   );
   const { visible: visibleTables, hiddenItems: hiddenTableNumbers } = chipLabel(
     photo.tables,
-    MAX_TABLE_CHIPS
+    tableLimit
   );
+
+  const formatTableChip = compact ? formatTableTagShort : formatTableTag;
 
   const tableExpandItems = hiddenTableNumbers.map((table) => ({
     key: `table-${table}`,
@@ -83,9 +96,13 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/55 transition active:scale-95 active:bg-white/10 hover:bg-white/10'
     : 'shrink-0 rounded-full border border-[#E8E1D5] bg-[#F5F0E8] px-2 py-0.5 text-[10px] text-[#2C3E50]/55 transition active:scale-95 active:bg-[#E8E1D5]/60 hover:bg-[#E8E1D5]/60';
 
-  const chipRowClass = 'flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden';
+  const chipRowClass = compact
+    ? 'flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden'
+    : 'flex min-w-0 flex-wrap items-center gap-1.5';
 
   const hasMeta = photo.names.length > 0 || photo.tables.length > 0;
+  const namesExpanded = !compact || expandedRow === 'names';
+  const tablesExpanded = !compact || expandedRow === 'tables';
 
   return (
     <article
@@ -128,9 +145,9 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
       </button>
 
       {hasMeta && (
-        <div className="space-y-1 px-2.5 py-2">
+        <div className={`space-y-1 px-2.5 py-2 ${compact ? '' : 'md:space-y-1.5 md:px-3'}`}>
           {photo.names.length > 0 && (
-            <div className={expandedRow === 'names' ? 'flex min-w-0 flex-wrap items-center gap-1' : chipRowClass}>
+            <div className={namesExpanded ? 'flex min-w-0 flex-wrap items-center gap-1.5' : chipRowClass}>
               {visibleNames.map((name) => (
                 <button
                   key={name}
@@ -139,7 +156,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onNameClick?.(name);
                   }}
-                  className={`${nameChipClass} max-w-[46%] truncate`}
+                  className={`${nameChipClass} ${compact ? 'max-w-[46%] truncate' : 'max-w-full'}`}
                 >
                   {name}
                 </button>
@@ -159,7 +176,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     {name}
                   </button>
                 ))}
-              {hiddenNames > 0 && (
+              {compact && hiddenNames > 0 && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -181,7 +198,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
           )}
 
           {photo.tables.length > 0 && (
-            <div className={expandedRow === 'tables' ? 'flex min-w-0 flex-wrap items-center gap-1' : chipRowClass}>
+            <div className={tablesExpanded ? 'flex min-w-0 flex-wrap items-center gap-1.5' : chipRowClass}>
               {visibleTables.map((table) => (
                 <button
                   key={table}
@@ -190,10 +207,10 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onTagClick?.(formatTableTag(table).replace(/^#/, ''));
                   }}
-                  className={`${tagChipClass} shrink-0 tabular-nums`}
+                  className={`${tagChipClass} ${compact ? 'shrink-0 tabular-nums' : 'max-w-full text-left'}`}
                   title={formatTableTag(table)}
                 >
-                  {formatTableTagShort(table)}
+                  {formatTableChip(table)}
                 </button>
               ))}
               {expandedRow === 'tables' &&
@@ -211,7 +228,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     {item.label}
                   </button>
                 ))}
-              {tableRowMoreCount > 0 && (
+              {compact && tableRowMoreCount > 0 && (
                 <button
                   type="button"
                   onClick={(e) => {

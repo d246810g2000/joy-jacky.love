@@ -10,6 +10,7 @@ import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
 import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
 import { PhotoBrowseFilm } from '../components/photo/PhotoBrowseFilm';
+import { PhotoWatchSplit } from '../components/photo/PhotoWatchSplit';
 import {
   EMPTY_FILTER,
   filterPhotos,
@@ -379,7 +380,7 @@ const PhotoPage: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, [skipHero, useDockLayout]);
 
-  useBodyScrollLock(!!selectedPhoto);
+  useBodyScrollLock(!!selectedPhoto || (!useDockLayout && filmExpanded));
 
   useEffect(() => {
     if (isFiltered) syncUrl(filter, selectedPhoto?.id ?? null);
@@ -623,12 +624,8 @@ const PhotoPage: React.FC = () => {
         onQuickSearch={() => setExpandSearch(true)}
       />
 
-      {showDesktopBrowseChrome && navItems.length > 0 && (
-        <div
-          className={`photo-browse-chrome sticky top-0 z-30 ${
-            filmExpanded ? 'photo-browse-chrome--watching' : ''
-          }`}
-        >
+      {showDesktopBrowseChrome && navItems.length > 0 && !filmExpanded && (
+        <div className="photo-browse-chrome sticky top-0 z-30">
           <PhotoTimelineNav
             items={navItems}
             activeStageId={activeStageId}
@@ -644,6 +641,22 @@ const PhotoPage: React.FC = () => {
             cinema
           />
         </div>
+      )}
+
+      {filmExpanded && (
+        <PhotoWatchSplit
+          navItems={navItems}
+          stages={stages}
+          activeStageId={activeStageId}
+          filmStageRequest={filmStageRequest}
+          onStageSelect={handleStageSelect}
+          onFilmExpandedChange={setFilmExpanded}
+          onPhotoClick={openPhoto}
+          onTagClick={handleTagClick}
+          onNameClick={handleNameClick}
+          onWatchVideo={openVideo}
+          registerSection={registerSection}
+        />
       )}
 
       {showChapterRail && !useDockLayout && showNav && !isDesktopWatching && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFilmEmbedUrl, getFilmWatchUrl } from '../../utils/weddingFilm';
 import { PHOTO_THEME } from '../../utils/photoTheme';
@@ -13,6 +13,8 @@ interface PhotoInlineFilmProps {
   onExpandedChange: (expanded: boolean) => void;
   /** 桌機觀影模式：畫幅置中並限制高度，避開搜尋／章節軌 */
   cinema?: boolean;
+  /** 左影片右照片分欄：影片填滿左側 */
+  split?: boolean;
 }
 
 export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
@@ -24,9 +26,14 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
   expanded,
   onExpandedChange,
   cinema = false,
+  split = false,
 }) => {
   const [playing, setPlaying] = useState(false);
   const watchUrl = getFilmWatchUrl(startSec);
+
+  useEffect(() => {
+    if (split && expanded) setPlaying(true);
+  }, [split, expanded, startSec]);
 
   const handleCollapse = () => {
     onExpandedChange(false);
@@ -37,12 +44,16 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
     onExpandedChange(true);
   };
 
+  const shellClass = [
+    'photo-inline-film border-b border-white/8',
+    cinema && expanded && !split ? 'photo-inline-film--cinema' : '',
+    split && expanded ? 'photo-inline-film--split' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div
-      className={`photo-inline-film border-b border-white/8 ${
-        cinema && expanded ? 'photo-inline-film--cinema' : ''
-      }`}
-    >
+    <div className={shellClass}>
       {!expanded ? (
         <button
           type="button"
@@ -76,12 +87,13 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
       ) : (
         <AnimatePresence initial={false}>
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={split ? false : { height: 0, opacity: 0 }}
+            animate={{ height: split ? '100%' : 'auto', opacity: 1 }}
+            exit={split ? undefined : { height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className={split ? 'flex h-full min-h-0 flex-col' : undefined}
           >
-            <div className="photo-inline-film__stage bg-black">
+            <div className="photo-inline-film__stage min-h-0 flex-1 bg-black">
               <div className="photo-inline-film__frame relative overflow-hidden bg-black">
                 {playing ? (
                   <iframe
@@ -114,7 +126,7 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
                 )}
               </div>
             </div>
-            <div className="flex min-h-9 items-center justify-between gap-2 bg-black/50 px-3 py-1.5">
+            <div className="flex min-h-9 shrink-0 items-center justify-between gap-2 bg-black/50 px-3 py-1.5">
               <p className="min-w-0 truncate text-[11px] text-white/55">
                 {title} · {filmTime}
               </p>
@@ -127,14 +139,16 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
                 >
                   YouTube ↗
                 </a>
-                <button
-                  type="button"
-                  onClick={handleCollapse}
-                  className="rounded-full border border-white/15 px-2.5 py-0.5 text-[11px] text-white/70 transition hover:bg-white/10"
-                  aria-label="收合影片，回到相簿"
-                >
-                  收合相簿 ▴
-                </button>
+                {!split && (
+                  <button
+                    type="button"
+                    onClick={handleCollapse}
+                    className="rounded-full border border-white/15 px-2.5 py-0.5 text-[11px] text-white/70 transition hover:bg-white/10"
+                    aria-label="收合影片，回到相簿"
+                  >
+                    收合相簿 ▴
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
