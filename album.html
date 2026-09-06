@@ -444,8 +444,46 @@
         );
         backdrop-filter: blur(12px);
       }
+
+      .photo-browse-chrome--watching {
+        background: rgba(8, 7, 6, 0.98);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .photo-inline-film__frame {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+      }
+
+      @media (min-width: 768px) {
+        .photo-inline-film--cinema .photo-inline-film__stage {
+          display: flex;
+          justify-content: center;
+          padding: 0.5rem 1rem 0;
+          background: #000;
+        }
+
+        .photo-inline-film--cinema .photo-inline-film__frame {
+          width: min(100%, 64rem, calc((100dvh - 11rem) * 16 / 9));
+          max-height: calc(100dvh - 11rem);
+        }
+
+        .photo-video-theater__frame {
+          width: min(100%, 72rem, calc((100dvh - 7rem) * 16 / 9));
+          max-height: calc(100dvh - 7rem);
+          aspect-ratio: 16 / 9;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .photo-video-theater__frame {
+          width: 100%;
+          max-width: 40rem;
+          aspect-ratio: 16 / 9;
+        }
+      }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-NDH-e1Ju.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-CAaWUjMa.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-DUGtFLSZ.js">
 </head>
