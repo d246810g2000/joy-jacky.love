@@ -40,20 +40,28 @@ export function shouldConfirmMobileShare(count: number): boolean {
   return count > SHARE_BATCH_SIZE;
 }
 
-/** 手機／平板：優先用系統分享把圖存進「照片」 */
+/** 手機／平板：優先用系統分享把圖存進「照片」（Mac 桌機一律走 zip） */
 export function isLikelyMobileDevice(): boolean {
-  if (typeof navigator === 'undefined') return false;
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
   const ua = navigator.userAgent || '';
-  if (/iPhone|iPad|iPod|Android/i.test(ua)) return true;
-  // iPadOS 桌面 UA：靠觸控點判斷
-  return navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua);
+  if (/iPhone|iPod|Android/i.test(ua)) return true;
+  if (/iPad/i.test(ua)) return true;
+  // iPadOS 13+ 會偽裝成 Macintosh；用觸控 + 粗指標區分真 Mac
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) {
+    return (
+      window.matchMedia('(pointer: coarse)').matches ||
+      !window.matchMedia('(hover: hover)').matches
+    );
+  }
+  return false;
 }
 
 export function shouldPreferMobilePhotoShare(): boolean {
   return (
     isLikelyMobileDevice() &&
     typeof navigator !== 'undefined' &&
-    typeof navigator.share === 'function'
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function'
   );
 }
 
@@ -221,16 +229,21 @@ async function zipPhotoBlobs(
     folder.file(photoFileName(photo), blob, { compression: 'STORE' });
   }
 
-  return zip.generateAsync(
+  const zipBlob = await zip.generateAsync(
     {
       type: 'blob',
       compression: 'STORE',
       streamFiles: true,
+      mimeType: 'application/zip',
     },
     (meta) => {
       if (meta.percent != null) onZipProgress?.(meta.percent / 100);
     }
   );
+  // Safari 需要明確 MIME，才會當成 zip 下載而不是開預覽
+  return zipBlob.type === 'application/zip'
+    ? zipBlob
+    : new Blob([zipBlob], { type: 'application/zip' });
 }
 
 export interface BulkDownloadOptions {
