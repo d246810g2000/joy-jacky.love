@@ -280,29 +280,38 @@
         display: none;
       }
 
+      /* 時間序：由左至右、由上至下（不用 column-count，避免直向填欄造成「展開後亂序」感） */
       .photo-masonry {
-        column-count: 2;
-        column-gap: 12px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: start;
       }
       @media (min-width: 768px) {
-        .photo-masonry { column-count: 3; }
+        .photo-masonry { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       }
       @media (min-width: 1024px) {
-        .photo-masonry { column-count: 4; }
+        .photo-masonry { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      }
+      .photo-masonry .photo-card {
+        margin-bottom: 0;
       }
       /* 形象照多為直幅：手機維持 2 欄、桌機加欄提升瀏覽密度 */
       .photo-masonry--portraits {
-        column-count: 2;
-        column-gap: 10px;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
       @media (min-width: 640px) {
-        .photo-masonry--portraits { column-count: 3; }
+        .photo-masonry--portraits { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       }
       @media (min-width: 1024px) {
-        .photo-masonry--portraits { column-count: 4; column-gap: 14px; }
+        .photo-masonry--portraits {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 14px;
+        }
       }
       @media (min-width: 1280px) {
-        .photo-masonry--portraits { column-count: 5; }
+        .photo-masonry--portraits { grid-template-columns: repeat(5, minmax(0, 1fr)); }
       }
 
       .photo-skeleton {
@@ -483,7 +492,7 @@
         }
       }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-CAaWUjMa.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-dBXKi_04.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-DUGtFLSZ.js">
 </head>
