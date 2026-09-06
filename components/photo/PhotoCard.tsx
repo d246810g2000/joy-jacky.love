@@ -89,9 +89,9 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 
   return (
     <article
-      className={`photo-card mb-3 break-inside-avoid overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:shadow-lg ${
+      className={`photo-card mb-3 break-inside-avoid overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 ${
         dark
-          ? 'border-white/10 bg-white/5 hover:border-white/20 hover:shadow-[var(--photo-accent)]/10'
+          ? 'photo-card--dark border-white/10 bg-white/5'
           : 'border-[#E8E1D5] bg-white hover:shadow-md'
       }`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 280px' }}
@@ -103,7 +103,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
         aria-label={`查看照片${photo.names.length ? `：${photo.names.join('、')}` : ''}`}
       >
         <div
-          className={`relative overflow-hidden ${dark ? 'bg-black/30' : 'bg-[#F5F0E8]'} ${
+          className={`photo-card-media relative overflow-hidden ${dark ? 'bg-black/30' : 'bg-[#F5F0E8]'} ${
             photo.orientation === 'landscape' ? 'aspect-[4/3]' : 'aspect-[3/4]'
           }`}
         >

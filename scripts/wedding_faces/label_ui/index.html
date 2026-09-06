@@ -11,8 +11,8 @@
     <div class="nav-group">
       <button id="btn-prev" type="button" aria-label="上一張">‹</button>
       <button id="btn-next" type="button" aria-label="下一張">›</button>
-      <button id="btn-finish-photo" type="button" class="btn-ghost" title="將未命名人臉標成不是臉，此張變已標記 (S)">排除未命名 (S)</button>
-      <button id="btn-repredict" type="button" class="btn-ghost" title="重跑此張預測：套用 cluster 分群並自動命名 (R)">重新預測 (R)</button>
+      <button id="btn-finish-photo" type="button" class="btn-ghost" title="將未命名人臉略過（不感興趣），此張變已標記 (S)">略過未命名 (S)</button>
+      <button id="btn-repredict" type="button" class="btn-ghost" title="重跑此張：略過的臉會用臉庫重新配對，分數夠就直接套用人名 (R)">重新預測 (R)</button>
       <button id="btn-draw-face" type="button" class="btn-ghost" title="在照片上拖曳框選漏偵測的臉 (M)">框選臉 (M)</button>
       <span id="photo-title" class="photo-title">—</span>
     </div>
@@ -60,19 +60,26 @@
   <div id="label-modal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-backdrop"></div>
     <div class="modal-card">
-      <h3>這是誰？</h3>
-      <button id="btn-not-face" type="button" class="btn-dismiss-top" title="誤判、工作人員、路人等我不想標的臉">不是臉（沒興趣）</button>
-      <input id="guest-search" type="search" placeholder="搜尋賓客姓名、桌號…" autocomplete="off" />
+      <div class="modal-sticky-top">
+        <h3>這是誰？</h3>
+        <div class="label-face-preview">
+          <img id="label-face-crop" alt="臉部裁切" />
+          <button id="btn-show-context" type="button" title="看整張原圖上的位置，方便對照是誰 (V)">看原圖位置 (V)</button>
+        </div>
+      </div>
+      <div class="modal-body">
+      <button id="btn-not-face" type="button" class="btn-dismiss-top" title="這張臉我不想標，單純略過">略過（不感興趣）</button>
+      <input id="guest-search" type="search" placeholder="搜尋賓客，或不在名單／未參加者直接輸入姓名…" autocomplete="off" />
       <ul id="guest-results" class="guest-results"></ul>
 
       <div id="custom-label-panel" class="custom-label-panel">
-        <h4>自填姓名（攜眷 / 不在名單）</h4>
-        <label class="field-label" for="custom-name">姓名（選填）</label>
-        <input id="custom-name" type="text" placeholder="知道就填；不知道可留空" autocomplete="off" />
-        <label class="field-label" for="host-search">隨誰出席？</label>
+        <h4>自填姓名（未參加／不在名單／攜眷）</h4>
+        <label class="field-label" for="custom-name">姓名</label>
+        <input id="custom-name" type="text" placeholder="例如：蔡姍姍" autocomplete="off" />
+        <label class="field-label" for="host-search">隨誰出席？（選填）</label>
         <input id="host-search" type="search" placeholder="搜尋正賓，例如：黃耀平" autocomplete="off" />
         <ul id="host-results" class="guest-results host-results"></ul>
-        <p id="custom-table-hint" class="custom-hint">可只選正賓不填姓名（自動「某某眷」），或自填姓名</p>
+        <p id="custom-table-hint" class="custom-hint">未參加或不在名單：直接填姓名確認即可；攜眷可再選正賓</p>
         <button id="btn-custom-label" type="button" class="btn-accent btn-block">確認標記</button>
       </div>
 
@@ -83,9 +90,22 @@
       <div class="modal-actions">
         <button id="btn-confirm-suggestion" type="button" class="btn-accent hidden">確認建議</button>
       </div>
+      </div>
     </div>
   </div>
 
-  <script src="/app.js?v=20"></script>
+  <div id="context-peek" class="context-peek hidden" aria-hidden="true">
+    <div class="context-peek-toolbar">
+      <button id="btn-close-peek" type="button" class="btn-accent">返回標記</button>
+      <span class="context-peek-hint">整張原圖（無裁切、無框）</span>
+    </div>
+    <div class="context-peek-stage">
+      <div class="context-peek-frame">
+        <img id="context-peek-img" alt="原圖" />
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=26"></script>
 </body>
 </html>

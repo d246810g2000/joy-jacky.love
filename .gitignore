@@ -24,10 +24,12 @@ dist-ssr
 *.sw?
 
 # Wedding face pipeline (local privacy)
-data/guest.csv
 data/photos.json
 data/photo_meta/
 data/face_crops/
 data/face_embeddings/
 scripts/wedding_faces/.venv/
 scripts/wedding_faces/__pycache__/
+
+# Local labeling backups
+backups/

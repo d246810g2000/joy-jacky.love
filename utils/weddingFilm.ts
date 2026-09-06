@@ -14,12 +14,12 @@ export interface FilmStageMarker {
   accent: string;
 }
 
-/** 相簿章節（6 段）— 與照片編號分章一致 */
+/** 相簿宴席章節 — 與照片編號分章一致（形象照另章、無對應影片段落） */
 export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'opening_mermaid',
     filmTime: '00:00',
-    clockTime: '11:30',
+    clockTime: '11:00',
     label: '溫馨開場',
     description: '真珠美人魚浪漫序幕 🧜‍♀️',
     startSec: 0,
@@ -28,7 +28,7 @@ export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'grand_entrance',
     filmTime: '04:37',
-    clockTime: '12:00',
+    clockTime: '12:10',
     label: '新人進場',
     description: '男女主角璀璨進場｜愛之雨星光燈海 💖',
     startSec: 277,
@@ -37,7 +37,7 @@ export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'second_entrance',
     filmTime: '17:31',
-    clockTime: '13:00',
+    clockTime: '13:40',
     label: '二進驚喜',
     description: '浪漫開唱與熱舞表演 🕺💃',
     startSec: 1051,
@@ -46,7 +46,7 @@ export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'interactive_games',
     filmTime: '20:21',
-    clockTime: '13:00',
+    clockTime: '13:45',
     label: '互動遊戲',
     description: '猜禮服、賓果、快問快答 🎲',
     startSec: 1221,
@@ -55,7 +55,7 @@ export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'table_toast',
     filmTime: '47:35',
-    clockTime: '13:40',
+    clockTime: '14:10',
     label: '逐桌敬酒',
     description: '溫馨逐桌敬酒 🍷',
     startSec: 2855,
@@ -64,7 +64,7 @@ export const FILM_STAGE_MARKERS: FilmStageMarker[] = [
   {
     id: 'farewell',
     filmTime: '53:35',
-    clockTime: '14:40',
+    clockTime: '14:30',
     label: '送客合照',
     description: '幸福送客與合照 📷',
     startSec: 3215,

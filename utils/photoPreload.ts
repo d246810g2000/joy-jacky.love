@@ -38,10 +38,11 @@ export function isImagePreloaded(url: string): boolean {
 export function preloadLightboxPhoto(
   publicId: string,
   viewportWidth: number,
-  includeBlur = true
+  includeBlur = true,
+  dpr?: number
 ): Promise<void> {
   const tasks: Promise<void>[] = [
-    preloadImageUrl(getLightboxDisplayUrl(publicId, viewportWidth)),
+    preloadImageUrl(getLightboxDisplayUrl(publicId, viewportWidth, dpr)),
   ];
   if (includeBlur) tasks.push(preloadImageUrl(getBlurUrl(publicId)));
   return Promise.all(tasks).then(() => undefined);
@@ -51,7 +52,8 @@ export function preloadLightboxNeighbors(
   photos: WeddingPhoto[],
   centerIndex: number,
   viewportWidth: number,
-  radius = LIGHTBOX_PREFETCH_RADIUS
+  radius = LIGHTBOX_PREFETCH_RADIUS,
+  dpr?: number
 ): void {
   if (centerIndex < 0 || photos.length === 0) return;
 
@@ -66,6 +68,6 @@ export function preloadLightboxNeighbors(
   for (let i = start; i < end; i += 1) {
     const photo = photos[i];
     if (!photo) continue;
-    preloadLightboxPhoto(photo.publicId, viewportWidth).catch(() => undefined);
+    preloadLightboxPhoto(photo.publicId, viewportWidth, true, dpr).catch(() => undefined);
   }
 }

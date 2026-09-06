@@ -37,7 +37,7 @@ function faceDisplayParts(face) {
     return { primary: `可能是 ${face.suggestion}？`, secondary: null };
   }
   if (face.status === "staff" || face.status === "not_face") {
-    return { primary: "不是臉", secondary: null };
+    return { primary: "已略過", secondary: null };
   }
   return { primary: null, secondary: null };
 }
@@ -46,7 +46,9 @@ function applyLocalFaceStatus(faceId, status, label = null, applyCluster = false
   const face = currentPhoto?.faces?.find((f) => f.faceId === faceId);
   if (!face) return;
 
-  const targets = applyCluster && face.clusterId
+  // 略過只作用在當下這張臉；姓名確認才可套用同群
+  const useCluster = applyCluster && status === "confirmed" && face.clusterId;
+  const targets = useCluster
     ? currentPhoto.faces.filter((f) => f.clusterId === face.clusterId)
     : [face];
 
@@ -85,9 +87,12 @@ function applyLocalFaceStatus(faceId, status, label = null, applyCluster = false
 }
 
 function guestToLabel(guest) {
+  // Prefer real roster guestId; synthetic search ids (>=100000) must not be persisted
+  const rawId = guest.guestId ?? guest.id;
+  const guestId = rawId != null && Number(rawId) < 100000 ? rawId : null;
   return {
     name: guest.name,
-    guestId: guest.id,
+    guestId,
     table: guest.table ?? null,
     companionOfGuestId: null,
     companionOfName: null,
@@ -112,7 +117,7 @@ function personToLabel(person) {
 function customToLabel(name, hostGuest = null) {
   const trimmed = (name || "").trim();
   return {
-    name: trimmed, // may be empty → server auto-names 「某某眷」
+    name: trimmed, // may be empty → server auto-names 「某某 眷」
     guestId: null,
     table: hostGuest?.table ?? null,
     companionOfGuestId: hostGuest?.id ?? null,
@@ -133,13 +138,17 @@ function updateCustomHint() {
   const hint = el("custom-table-hint");
   const typed = el("custom-name").value.trim();
   if (selectedHostGuest) {
-    const autoName = typed || `${selectedHostGuest.name}眷`;
+    const autoName = typed || `${selectedHostGuest.name} 眷`;
     hint.textContent = typed
       ? `將標為「${typed}」· ${selectedHostGuest.name} 眷 · 第 ${selectedHostGuest.table ?? "—"} 桌`
       : `未填姓名 → 自動命名「${autoName}」· 第 ${selectedHostGuest.table ?? "—"} 桌`;
     hint.classList.add("selected");
+  } else if (typed) {
+    hint.textContent = `將標為「${typed}」（不在賓客名單／未參加也可）`;
+    hint.classList.add("selected");
   } else {
-    hint.textContent = "可只選正賓不填姓名（自動「某某眷」），或自填姓名";
+    hint.textContent =
+      "未參加或不在名單：直接填姓名確認即可；攜眷可再選正賓（不填姓名會自動「某某 眷」）";
     hint.classList.remove("selected");
   }
 }
@@ -291,7 +300,7 @@ async function clearUnnamedFaces() {
 
   const targets = unnamedPendingFaces();
   if (!targets.length) {
-    alert("此張沒有未命名人臉可排除（已是已標記狀態）。");
+    alert("此張沒有未命名人臉可略過（已是已標記狀態）。");
     return;
   }
 
@@ -301,7 +310,7 @@ async function clearUnnamedFaces() {
     const result = await finalizeCurrentPhoto();
     const cleared = result.cleared || 0;
     if (!cleared) {
-      alert("沒有排除任何臉，請再試一次。");
+      alert("沒有略過任何臉，請再試一次。");
       return;
     }
 
@@ -315,7 +324,7 @@ async function clearUnnamedFaces() {
       if (idx >= 0) await showPhoto(idx);
     }
   } catch (err) {
-    alert(err.message || "排除失敗");
+    alert(err.message || "略過失敗");
     await showPhoto(currentIndex);
   } finally {
     isLabeling = false;
@@ -449,9 +458,9 @@ function updatePhotoMeta() {
   const shown = visibleFaces(faces);
   const pending = shown.filter(isPendingFace);
   const hidden = faces.length - shown.length;
-  const hiddenNote = hidden > 0 ? ` · 已排除 ${hidden}` : "";
+  const hiddenNote = hidden > 0 ? ` · 已略過 ${hidden}` : "";
   el("photo-meta").textContent =
-    `待標記 ${pending.length} · 可見 ${shown.length} 張臉${hiddenNote} · 全部標完再下一張才會進已標記 · S 排除剩餘未命名 · R 重新預測 · M 框選臉`;
+    `待標記 ${pending.length} · 可見 ${shown.length} 張臉${hiddenNote} · 全部標完再下一張才會進已標記 · S 略過剩餘未命名 · R 重新預測 · M 框選臉`;
 }
 
 async function showPhoto(index) {
@@ -674,6 +683,14 @@ function openLabelModal(face) {
   setDrawMode(false);
   activeFaceId = face.faceId;
   el("label-modal").classList.remove("hidden");
+  const cropImg = el("label-face-crop");
+  if (face.cropUrl) {
+    cropImg.src = face.cropUrl;
+    cropImg.classList.remove("hidden");
+  } else {
+    cropImg.removeAttribute("src");
+    cropImg.classList.add("hidden");
+  }
   el("guest-search").value = "";
   el("guest-results").innerHTML = "";
   el("btn-confirm-suggestion").classList.toggle("hidden", face.status !== "suggested");
@@ -698,13 +715,45 @@ function openLabelModal(face) {
   }
 
   searchGuests("");
-  setTimeout(() => el("guest-search").focus(), 100);
+  const modalCard = el("label-modal").querySelector(".modal-card");
+  if (modalCard) modalCard.scrollTop = 0;
+  setTimeout(() => el("guest-search").focus({ preventScroll: true }), 100);
 }
 
 function closeLabelModal() {
+  closeContextPeek();
   el("label-modal").classList.add("hidden");
   activeFaceId = null;
   selectedHostGuest = null;
+}
+
+function isContextPeekOpen() {
+  return !el("context-peek").classList.contains("hidden");
+}
+
+function openContextPeek() {
+  const face = currentPhoto?.faces?.find((f) => f.faceId === activeFaceId);
+  if (!face || !currentPhoto) return;
+
+  const peek = el("context-peek");
+  const img = el("context-peek-img");
+  const src = el("photo-img").currentSrc || el("photo-img").src;
+  if (!src) return;
+
+  if (img.src !== src) img.src = src;
+
+  peek.classList.remove("hidden");
+  peek.setAttribute("aria-hidden", "false");
+  el("label-modal").style.visibility = "hidden";
+}
+
+function closeContextPeek() {
+  const peek = el("context-peek");
+  if (!peek || peek.classList.contains("hidden")) return;
+  peek.classList.add("hidden");
+  peek.setAttribute("aria-hidden", "true");
+  el("label-modal").style.visibility = "";
+  setTimeout(() => el("guest-search").focus(), 50);
 }
 
 function renderGuestListItem(g, onPick) {
@@ -736,25 +785,40 @@ async function searchGuests(q) {
   const trimmed = q.trim();
 
   if (!guests.length && !trimmed) {
-    ul.innerHTML = '<li class="empty-hint">尚無相似推薦，請搜尋賓客／已建眷屬，或下方只選正賓</li>';
+    ul.innerHTML =
+      '<li class="empty-hint">尚無相似推薦。搜尋名單，或輸入未參加者姓名後點「用此姓名標記」</li>';
     return;
   }
 
-  if (trimmed.length >= 2) {
-    const createLi = document.createElement("li");
-    createLi.className = "create-custom";
-    createLi.textContent = `以「${trimmed}」標記為新姓名（攜眷 / 自填）`;
-    createLi.addEventListener("click", () => {
-      el("custom-name").value = trimmed;
-      el("custom-name").focus();
-      updateCustomHint();
-    });
-    ul.appendChild(createLi);
+  if (trimmed.length >= 1) {
+    const exact = guests.find((g) => g.name === trimmed);
+    if (!exact) {
+      const createLi = document.createElement("li");
+      createLi.className = "create-custom";
+      createLi.innerHTML = `<div class="guest-row"><span>用「${trimmed}」標記</span><span class="count-badge">未參加／自填</span></div><div class="sub">不在賓客名單也可直接標記，之後可再搜到</div>`;
+      createLi.addEventListener("click", () => {
+        submitLabel(customToLabel(trimmed));
+      });
+      ul.appendChild(createLi);
+    }
   }
 
   guests.forEach((g) => {
     ul.appendChild(renderGuestListItem(g, (person) => submitLabel(personToLabel(person))));
   });
+}
+
+function trySubmitGuestSearch() {
+  const trimmed = el("guest-search").value.trim();
+  if (!trimmed) return;
+  const exactLi = [...el("guest-results").querySelectorAll("li")].find(
+    (li) => !li.classList.contains("create-custom") && li.querySelector(".guest-row span")?.textContent === trimmed
+  );
+  if (exactLi) {
+    exactLi.click();
+    return;
+  }
+  submitLabel(customToLabel(trimmed));
 }
 
 async function searchHosts(q) {
@@ -821,7 +885,7 @@ async function submitLabel(label, status = "confirmed") {
 
 async function labelFace(guest, status = "confirmed") {
   if (status === "not_face" || status === "skipped" || status === "staff") {
-    // 非賓客併入「不是臉」：一律當沒興趣排除
+    // 略過／不感興趣：只影響這張臉，不做額外計算
     await submitLabel(null, "not_face");
     return;
   }
@@ -831,7 +895,7 @@ async function labelFace(guest, status = "confirmed") {
 function submitCustomLabel() {
   const name = el("custom-name").value.trim();
   if (!name && !selectedHostGuest) {
-    alert("請輸入姓名，或先選擇「隨誰出席」正賓（不填姓名會自動命名為「某某眷」）");
+    alert("請輸入姓名，或先選擇「隨誰出席」正賓（不填姓名會自動命名為「某某 眷」）");
     el("custom-name").focus();
     return;
   }
@@ -863,7 +927,7 @@ async function loadClusters() {
   clusters.slice(0, 50).forEach((c) => {
     const div = document.createElement("div");
     div.className = "cluster-item";
-    const label = c.name || (c.labeled && c.status === "not_face" ? "已排除" : c.clusterId);
+    const label = c.name || (c.labeled && c.status === "not_face" ? "已略過" : c.clusterId);
     div.innerHTML = `<img src="${c.cropUrl}" alt="" /><div><div>${label}</div><div class="count">${c.count} 張臉</div></div>`;
     list.appendChild(div);
   });
@@ -895,9 +959,29 @@ el("btn-propagate").addEventListener("click", async () => {
   await loadPhotos();
 });
 el("guest-search").addEventListener("input", (e) => searchGuests(e.target.value));
+el("guest-search").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    trySubmitGuestSearch();
+  }
+});
 el("host-search").addEventListener("input", (e) => searchHosts(e.target.value));
 el("custom-name").addEventListener("input", () => updateCustomHint());
+el("custom-name").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    submitCustomLabel();
+  }
+});
 el("btn-custom-label").addEventListener("click", () => submitCustomLabel());
+el("btn-show-context").addEventListener("click", () => openContextPeek());
+el("btn-close-peek").addEventListener("click", () => closeContextPeek());
+el("context-peek").addEventListener("click", (e) => {
+  // click empty dark area (not the image) to close
+  if (e.target === el("context-peek") || e.target.classList.contains("context-peek-stage")) {
+    closeContextPeek();
+  }
+});
 el("label-modal").querySelector(".modal-backdrop").addEventListener("click", closeLabelModal);
 el("btn-not-face").addEventListener("click", async () => {
   try {
@@ -914,9 +998,22 @@ document.addEventListener("keydown", (e) => {
       e.target.tagName === "TEXTAREA" ||
       e.target.tagName === "SELECT");
 
+  if (isContextPeekOpen()) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeContextPeek();
+      return;
+    }
+  }
+
   if (isModalOpen()) {
     if (e.key === "Escape") {
       closeLabelModal();
+      return;
+    }
+    if (!typing && (e.key === "v" || e.key === "V")) {
+      e.preventDefault();
+      openContextPeek();
       return;
     }
     if (!typing && (e.key === "s" || e.key === "S")) {

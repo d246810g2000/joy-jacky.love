@@ -62,15 +62,37 @@ python build_wedding_photos_ts.py    # 寫入 data/weddingPhotos.ts
 
 上傳腳本會把進度寫入 `data/photo_meta/cloudinary_map.json`，重跑會跳過已上傳的。
 
-公開 repo 不包含原始 `guest.csv` 與 `photos.json`。若要在私有環境重新產生資料，
-請將兩個檔案放在 `data/` 或設定：
+Label UI 賓客搜尋讀取已進 git 的 `data/publicGuestIndex.ts`。
+
+若要在私有環境重新產生相簿 manifest，請將 `photos.json` 放在 `data/` 或設定：
 
 ```bash
 export WEDDING_PRIVATE_DATA_DIR="/path/to/private/wedding-data"
 ```
 
+## 清理臉庫（unused bank vectors）
+
+標記過程中臉庫只會「新增」、略過／改標不會自動從 `known_faces.json` 移除向量。
+若要清掉沒用到的臉庫向量：
+
+```bash
+cd scripts/wedding_faces
+source .venv/bin/activate
+python prune_known_faces.py          # 先看會刪什麼（不會寫入）
+python prune_known_faces.py --apply  # 實際清理並重建 centroid
+# 若也要把「已確認但沒進臉庫」的臉補進去：
+# python prune_known_faces.py --sync --apply
+```
+
+這會：
+- 只保留「目前仍是 confirmed」的臉向量進臉庫
+- 刪掉已無人確認的人名條目（例如誤建的「張」「張師」）
+- 刪掉對應的孤兒 `*_centroid.npy`
+
+**不會**刪偵測產生的 `data/face_embeddings/<faceId>.npy`（重新預測還用得到）。
+
 ## 隱私
 
-`guest.csv`、`photos.json`、`data/face_crops/`、`data/face_embeddings/`、
-`data/photo_meta/` 已加入 `.gitignore`，不會上傳 git。公開版本只提交網站運作
-所需的衍生索引與相簿 manifest。
+`photos.json`、`data/face_crops/`、`data/face_embeddings/`、`data/photo_meta/`
+已加入 `.gitignore`，不會上傳 git。公開版本只提交網站運作所需的衍生索引與相簿
+manifest。

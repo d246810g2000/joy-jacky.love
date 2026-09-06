@@ -1,4 +1,5 @@
 import type { GuestRecord, PhotoFilter, WeddingPhoto, WeddingStage } from '../types';
+import { COMPANIONS_BY_HOST } from '../data/companionIndex';
 import { GUEST_INDEX, GUEST_RECORDS } from './guestIndex';
 import { formatTableFilterTitle, formatTableTag } from './tableLabels';
 
@@ -131,6 +132,12 @@ export function buildFilterFromSearchQuery(raw: string): PhotoFilter {
     return { ...EMPTY_FILTER, name: trimmed, query: trimmed, nameScope: 'person' };
   }
 
+  // 以「某某 眷」標籤搜尋時，視為搜尋主人姓名
+  const companionHost = hostNameFromCompanionLabel(clean);
+  if (companionHost) {
+    return { ...EMPTY_FILTER, name: companionHost, query: trimmed, nameScope: 'person' };
+  }
+
   return { ...EMPTY_FILTER, query: trimmed };
 }
 
@@ -154,8 +161,75 @@ export function guestTableForName(name: string): number | null {
   return guest?.table ?? null;
 }
 
+function normalizeNameKey(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, '');
+}
+
+/** 「陳岳陽 眷」「洪婉琦 眷」「李淑美 眷2」→ 主人名 */
+export function hostNameFromCompanionLabel(label: string): string | null {
+  const match = label.trim().match(/^(.+?)\s*眷\d*$/);
+  return match?.[1]?.trim() || null;
+}
+
+function isCompanionLabelOfHost(label: string, hostLower: string): boolean {
+  const normalizedLabel = normalizeNameKey(label);
+  const normalizedHost = normalizeNameKey(hostLower);
+  if (!normalizedHost) return false;
+  const rest = normalizedLabel.slice(normalizedHost.length);
+  return normalizedLabel.startsWith(normalizedHost) && /^眷\d*$/.test(rest);
+}
+
+function nameMatchesQuery(candidate: string, queryLower: string): boolean {
+  const candidateLower = candidate.toLowerCase();
+  return (
+    candidateLower === queryLower ||
+    candidateLower.includes(queryLower) ||
+    queryLower.includes(candidateLower)
+  );
+}
+
+/** 搜尋姓名時一併命中的眷屬標籤（含獨立姓名眷屬） */
+export function companionNamesForQuery(name: string): string[] {
+  const queryLower = name.trim().toLowerCase();
+  if (!queryLower) return [];
+
+  const out = new Set<string>();
+  for (const [host, companions] of Object.entries(COMPANIONS_BY_HOST)) {
+    if (!nameMatchesQuery(host, queryLower)) continue;
+    for (const companion of companions) out.add(companion);
+  }
+  return [...out];
+}
+
+function matchingHostNames(queryLower: string): string[] {
+  const hosts = new Set<string>();
+  hosts.add(queryLower);
+  for (const guest of GUEST_INDEX.guests) {
+    if (nameMatchesQuery(guest.name, queryLower)) hosts.add(guest.name.toLowerCase());
+  }
+  for (const host of Object.keys(COMPANIONS_BY_HOST)) {
+    if (nameMatchesQuery(host, queryLower)) hosts.add(host.toLowerCase());
+  }
+  return [...hosts];
+}
+
 function nameInPhoto(photo: WeddingPhoto, nameLower: string): boolean {
   return photo.names.some((n) => n.toLowerCase().includes(nameLower));
+}
+
+function photoHasCompanionOfQuery(photo: WeddingPhoto, queryLower: string): boolean {
+  const companions = companionNamesForQuery(queryLower);
+  if (
+    companions.some((companion) => {
+      const companionKey = normalizeNameKey(companion);
+      return photo.names.some((n) => normalizeNameKey(n) === companionKey);
+    })
+  ) {
+    return true;
+  }
+
+  const hosts = matchingHostNames(queryLower);
+  return photo.names.some((label) => hosts.some((host) => isCompanionLabelOfHost(label, host)));
 }
 
 function tablesForNameQuery(nameLower: string): number[] {
@@ -169,8 +243,12 @@ function tablesForNameQuery(nameLower: string): number[] {
 }
 
 function matchesName(photo: WeddingPhoto, name: string, scope: PhotoFilter['nameScope']): boolean {
-  const nameLower = name.toLowerCase();
+  const nameLower = name.trim().toLowerCase();
+  if (!nameLower) return true;
+  // 本人，或標籤本身含姓名（含「某某 眷」）
   if (nameInPhoto(photo, nameLower)) return true;
+  // 獨立姓名眷屬，或尚未入索引的「主人 眷N」標籤
+  if (photoHasCompanionOfQuery(photo, nameLower)) return true;
   if (scope === 'person') return false;
   return tablesForNameQuery(nameLower).some((t) => photo.tables.includes(t));
 }
@@ -250,8 +328,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
 
 export function filterLabel(filter: PhotoFilter): string | null {
   if (filter.name) {
-    const scope =
-      filter.nameScope === 'table' ? '（含同桌）' : '';
+    const scope = filter.nameScope === 'table' ? '（含同桌）' : '（含眷屬）';
     return `「${filter.name}」的照片${scope}`;
   }
   if (filter.table != null) return formatTableFilterTitle(filter.table);

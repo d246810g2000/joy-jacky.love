@@ -29,7 +29,7 @@ export const PhotoNameScopeBar: React.FC<PhotoNameScopeBarProps> = ({
           : 'border-white/12 bg-white/5 text-white/55 active:bg-white/10'
       }`}
     >
-      只有本人
+      本人與眷屬
     </button>
     <button
       type="button"

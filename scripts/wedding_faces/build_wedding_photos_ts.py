@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -27,6 +28,22 @@ def load_json(path: Path, default=None):
 
 def ts_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
+
+
+def read_existing_hero_cover_ids(path: Path) -> list[str]:
+    """Preserve curated HERO_COVER_PUBLIC_IDS across regenerations."""
+    if not path.exists():
+        return []
+    text = path.read_text(encoding="utf-8")
+    marker = "export const HERO_COVER_PUBLIC_IDS"
+    start = text.find(marker)
+    if start < 0:
+        return []
+    bracket = text.find("[", start)
+    end = text.find("]", bracket)
+    if bracket < 0 or end < 0:
+        return []
+    return re.findall(r'"([^"]+)"', text[bracket:end])
 
 
 def orientation_from_dims(width: int | None, height: int | None) -> str:
@@ -67,11 +84,13 @@ def main():
         print(f"Missing {PHOTOS_JSON}", file=sys.stderr)
         sys.exit(1)
 
+    existing_hero_ids = read_existing_hero_cover_ids(WEDDING_PHOTOS_TS)
+
     manifest = load_json(PHOTOS_JSON)
     cmap = load_json(CLOUDINARY_MAP, {})
 
     stages_out: list[dict] = []
-    hero_public_id = args.hero or None
+    hero_public_id = args.hero or (existing_hero_ids[0] if existing_hero_ids else None)
     total = 0
 
     manifest_stages = {s["id"]: s for s in manifest.get("stages", [])}
@@ -184,8 +203,20 @@ export const STAGE_NAV_ITEMS = WEDDING_STAGES.map((s) => ({{
 export const HERO_COVER_PUBLIC_ID = {ts_string(hero_public_id)};
 """
 
+    if existing_hero_ids:
+        ids_joined = ",\n".join(f"  {ts_string(pid)}" for pid in existing_hero_ids)
+        content += f"""
+/** 相簿 Hero 輪播：各章精選（雙人為主，橫幅優先） */
+export const HERO_COVER_PUBLIC_IDS = [
+{ids_joined},
+] as const;
+"""
+
     WEDDING_PHOTOS_TS.write_text(content, encoding="utf-8")
-    print(f"Wrote {WEDDING_PHOTOS_TS} ({total} photos, {len(stages_out)} stages, hero={hero_public_id})")
+    print(
+        f"Wrote {WEDDING_PHOTOS_TS} ({total} photos, {len(stages_out)} stages, "
+        f"hero={hero_public_id}, hero_ids={len(existing_hero_ids)})"
+    )
 
 
 if __name__ == "__main__":

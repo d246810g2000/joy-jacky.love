@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getBlurUrl, getHeroCoverUrl } from '../../utils/photoUrls';
 import { APP_CONTENT } from '../../constants';
 import { PHOTO_THEME } from '../../utils/photoTheme';
+import { useIsMobile } from '../../hooks/useIsMobile';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
+
+const PhotoHeroCanvas = lazy(() => import('./PhotoHeroCanvas'));
 
 interface PhotoHeroProps {
   coverPublicId: string;
@@ -14,6 +18,31 @@ interface PhotoHeroProps {
   onQuickSearch: () => void;
 }
 
+interface CanvasErrorBoundaryProps {
+  children: React.ReactNode;
+  onError: () => void;
+}
+
+class CanvasErrorBoundary extends React.Component<
+  CanvasErrorBoundaryProps,
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
 export const PhotoHero: React.FC<PhotoHeroProps> = ({
   coverPublicId,
   coverPublicIds = [],
@@ -23,12 +52,20 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
   onWatchFilm,
   onQuickSearch,
 }) => {
+  const isMobile = useIsMobile();
+  const reducedMotion = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
   const [coverLoaded, setCoverLoaded] = useState(false);
+  const [webglFailed, setWebglFailed] = useState(false);
+  const [heroVisible, setHeroVisible] = useState(true);
   const heroIds = coverPublicIds.length > 0 ? coverPublicIds : [coverPublicId];
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
   const activeCoverId = heroIds[activeCoverIndex] ?? coverPublicId;
   const coverUrl = getHeroCoverUrl(activeCoverId);
   const blurUrl = getBlurUrl(activeCoverId);
+
+  const useWebGL = !compact && !isMobile && !reducedMotion && !webglFailed;
+  const showKenBurns = !useWebGL;
 
   useEffect(() => {
     setCoverLoaded(false);
@@ -41,6 +78,17 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
     }, 5200);
     return () => window.clearInterval(timer);
   }, [compact, heroIds.length]);
+
+  useEffect(() => {
+    if (!useWebGL || !sectionRef.current) return;
+    const node = sectionRef.current;
+    const io = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { threshold: 0.05, rootMargin: '0px' }
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [useWebGL]);
 
   if (compact) {
     return (
@@ -68,30 +116,57 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
   }
 
   return (
-    <section className="photo-hero relative h-[85dvh] min-h-[480px] w-full overflow-hidden bg-[#0c0b0a] md:h-[100dvh] md:min-h-[560px]">
-      <div className="photo-hero-kenburns absolute inset-0">
-        {!coverLoaded && (
-          <img
-            src={blurUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full scale-105 object-cover blur-md"
-            aria-hidden
-          />
-        )}
-        <img
-          src={coverUrl}
-          alt="Jacky & Joy 婚禮相簿"
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
-            coverLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          fetchPriority="high"
-          onLoad={() => setCoverLoaded(true)}
-        />
-      </div>
+    <section
+      ref={sectionRef}
+      className="photo-hero relative h-[85dvh] min-h-[480px] w-full overflow-hidden bg-[#0c0b0a] md:h-[100dvh] md:min-h-[560px]"
+    >
+      {useWebGL && (
+        <CanvasErrorBoundary onError={() => setWebglFailed(true)}>
+          <Suspense fallback={null}>
+            <PhotoHeroCanvas
+              coverUrl={coverUrl}
+              active={heroVisible}
+              onTextureLoaded={() => setCoverLoaded(true)}
+              onError={() => setWebglFailed(true)}
+            />
+          </Suspense>
+        </CanvasErrorBoundary>
+      )}
 
-      <div className="photo-film-grain pointer-events-none absolute inset-0 opacity-[0.35]" aria-hidden />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-[#0c0b0a]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0c0b0a] via-transparent to-black/20" />
+      {showKenBurns && (
+        <div className="photo-hero-kenburns absolute inset-0">
+          {!coverLoaded && (
+            <img
+              src={blurUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full scale-105 object-cover blur-md"
+              aria-hidden
+            />
+          )}
+          <img
+            src={coverUrl}
+            alt="Jacky & Joy 婚禮相簿"
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+              coverLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            fetchPriority="high"
+            onLoad={() => setCoverLoaded(true)}
+          />
+        </div>
+      )}
+
+      {useWebGL && !coverLoaded && (
+        <img
+          src={blurUrl}
+          alt=""
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full scale-105 object-cover blur-md"
+          aria-hidden
+        />
+      )}
+
+      <div className="photo-film-grain pointer-events-none absolute inset-0 z-[2] opacity-[0.35]" aria-hidden />
+      <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-b from-black/55 via-black/35 to-[#0c0b0a]" />
+      <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#0c0b0a] via-transparent to-black/20" />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-end px-5 pb-28 text-center md:px-6 md:pb-32">
         <motion.p

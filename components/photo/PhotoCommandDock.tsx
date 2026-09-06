@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PhotoInlineFilm } from './PhotoInlineFilm';
+import { PhotoBrowseFilm } from './PhotoBrowseFilm';
 import { PhotoTimelineNav, type TimelineNavItem } from './PhotoTimelineNav';
-import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import {
-  PHOTO_THEME,
-  readFilmExpanded,
-  writeFilmExpanded,
-} from '../../utils/photoTheme';
+import { PHOTO_THEME, readFilmExpanded, writeFilmExpanded } from '../../utils/photoTheme';
+import { stageHasFilm } from '../../utils/photoStageMeta';
 
 interface PhotoCommandDockProps {
   navItems: TimelineNavItem[];
@@ -48,7 +44,7 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
   }, [filmExpanded, onFilmExpandedChange]);
 
   useEffect(() => {
-    if (!filmStageId) return;
+    if (!filmStageId || !stageHasFilm(filmStageId)) return;
     setFilmExpanded(true);
   }, [filmStageId]);
 
@@ -57,15 +53,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
       setFilmExpanded(false);
     }
   }, [isChapterFocused]);
-
-  const displayedStageId = filmStageId ?? activeStageId;
-  const marker = getStageFilmMarker(displayedStageId);
-  const activeIndex = navItems.findIndex((i) => i.id === displayedStageId);
-  const activeItem = navItems[activeIndex] ?? navItems[0];
-  const filmTitle = activeItem?.label ?? '婚宴影片';
-  const clockTime = activeItem?.time;
-  const startSec = marker?.startSec ?? 0;
-  const filmTime = marker?.filmTime ?? '00:00';
 
   return (
     <header
@@ -122,16 +109,16 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
             ))}
           </div>
         </div>
-      ) : !hasFilter && (
-        <PhotoInlineFilm
-          startSec={startSec}
-          title={filmTitle}
-          filmTime={filmTime}
-          clockTime={clockTime}
-          accent={marker?.accent}
-          expanded={filmExpanded}
-          onExpandedChange={setFilmExpanded}
-        />
+      ) : (
+        !hasFilter && (
+          <PhotoBrowseFilm
+            activeStageId={activeStageId}
+            filmStageRequest={filmStageId}
+            filmExpanded={filmExpanded}
+            onFilmExpandedChange={setFilmExpanded}
+            navItems={navItems}
+          />
+        )
       )}
 
       {!isMobile && !hideTimeline && navItems.length > 0 && (
@@ -143,7 +130,6 @@ export const PhotoCommandDock: React.FC<PhotoCommandDockProps> = ({
           isSticky={false}
         />
       )}
-
     </header>
   );
 };

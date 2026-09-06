@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -19,10 +20,10 @@ from config import (
     CROPS_DIR,
     DET_SCORE_MIN,
     EMB_DIR,
-    GUEST_CSV,
     META_DIR,
     PHOTO_SOURCE,
     PROJECT_ROOT,
+    PUBLIC_GUEST_INDEX,
     SUGGEST_THRESHOLD,
     ensure_dirs,
 )
@@ -49,53 +50,116 @@ def save_json(path: Path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def load_guests() -> list[dict]:
-    guests = []
-    if not GUEST_CSV.exists():
-        return guests
-    with GUEST_CSV.open(encoding="utf-8-sig") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            id_raw = row.get("編號", "").strip()
-            name = row.get("姓名", "").strip()
-            if not id_raw or not name or not id_raw.isdigit():
-                continue
-            table_raw = row.get("桌次", "").strip()
-            table_match = __import__("re").search(r"^(\d{1,2})", table_raw)
-            guests.append(
-                {
-                    "id": int(id_raw),
-                    "name": name,
-                    "table": int(table_match.group(1)) if table_match else None,
-                    "side": row.get("親友別", "").strip(),
-                    "relation": row.get("關係", "").strip(),
-                    "tableLabel": table_raw,
-                    "nameType": "guest",
-                    "source": "csv",
-                    "companionOfGuestId": None,
-                    "companionOfName": None,
-                    "knownKey": f"guest:{id_raw}",
-                }
-            )
-    return guests
-
-
 def stable_extra_id(key: str) -> int:
-    """Synthetic searchable id for known_faces people not in guest.csv."""
+    """Synthetic searchable id for known_faces people not in the roster."""
     import zlib
 
     return 100000 + (zlib.adler32(key.encode("utf-8")) % 800000)
 
 
+def _parse_public_guest_index(path: Path) -> tuple[dict[int, str], list[tuple[str, str, str, int | None]]]:
+    """Parse data/publicGuestIndex.ts → (table_names, rows of name/side/relation/table)."""
+    text = path.read_text(encoding="utf-8")
+    table_names: dict[int, str] = {}
+    tables_block = re.search(
+        r"PUBLIC_TABLE_NAMES[^=]*=\s*\{(.*?)\};",
+        text,
+        re.S,
+    )
+    if tables_block:
+        for m in re.finditer(r"(\d+)\s*:\s*'([^']*)'", tables_block.group(1)):
+            table_names[int(m.group(1))] = m.group(2)
+
+    rows: list[tuple[str, str, str, int | None]] = []
+    rows_block = re.search(
+        r"PUBLIC_GUEST_ROWS[^=]*=\s*\[(.*?)\];",
+        text,
+        re.S,
+    )
+    block = rows_block.group(1) if rows_block else text
+    for m in re.finditer(
+        r"\['([^']*)',\s*'([^']*)',\s*'([^']*)',\s*(null|\d+)\]",
+        block,
+    ):
+        table = None if m.group(4) == "null" else int(m.group(4))
+        rows.append((m.group(1), m.group(2), m.group(3), table))
+    return table_names, rows
+
+
+def _guest_ids_from_known() -> dict[str, tuple[int, str]]:
+    """name → (guestId, knownKey) from existing face bank (preserves guest:N continuity)."""
+    known = load_json(META_DIR / "known_faces.json", {})
+    by_name: dict[str, tuple[int, str]] = {}
+    for key, entry in known.items():
+        name = (entry.get("name") or "").strip()
+        if not name:
+            continue
+        guest_id = entry.get("guestId")
+        if key.startswith("guest:") and guest_id is not None:
+            by_name[name] = (int(guest_id), key)
+        elif name not in by_name and guest_id is not None:
+            by_name[name] = (int(guest_id), f"guest:{int(guest_id)}")
+    return by_name
+
+
+def load_guests() -> list[dict]:
+    """Load searchable roster from publicGuestIndex.ts."""
+    guests: list[dict] = []
+    if not PUBLIC_GUEST_INDEX.exists():
+        return guests
+
+    table_names, rows = _parse_public_guest_index(PUBLIC_GUEST_INDEX)
+    known_ids = _guest_ids_from_known()
+
+    for name, side, relation, table in rows:
+        name = name.strip()
+        if not name:
+            continue
+        table_label = ""
+        if table is not None:
+            nice = table_names.get(table)
+            table_label = f"{table:02d}. {nice}" if nice else str(table)
+
+        if name in known_ids:
+            guest_id, known_key = known_ids[name]
+            person_id = guest_id
+        else:
+            guest_id = None
+            known_key = f"name:{name}"
+            person_id = stable_extra_id(known_key)
+
+        guests.append(
+            {
+                "id": person_id,
+                "name": name,
+                "table": table,
+                "side": side.strip(),
+                "relation": relation.strip(),
+                "tableLabel": table_label,
+                "nameType": "guest",
+                "source": "roster",
+                "companionOfGuestId": None,
+                "companionOfName": None,
+                "knownKey": known_key,
+                # Real known-faces id when available; synthetic search ids stay in "id" only
+                "guestId": guest_id,
+            }
+        )
+    return guests
+
+
 def load_known_extra_people() -> list[dict]:
     """Companions / custom names saved in known_faces (selectable in search)."""
     known = load_json(META_DIR / "known_faces.json", {})
+    roster_names = {g["name"] for g in load_guests()}
     people = []
     for key, entry in known.items():
         name = (entry.get("name") or "").strip()
         if not name:
             continue
-        # CSV guests already covered by load_guests()
+        # Roster guests already covered by load_guests()
+        if name in roster_names:
+            continue
         if entry.get("guestId") and key.startswith("guest:"):
             continue
         name_type = entry.get("nameType") or ("companion" if entry.get("companionOfName") else "custom")
@@ -127,14 +191,21 @@ def load_all_people(*, hosts_only: bool = False) -> list[dict]:
     if hosts_only:
         return guests
     extras = load_known_extra_people()
-    # Prefer CSV if same display name also exists as guest
+    # Prefer roster if same display name also exists as guest
     guest_names = {g["name"] for g in guests}
     extras = [p for p in extras if p["name"] not in guest_names]
     return guests + extras
 
 
+def is_roster_guest(person: dict) -> bool:
+    return person.get("source") == "roster" or person.get("nameType") == "guest"
+
+
 def next_companion_auto_name(host_name: str, host_id=None) -> str:
-    """Auto name when companion host is known but personal name is not."""
+    """Auto name when companion host is known but personal name is not.
+
+    Format: 「主人 眷」「主人 眷2」…
+    """
     host_name = (host_name or "").strip()
     if not host_name:
         return "未命名眷屬"
@@ -150,15 +221,19 @@ def next_companion_auto_name(host_name: str, host_id=None) -> str:
         if entry.get("companionOfName") == host_name:
             same_host = True
         if same_host:
-            existing.add(n)
+            # Compare with/without space before 眷
+            existing.add(re.sub(r"\s+眷", "眷", n))
 
-    base = f"{host_name}眷"
-    if base not in existing:
-        return base
+    def label(n: int | None = None) -> str:
+        return f"{host_name} 眷" if not n or n == 1 else f"{host_name} 眷{n}"
+
+    base_key = f"{host_name}眷"
+    if base_key not in existing:
+        return label()
     n = 2
     while f"{host_name}眷{n}" in existing:
         n += 1
-    return f"{host_name}眷{n}"
+    return label(n)
 
 
 def load_face_embedding(face_id: str) -> np.ndarray | None:
@@ -259,7 +334,12 @@ def rank_guests(guests: list[dict], *, face_id: str | None, query: str) -> list[
     for guest in guests:
         guest_id = guest["id"]
         known_key = guest.get("knownKey")
-        match_score = emb_by_id.get(guest_id, 0.0) if guest.get("source") == "csv" else 0.0
+        roster_id = guest.get("guestId") if guest.get("guestId") is not None else guest_id
+        match_score = (
+            emb_by_id.get(roster_id, 0.0)
+            if is_roster_guest(guest) and isinstance(roster_id, int) and roster_id < 100000
+            else 0.0
+        )
         if known_key and known_key in emb_by_key:
             match_score = max(match_score, emb_by_key[known_key])
         if suggestion and guest["name"] == suggestion:
@@ -268,8 +348,8 @@ def rank_guests(guests: list[dict], *, face_id: str | None, query: str) -> list[
             match_score = max(match_score, suggestion_score)
         if (
             suggestion_guest_id
-            and guest.get("source") == "csv"
-            and guest_id == suggestion_guest_id
+            and is_roster_guest(guest)
+            and roster_id == suggestion_guest_id
             and suggestion_score
         ):
             match_score = max(match_score, suggestion_score)
@@ -304,7 +384,7 @@ def rank_guests(guests: list[dict], *, face_id: str | None, query: str) -> list[
             key=lambda g: (
                 -g.get("labelCount", 0),
                 -g["matchScore"],
-                0 if g.get("source") == "csv" else 1,
+                0 if is_roster_guest(g) else 1,
                 g["name"],
             )
         )
@@ -314,7 +394,7 @@ def rank_guests(guests: list[dict], *, face_id: str | None, query: str) -> list[
             key=lambda g: (
                 -g["matchScore"],
                 -g.get("labelCount", 0),
-                0 if g.get("source") == "csv" else 1,
+                0 if is_roster_guest(g) else 1,
                 g["name"],
             )
         )
@@ -876,7 +956,7 @@ def api_label_face_impl(face_id: str, data: dict):
                     table = guest.get("table")
                 break
 
-    # Unknown companion name → auto 「某某眷」
+    # Unknown companion name → auto 「某某 眷」
     if status == "confirmed" and (companion_of_guest_id or companion_of_name):
         if not (name or "").strip():
             name = next_companion_auto_name(companion_of_name or "", companion_of_guest_id)
@@ -948,10 +1028,9 @@ def api_label_face_impl(face_id: str, data: dict):
         if rel_emb not in known_faces[key]["embeddings"]:
             known_faces[key]["embeddings"].append(rel_emb)
 
-    elif status == "not_face" and cluster_id and apply_cluster:
-        save_cluster_label(cluster_id, status="not_face")
-        apply_status_to_cluster(face_index, cluster_id, "not_face")
-
+    elif status == "not_face":
+        # Skip / not interested: only this face. No cluster inheritance, no special meaning.
+        pass
     save_json(META_DIR / "face_index.json", face_index)
     save_json(META_DIR / "known_faces.json", known_faces)
 

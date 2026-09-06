@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { getStageAccent, getStageNavTime } from '../../utils/photoStageMeta';
 
 export interface TimelineNavItem {
   id: string;
@@ -16,6 +16,10 @@ interface PhotoTimelineNavProps {
   onSelect: (stageId: string) => void;
   isSticky?: boolean;
   variant?: 'default' | 'dock';
+}
+
+function itemTime(item: TimelineNavItem): string {
+  return getStageNavTime(item.id, item.time);
 }
 
 export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
@@ -32,7 +36,7 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
   const activeRef = useRef<HTMLButtonElement>(null);
 
   const activeItem = items.find((i) => i.id === activeStageId) ?? items[0];
-  const activeMarker = getStageFilmMarker(activeStageId);
+  const activeAccent = getStageAccent(activeStageId);
 
   useBodyScrollLock(sheetOpen);
 
@@ -62,8 +66,12 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
             <div className="min-w-0 text-left">
               <p className="font-mono text-[10px] tracking-widest text-white/40">目前章節</p>
               <p className="truncate text-sm font-medium text-white">
-                <span className="font-mono text-[#e6c896]">{activeItem?.time}</span>
-                <span className="ml-2">{activeItem?.label}</span>
+                {itemTime(activeItem) && (
+                  <span className="font-mono" style={{ color: activeAccent }}>
+                    {itemTime(activeItem)}
+                  </span>
+                )}
+                <span className={itemTime(activeItem) ? 'ml-2' : ''}>{activeItem?.label}</span>
               </p>
             </div>
             <span
@@ -101,7 +109,8 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
                 <div className="flex flex-col gap-1.5">
                   {items.map((item) => {
                     const isActive = item.id === activeStageId;
-                    const marker = getStageFilmMarker(item.id);
+                    const accent = getStageAccent(item.id);
+                    const time = itemTime(item);
                     return (
                       <button
                         key={item.id}
@@ -111,12 +120,16 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
                           isActive ? 'bg-white/10' : 'hover:bg-white/5'
                         }`}
                       >
-                        <span
-                          className="font-mono text-sm tabular-nums"
-                          style={{ color: isActive ? marker?.accent ?? '#e6c896' : 'rgba(255,255,255,0.5)' }}
-                        >
-                          {item.time}
-                        </span>
+                        {time ? (
+                          <span
+                            className="w-10 shrink-0 font-mono text-sm tabular-nums"
+                            style={{ color: isActive ? accent : 'rgba(255,255,255,0.5)' }}
+                          >
+                            {time}
+                          </span>
+                        ) : (
+                          <span className="w-10 shrink-0" aria-hidden />
+                        )}
                         <span className={`text-sm ${isActive ? 'text-white' : 'text-white/70'}`}>
                           {item.label}
                         </span>
@@ -138,11 +151,7 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
         variant === 'dock' ? 'border-t-0' : ''
       }`}
       aria-label="婚禮時間軸"
-      style={
-        activeMarker
-          ? ({ '--nav-accent': activeMarker.accent } as React.CSSProperties)
-          : undefined
-      }
+      style={{ '--nav-accent': activeAccent } as React.CSSProperties}
     >
       <div
         ref={navRef}
@@ -152,8 +161,9 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
       >
         {items.map((item) => {
           const isActive = item.id === activeStageId;
-          const marker = getStageFilmMarker(item.id);
+          const accent = getStageAccent(item.id);
           const isDock = variant === 'dock';
+          const time = itemTime(item);
           return (
             <button
               key={item.id}
@@ -161,7 +171,7 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
               type="button"
               onClick={() => onSelect(item.id)}
               aria-current={isActive ? 'step' : undefined}
-              title={isDock ? `${item.time} ${item.label}` : undefined}
+              title={isDock ? `${time} ${item.label}`.trim() : undefined}
               className={`shrink-0 snap-center rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
                 isDock ? 'py-1.5' : 'md:px-4 md:py-2 md:text-sm'
               } ${
@@ -170,23 +180,27 @@ export const PhotoTimelineNav: React.FC<PhotoTimelineNavProps> = ({
                   : 'border-white/10 bg-white/5 text-white/65 hover:border-white/25 hover:bg-white/10'
               } ${isActive && isDock ? 'scale-105' : ''}`}
               style={
-                isActive && marker
+                isActive
                   ? {
-                      background: `linear-gradient(135deg, ${marker.accent}cc, ${marker.accent}88)`,
-                      boxShadow: isDock ? `0 0 20px ${marker.accent}55, 0 4px 12px rgba(0,0,0,0.35)` : undefined,
+                      background: `linear-gradient(135deg, ${accent}cc, ${accent}88)`,
+                      boxShadow: isDock
+                        ? `0 0 20px ${accent}55, 0 4px 12px rgba(0,0,0,0.35)`
+                        : undefined,
                     }
                   : undefined
               }
             >
               {isDock ? (
                 <span className="flex items-center gap-1.5 font-medium">
-                  <span className="font-mono text-[10px] tabular-nums opacity-75">{item.time}</span>
+                  {time && (
+                    <span className="font-mono text-[10px] tabular-nums opacity-75">{time}</span>
+                  )}
                   <span>{item.label}</span>
                 </span>
               ) : (
                 <>
-                  <span className="font-mono font-medium tabular-nums">{item.time}</span>
-                  <span className="ml-1.5">{item.label}</span>
+                  {time && <span className="font-mono font-medium tabular-nums">{time}</span>}
+                  <span className={time ? 'ml-1.5' : ''}>{item.label}</span>
                 </>
               )}
             </button>

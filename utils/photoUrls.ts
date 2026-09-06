@@ -21,16 +21,58 @@ export const getThumbUrl = (publicId: string, width = 96) =>
 export const getFaceAvatarUrl = (publicId: string, size = 160) =>
   buildUrl(publicId, `f_auto,q_auto:good,w_${size},h_${size},c_fill,g_face`);
 
-/** 燈箱初始畫面 — 足夠清晰，但不先下載放大用的大檔案 */
-export function getLightboxDisplayUrl(publicId: string, viewportWidth = 1200): string {
-  const width =
-    viewportWidth < 640 ? 1280 : viewportWidth < 1024 ? 1600 : viewportWidth < 1536 ? 1920 : 2560;
+const LIGHTBOX_WIDTH_STEPS = [1280, 1600, 1920, 2048, 2560, 2880, 3200, 3840, 4096] as const;
+const LIGHTBOX_DISPLAY_MAX = 3840;
+const LIGHTBOX_ZOOM_MAX = 4096;
+
+function resolveDevicePixelRatio(dpr?: number): number {
+  const raw =
+    dpr ??
+    (typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
+      ? window.devicePixelRatio
+      : 1);
+  // Cap at 3× to avoid absurd downloads on high-DPI phones
+  return Math.min(Math.max(raw || 1, 1), 3);
+}
+
+function snapLightboxWidth(targetPx: number, max: number): number {
+  const capped = Math.min(Math.max(Math.ceil(targetPx), LIGHTBOX_WIDTH_STEPS[0]), max);
+  for (const step of LIGHTBOX_WIDTH_STEPS) {
+    if (step >= capped) return Math.min(step, max);
+  }
+  return max;
+}
+
+/** 燈箱初始圖寬：CSS 視窗寬 × devicePixelRatio，再對齊 Cloudinary 階梯 */
+export function getLightboxDisplayWidth(viewportWidth = 1200, dpr?: number): number {
+  return snapLightboxWidth(viewportWidth * resolveDevicePixelRatio(dpr), LIGHTBOX_DISPLAY_MAX);
+}
+
+/** 燈箱放大圖寬：在螢幕像素基礎上再留餘裕 */
+export function getLightboxZoomWidth(viewportWidth = 1200, dpr?: number): number {
+  return snapLightboxWidth(
+    viewportWidth * resolveDevicePixelRatio(dpr) * 1.5,
+    LIGHTBOX_ZOOM_MAX
+  );
+}
+
+/** 燈箱初始畫面 — 依螢幕實體像素選寬，Retina 不會偏軟 */
+export function getLightboxDisplayUrl(
+  publicId: string,
+  viewportWidth = 1200,
+  dpr?: number
+): string {
+  const width = getLightboxDisplayWidth(viewportWidth, dpr);
   return buildUrl(publicId, `f_auto,q_auto:good,w_${width},c_limit`);
 }
 
 /** 燈箱放大畫面 — 只有使用者放大時才載入，避免初始流量過大 */
-export function getLightboxZoomUrl(publicId: string, viewportWidth = 1200): string {
-  const width = viewportWidth < 640 ? 1920 : viewportWidth < 1024 ? 2560 : 2880;
+export function getLightboxZoomUrl(
+  publicId: string,
+  viewportWidth = 1200,
+  dpr?: number
+): string {
+  const width = getLightboxZoomWidth(viewportWidth, dpr);
   return buildUrl(publicId, `f_auto,q_auto:good,w_${width},c_limit`);
 }
 

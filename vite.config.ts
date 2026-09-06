@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'vendor-react': ['react', 'react-dom'],
             'vendor-framer': ['framer-motion'],
+            'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
             'wedding-photos': ['./data/weddingPhotos.ts'],
           }
         }

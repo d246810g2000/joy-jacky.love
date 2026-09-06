@@ -6,6 +6,7 @@ import { PhotoStageHeader } from './PhotoStageHeader';
 import { FILTER_PAGE_SIZE, STAGE_PAGE_SIZE, usePhotoBatch } from '../../hooks/usePhotoBatch';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import type { NameSearchScope } from '../../types';
+import { getStageAccent } from '../../utils/photoStageMeta';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 
 interface PhotoMasonryGridProps {
@@ -70,16 +71,20 @@ function StageSection({
 }) {
   const isMobile = useIsMobile();
   const total = stage.photos.length;
+  const stageAccent = getStageAccent(stage.id);
+  const isPortraits = stage.id === 'couple_portraits';
+  const pageSize = isPortraits ? (isMobile ? 12 : 16) : STAGE_PAGE_SIZE;
   const [expanded, setExpanded] = useState(showAllPhotos);
   const isExpanded = showAllPhotos || expanded;
-  const visible = isExpanded ? stage.photos : stage.photos.slice(0, STAGE_PAGE_SIZE);
-  const hasPreviewMore = !isExpanded && total > STAGE_PAGE_SIZE;
+  const visible = isExpanded ? stage.photos : stage.photos.slice(0, pageSize);
+  const hasPreviewMore = !isExpanded && total > pageSize;
 
   return (
     <section
       id={`stage-${stage.id}`}
       data-stage-id={stage.id}
-      className={compactHeaders ? 'scroll-mt-2' : 'scroll-mt-20'}
+      className={`photo-stage-section ${compactHeaders ? 'scroll-mt-2' : 'scroll-mt-20'}`}
+      style={{ '--card-accent': stageAccent } as React.CSSProperties}
     >
       <PhotoStageHeader
         stage={stage}
@@ -94,11 +99,11 @@ function StageSection({
         headerRef={registerSection(stage.id)}
       />
       <motion.div
-        initial={isMobile ? undefined : { opacity: 0 }}
-        whileInView={isMobile ? undefined : { opacity: 1 }}
-        viewport={{ once: true, margin: '-5%' }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="photo-masonry"
+        initial={isMobile ? undefined : { opacity: 0, y: 16 }}
+        whileInView={isMobile ? undefined : { opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-8%' }}
+        transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+        className={`photo-masonry mt-4 md:mt-6${stage.id === 'couple_portraits' ? ' photo-masonry--portraits' : ''}`}
       >
         {visible.map((photo, i) =>
           isMobile ? (
@@ -134,7 +139,7 @@ function StageSection({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-4 py-2.5 text-xs font-medium text-[var(--photo-gold-light)] transition active:scale-[0.99] active:bg-[var(--photo-accent)]/20"
+          className="photo-stage-cta mt-5 flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium md:mt-6"
         >
           {compactHeaders ? '載入更多照片' : `查看本章全部 ${total} 張照片`}
           <span aria-hidden>↓</span>
@@ -261,7 +266,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   }
 
   return (
-    <div className={`space-y-10 px-4 ${bottomPad} ${compactHeaders ? 'pt-4' : 'pt-8'} md:space-y-14 md:px-8`}>
+    <div className={`space-y-12 px-4 ${bottomPad} ${compactHeaders ? 'pt-4' : 'pt-8'} md:space-y-20 md:px-8`}>
       {stages.map((stage, index) => (
         <StageSection
           key={stage.id}

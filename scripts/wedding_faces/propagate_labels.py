@@ -49,6 +49,37 @@ def load_cluster_labels() -> dict[str, dict]:
     return labels
 
 
+def save_cluster_labels(labels: dict[str, dict]) -> None:
+    path = META_DIR / "cluster_labels.csv"
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=["clusterId", "guestId", "name", "table", "status"]
+        )
+        writer.writeheader()
+        for cid, row in sorted(labels.items()):
+            writer.writerow(
+                {
+                    "clusterId": cid,
+                    "guestId": str(row["guestId"]) if row.get("guestId") else "",
+                    "name": row.get("name") or "",
+                    "table": str(row["table"]) if row.get("table") else "",
+                    "status": row.get("status") or "confirmed",
+                }
+            )
+
+
+def clear_not_face_cluster_labels(
+    labels: dict[str, dict], cluster_ids: set[str]
+) -> int:
+    """Drop not_face cluster marks so repredict can show those faces again."""
+    cleared = 0
+    for cid in list(cluster_ids):
+        if labels.get(cid, {}).get("status") == "not_face":
+            del labels[cid]
+            cleared += 1
+    return cleared
+
+
 def update_known_faces_centroids(known_faces: dict) -> dict:
     for key, entry in known_faces.items():
         paths = entry.get("embeddings", [])
@@ -129,10 +160,17 @@ def predict_face(
     face: dict,
     cluster_labels: dict[str, dict],
     centroids: list[tuple],
+    *,
+    auto_threshold: float | None = None,
 ) -> str | None:
-    """Apply cluster inheritance + embedding match to one face. Returns action tag."""
+    """Apply cluster inheritance + embedding match to one face. Returns action tag.
+
+    auto_threshold: override AUTO_THRESHOLD (repredict uses a lower bar so
+    bank matches are applied as confirmed, not left as suggestions).
+    """
     cid = face.get("clusterId")
     current = face.get("status", "unknown")
+    confirm_at = AUTO_THRESHOLD if auto_threshold is None else auto_threshold
 
     if current in ("not_face", "skipped", "staff"):
         return None
@@ -146,17 +184,10 @@ def predict_face(
         lbl = cluster_labels[cid]
         lbl_status = lbl.get("status") or "confirmed"
         if lbl_status == "not_face":
-            face["status"] = "not_face"
-            face["name"] = None
-            face["guestId"] = None
-            face["table"] = None
-            face["suggestion"] = None
-            face["suggestionScore"] = None
-            face["companionOfGuestId"] = None
-            face["companionOfName"] = None
-            face["nameType"] = None
-            return "cluster"
-        if lbl_status == "confirmed" and lbl.get("name"):
+            # not_face only means "skipped / not interested" on a specific face —
+            # do not inherit it across the cluster during propagation.
+            pass
+        elif lbl_status == "confirmed" and lbl.get("name"):
             face["status"] = "confirmed"
             face["name"] = lbl["name"]
             face["guestId"] = lbl.get("guestId")
@@ -180,7 +211,7 @@ def predict_face(
             best_score = score
             best = (name, guest_id, table, companion_of_guest_id, companion_of_name, name_type)
 
-    if best_score >= AUTO_THRESHOLD and best and best[0]:
+    if best_score >= confirm_at and best and best[0]:
         name, guest_id, table, companion_of_guest_id, companion_of_name, name_type = best
         face["status"] = "confirmed"
         face["name"] = name
@@ -216,6 +247,37 @@ def predict_face(
     face["suggestion"] = None
     face["suggestionScore"] = None
     return None
+
+
+def _clear_face_name(face: dict) -> None:
+    face["status"] = "not_face"
+    face["name"] = None
+    face["guestId"] = None
+    face["table"] = None
+    face["suggestion"] = None
+    face["suggestionScore"] = None
+    face["companionOfGuestId"] = None
+    face["companionOfName"] = None
+    face["nameType"] = None
+
+
+def enforce_unique_confirmed_names(faces: list[dict]) -> int:
+    """Keep one confirmed face per name on a photo; retire duplicates."""
+    by_name: dict[str, list[dict]] = {}
+    for face in faces:
+        if face.get("status") == "confirmed" and face.get("name"):
+            by_name.setdefault(face["name"], []).append(face)
+    retired = 0
+    for group in by_name.values():
+        if len(group) <= 1:
+            continue
+        winner = max(group, key=lambda f: float(f.get("detScore") or f.get("suggestionScore") or 0))
+        for face in group:
+            if face is winner:
+                continue
+            _clear_face_name(face)
+            retired += 1
+    return retired
 
 
 def recompute_progress(face_index: dict, *, auto_count=0, suggest_count=0, cluster_inherit=0) -> dict:
@@ -270,6 +332,11 @@ def propagate(photo_ids: set[str] | None = None, *, reset: bool = False) -> dict
     suggest_count = 0
     cluster_inherit = 0
     reset_count = 0
+    cleared_not_face_clusters = 0
+    unique_retired = 0
+    reset_cluster_ids: set[str] = set()
+    # Repredict: apply bank matches as confirmed at suggest threshold (≥0.55)
+    auto_threshold = SUGGEST_THRESHOLD if reset else None
 
     for pid, faces in face_index.items():
         if photo_ids is not None and pid not in photo_ids:
@@ -279,15 +346,34 @@ def propagate(photo_ids: set[str] | None = None, *, reset: bool = False) -> dict
             for face in faces:
                 if reset_face_for_repredict(face):
                     reset_count += 1
+                    cid = face.get("clusterId")
+                    if cid:
+                        reset_cluster_ids.add(cid)
+
+    if reset and reset_cluster_ids:
+        cleared_not_face_clusters = clear_not_face_cluster_labels(
+            cluster_labels, reset_cluster_ids
+        )
+        if cleared_not_face_clusters:
+            save_cluster_labels(cluster_labels)
+
+    for pid, faces in face_index.items():
+        if photo_ids is not None and pid not in photo_ids:
+            continue
 
         for face in faces:
-            action = predict_face(face, cluster_labels, centroids)
+            action = predict_face(
+                face, cluster_labels, centroids, auto_threshold=auto_threshold
+            )
             if action == "auto":
                 auto_count += 1
             elif action == "suggest":
                 suggest_count += 1
             elif action == "cluster":
                 cluster_inherit += 1
+
+        if reset:
+            unique_retired += enforce_unique_confirmed_names(faces)
 
     save_json(META_DIR / "face_index.json", face_index)
     save_json(META_DIR / "known_faces.json", known_faces)
@@ -299,9 +385,13 @@ def propagate(photo_ids: set[str] | None = None, *, reset: bool = False) -> dict
         cluster_inherit=cluster_inherit,
     )
     progress["resetCount"] = reset_count
+    progress["clearedNotFaceClusters"] = cleared_not_face_clusters
+    progress["uniqueRetired"] = unique_retired
     print(
         f"Propagated: auto={auto_count}, suggested={suggest_count}, "
-        f"cluster={cluster_inherit}, reset={reset_count}"
+        f"cluster={cluster_inherit}, reset={reset_count}, "
+        f"clearedNotFaceClusters={cleared_not_face_clusters}, "
+        f"uniqueRetired={unique_retired}"
     )
     print(
         f"Coverage: {progress['namedFaces']}/{progress['totalFaces']} faces "
@@ -313,7 +403,11 @@ def propagate(photo_ids: set[str] | None = None, *, reset: bool = False) -> dict
 
 
 def repredict_photo(photo_id: str) -> dict:
-    """Reset dismiss/pending faces on one photo, then re-apply cluster + auto naming."""
+    """Reset dismiss/pending faces on one photo, then auto-apply bank matches.
+
+    On repredict, embedding matches ≥ SUGGEST_THRESHOLD are confirmed (not just
+    suggested), and duplicate names on the same photo are retired.
+    """
     face_index = load_json(META_DIR / "face_index.json", {})
     if photo_id not in face_index:
         raise KeyError(f"photo not found: {photo_id}")

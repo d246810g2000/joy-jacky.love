@@ -11,6 +11,8 @@ interface PhotoInlineFilmProps {
   accent?: string;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
+  /** 桌機觀影模式：畫幅置中並限制高度，避開搜尋／章節軌 */
+  cinema?: boolean;
 }
 
 export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
@@ -21,6 +23,7 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
   accent = PHOTO_THEME.gold,
   expanded,
   onExpandedChange,
+  cinema = false,
 }) => {
   const [playing, setPlaying] = useState(false);
   const watchUrl = getFilmWatchUrl(startSec);
@@ -35,7 +38,11 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
   };
 
   return (
-    <div className="photo-inline-film border-b border-white/8">
+    <div
+      className={`photo-inline-film border-b border-white/8 ${
+        cinema && expanded ? 'photo-inline-film--cinema' : ''
+      }`}
+    >
       {!expanded ? (
         <button
           type="button"
@@ -74,42 +81,44 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="relative aspect-video w-full overflow-hidden bg-black">
-              {playing ? (
-                <iframe
-                  key={startSec}
-                  src={getFilmEmbedUrl(startSec)}
-                  title={title}
-                  className="absolute inset-0 h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setPlaying(true)}
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-                  style={{
-                    background: `linear-gradient(160deg, ${accent}33 0%, rgba(0,0,0,0.88) 55%)`,
-                  }}
-                  aria-label={`播放 ${title}`}
-                >
-                  <span
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-lg text-white shadow-lg"
-                    style={{ background: `${accent}cc`, boxShadow: `0 0 28px ${accent}55` }}
+            <div className="photo-inline-film__stage bg-black">
+              <div className="photo-inline-film__frame relative overflow-hidden bg-black">
+                {playing ? (
+                  <iframe
+                    key={startSec}
+                    src={getFilmEmbedUrl(startSec)}
+                    title={title}
+                    className="absolute inset-0 h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setPlaying(true)}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                    style={{
+                      background: `linear-gradient(160deg, ${accent}33 0%, rgba(0,0,0,0.88) 55%)`,
+                    }}
+                    aria-label={`播放 ${title}`}
                   >
-                    ▶
-                  </span>
-                  <span className="px-4 text-center text-sm font-medium text-white">{title}</span>
-                  <span className="text-xs text-white/50">影片 {filmTime}</span>
-                </button>
-              )}
+                    <span
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-lg text-white shadow-lg"
+                      style={{ background: `${accent}cc`, boxShadow: `0 0 28px ${accent}55` }}
+                    >
+                      ▶
+                    </span>
+                    <span className="px-4 text-center text-sm font-medium text-white">{title}</span>
+                    <span className="text-xs text-white/50">影片 {filmTime}</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex min-h-9 items-center justify-between gap-2 bg-black/40 px-3 py-1">
+            <div className="flex min-h-9 items-center justify-between gap-2 bg-black/50 px-3 py-1.5">
               <p className="min-w-0 truncate text-[11px] text-white/55">
                 {title} · {filmTime}
               </p>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-3">
                 <a
                   href={watchUrl}
                   target="_blank"
@@ -121,10 +130,10 @@ export const PhotoInlineFilm: React.FC<PhotoInlineFilmProps> = ({
                 <button
                   type="button"
                   onClick={handleCollapse}
-                  className="text-[11px] text-white/40"
-                  aria-label="收合影片"
+                  className="rounded-full border border-white/15 px-2.5 py-0.5 text-[11px] text-white/70 transition hover:bg-white/10"
+                  aria-label="收合影片，回到相簿"
                 >
-                  收合 ▴
+                  收合相簿 ▴
                 </button>
               </div>
             </div>

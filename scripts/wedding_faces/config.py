@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import os
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -10,41 +10,52 @@ PHOTO_SOURCE = Path("/Users/d246810g2000/Downloads/20260530家銘&謦伊 婚禮�
 META_DIR = PROJECT_ROOT / "data" / "photo_meta"
 CROPS_DIR = PROJECT_ROOT / "data" / "face_crops"
 EMB_DIR = PROJECT_ROOT / "data" / "face_embeddings"
-GUEST_CSV = PRIVATE_DATA_DIR / "guest.csv"
+# Label UI 賓客搜尋來源（已進 git）
+PUBLIC_GUEST_INDEX = PROJECT_ROOT / "data" / "publicGuestIndex.ts"
 PHOTOS_JSON = PRIVATE_DATA_DIR / "photos.json"
 
 AUTO_THRESHOLD = 0.75
 SUGGEST_THRESHOLD = 0.55
-# InsightFace det_score cutoff; raise to reduce false-positive labeling load.
-DET_SCORE_MIN = 0.65
+# InsightFace det_score cutoff. Lower = more small/side faces enter review.
+DET_SCORE_MIN = 0.55
 
-# Faces that should not be overwritten by cluster/propagation rules.
+# Faces the user chose to ignore (not interested) or otherwise leave alone.
 PROTECTED_STATUSES = frozenset({"confirmed", "not_face", "skipped", "staff"})
-# Faces excluded from the labeling queue.
+# Faces excluded from the labeling queue (not_face = skipped / not interested).
 RESOLVED_STATUSES = frozenset({"not_face", "skipped", "staff", "confirmed"})
 
-# 婚宴實際時間（顯示用）
-BANQUET_ARRIVAL_CLOCK = (11, 30)
-BANQUET_ENTRANCE_CLOCK = (12, 0)
-BANQUET_SECOND_ENTRANCE_CLOCK = (13, 0)
-BANQUET_GAMES_CLOCK = (13, 0)
-BANQUET_TOAST_CLOCK = (13, 40)
-BANQUET_FAREWELL_CLOCK = (14, 40)
+# 婚宴章節切點：對章節首張 EXIF 取「最近 10 分鐘」，但不得晚於實際時間
+# 二進 #279 @ 13:41、遊戲 #331 @ 13:45 同落 13:40 格 → 遊戲改用首張實際分鐘 13:45
+BANQUET_ARRIVAL_CLOCK = (11, 0)          # #1   @ 11:00 → 11:00
+BANQUET_ENTRANCE_CLOCK = (12, 10)        # #107 @ 12:17 → 12:10
+BANQUET_SECOND_ENTRANCE_CLOCK = (13, 40) # #279 @ 13:41 → 13:40
+BANQUET_GAMES_CLOCK = (13, 45)           # #331 @ 13:45（避免與二進同為 13:40）
+BANQUET_TOAST_CLOCK = (14, 10)           # #440 @ 14:17 → 14:10
+BANQUET_FAREWELL_CLOCK = (14, 30)        # #526 @ 14:36 → 14:30
 
-# 照片章節 — 依檔名編號（260530-N 的 N）手動對應
-# 106 以前（含 106）除了 14–33 → 溫馨開場
-# 14–33、107–278 → 新人進場
-# 279–329 → 二進驚喜
-# 330–442 → 互動遊戲
-# 443–521 → 逐桌敬酒
-# 522+     → 送客合照
+# 新人形象照（穿插於相本編號，獨立成章、不插入宴席時間軸）
+COUPLE_PORTRAIT_RANGES: Tuple[Tuple[int, int], ...] = (
+    (103, 106),
+    (240, 278),
+    (519, 525),
+    (624, 640),
+)
+
+# 照片章節 — 依檔名編號（260530-N 的 N）
+# 1–102（含 14–33 綵排）→ 溫馨開場
+# 103–106、240–278、519–525、624–640 → 新人形象照
+# 107–239 → 新人進場
+# 279–330 → 二進驚喜
+# 331–439 → 互動遊戲
+# 440–518 → 逐桌敬酒
+# 526–623、641–643 → 送客合照
 PHOTO_STAGES = [
     {
         "id": "opening_mermaid",
         "label": "溫馨開場",
         "description": "真珠美人魚浪漫序幕 🧜‍♀️",
         "clockStart": BANQUET_ARRIVAL_CLOCK,
-        "clockEnd": (11, 59),
+        "clockEnd": (12, 20),  # #102 @ 12:12
         "filmStartSec": 0,
         "filmEndSec": 4 * 60 + 37,
         "accent": "#c9a87c",
@@ -54,7 +65,7 @@ PHOTO_STAGES = [
         "label": "新人進場",
         "description": "男女主角璀璨進場｜愛之雨星光燈海 💖",
         "clockStart": BANQUET_ENTRANCE_CLOCK,
-        "clockEnd": (12, 59),
+        "clockEnd": (12, 50),  # #239 @ 12:42
         "filmStartSec": 4 * 60 + 37,
         "filmEndSec": 17 * 60 + 31,
         "accent": "#e6c07a",
@@ -64,7 +75,7 @@ PHOTO_STAGES = [
         "label": "二進驚喜",
         "description": "浪漫開唱與熱舞表演 🕺💃",
         "clockStart": BANQUET_SECOND_ENTRANCE_CLOCK,
-        "clockEnd": (13, 29),
+        "clockEnd": (13, 50),  # #330 @ 13:44
         "filmStartSec": 17 * 60 + 31,
         "filmEndSec": 20 * 60 + 21,
         "accent": "#e0a86e",
@@ -74,7 +85,7 @@ PHOTO_STAGES = [
         "label": "互動遊戲",
         "description": "猜禮服、賓果、快問快答 🎲",
         "clockStart": BANQUET_GAMES_CLOCK,
-        "clockEnd": (13, 39),
+        "clockEnd": (14, 20),  # #439 @ 14:17
         "filmStartSec": 20 * 60 + 21,
         "filmEndSec": 47 * 60 + 35,
         "accent": "#9a8ed4",
@@ -84,7 +95,7 @@ PHOTO_STAGES = [
         "label": "逐桌敬酒",
         "description": "溫馨逐桌敬酒 🍷",
         "clockStart": BANQUET_TOAST_CLOCK,
-        "clockEnd": (14, 39),
+        "clockEnd": (14, 40),  # #518 @ 14:33
         "filmStartSec": 47 * 60 + 35,
         "filmEndSec": 53 * 60 + 35,
         "accent": "#a85858",
@@ -94,10 +105,21 @@ PHOTO_STAGES = [
         "label": "送客合照",
         "description": "幸福送客與合照 📷",
         "clockStart": BANQUET_FAREWELL_CLOCK,
-        "clockEnd": BANQUET_FAREWELL_CLOCK,
+        "clockEnd": (16, 0),  # #643 @ 15:51
         "filmStartSec": 53 * 60 + 35,
         "filmEndSec": 53 * 60 + 35,
         "accent": "#7a8eb0",
+    },
+    {
+        "id": "couple_portraits",
+        "label": "新人形象照",
+        "description": "新人形象寫真精選 ✨",
+        # 非宴席時段切點；僅供缺 EXIF 時插值。標題不顯示時鐘。
+        "clockStart": (12, 10),  # 最早一段 #103 @ 12:14
+        "clockEnd": (15, 50),  # 最末一段 #640 @ 15:50
+        "filmStartSec": 53 * 60 + 35,
+        "filmEndSec": 53 * 60 + 35,
+        "accent": "#b08a6a",
     },
 ]
 
@@ -109,12 +131,13 @@ STAGE_LABELS = {s["id"]: s["label"] for s in PHOTO_STAGES}
 STAGE_DESCRIPTIONS = {s["id"]: s["description"] for s in PHOTO_STAGES}
 
 STAGE_TAGS = {
-    "opening_mermaid": ["開場"],
+    "opening_mermaid": ["開場", "綵排"],
     "grand_entrance": ["進場", "一進"],
     "second_entrance": ["二進"],
     "interactive_games": ["互動遊戲", "猜禮服", "賓果", "快問快答"],
     "table_toast": ["敬酒", "逐桌敬酒"],
     "farewell": ["送客", "送客合照"],
+    "couple_portraits": ["形象照", "新人形象"],
 }
 
 # 預先展開各章節的照片編號（用於時間插值）
@@ -125,20 +148,26 @@ def _in_range(n: int, start: int, end: int) -> bool:
     return start <= n <= end
 
 
+def is_couple_portrait(sort_index: int) -> bool:
+    return any(_in_range(sort_index, a, b) for a, b in COUPLE_PORTRAIT_RANGES)
+
+
 def assign_stage_from_sort_index(sort_index: int, min_index: int = 0, max_index: int = 0) -> str:
     n = sort_index
-    if _in_range(n, 14, 33) or _in_range(n, 107, 278):
+    if is_couple_portrait(n):
+        return "couple_portraits"
+    if n <= 102:
+        return "opening_mermaid"  # 含 #14–33 進場綵排
+    if _in_range(n, 107, 239):
         return "grand_entrance"
-    if n <= 106 and not _in_range(n, 14, 33):
-        return "opening_mermaid"
-    if _in_range(n, 279, 329):
+    if _in_range(n, 279, 330):
         return "second_entrance"
-    if _in_range(n, 330, 442):
+    if _in_range(n, 331, 439):
         return "interactive_games"
-    if _in_range(n, 443, 521):
+    if _in_range(n, 440, 518):
         return "table_toast"
-    if n >= 522:
-        return "farewell"
+    if n >= 526:
+        return "farewell"  # 含 #641–643
     return "opening_mermaid"
 
 
@@ -210,6 +239,8 @@ def video_time_for_sort_index(sort_index: int, min_index: int = 0, max_index: in
 
 
 def stage_clock_time(stage_id: str) -> str:
+    if stage_id == "couple_portraits":
+        return ""  # 非宴席時段切點，標題不顯示時鐘
     stage = STAGE_BY_ID.get(stage_id)
     if not stage:
         return "12:00"
@@ -217,7 +248,11 @@ def stage_clock_time(stage_id: str) -> str:
 
 
 STAGE_TITLES = {
-    sid: f"{stage_clock_time(sid)} {STAGE_LABELS[sid]}"
+    sid: (
+        STAGE_LABELS[sid]
+        if sid == "couple_portraits"
+        else f"{stage_clock_time(sid)} {STAGE_LABELS[sid]}"
+    )
     for sid in STAGE_ORDER
 }
 

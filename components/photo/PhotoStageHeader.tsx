@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { WeddingStage } from '../../types';
-import { getStageFilmMarker } from '../../utils/weddingFilm';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { chapterLabel } from '../../utils/photoTheme';
+import {
+  getStageAccent,
+  getStageDescription,
+  getStageLabel,
+  getStageNavTime,
+  stageHasFilm,
+} from '../../utils/photoStageMeta';
 
 interface PhotoStageHeaderProps {
   stage: WeddingStage;
@@ -28,9 +34,11 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [descOpen, setDescOpen] = useState(!isMobile && !compact);
-  const marker = getStageFilmMarker(stage.id);
-  const accent = marker?.accent ?? 'var(--photo-accent)';
-  const stageLabel = stage.title.replace(/^\d{1,2}:\d{2}\s*/, '') || stage.title;
+  const accent = getStageAccent(stage.id);
+  const hasFilm = stageHasFilm(stage.id);
+  const stageLabel = getStageLabel(stage.id, stage.title);
+  const navTime = getStageNavTime(stage.id, stage.time);
+  const description = getStageDescription(stage.id, stage.description);
   const countLabel =
     visibleCount != null && visibleCount < photoCount
       ? `已顯示 ${visibleCount} / 共 ${photoCount} 張`
@@ -43,7 +51,7 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
       viewport={{ once: true, margin: '-10%' }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={`photo-stage-header relative overflow-hidden rounded-2xl border border-white/10 ${
-        compact ? 'mb-3 py-3 pl-4 pr-3' : 'mb-6 px-5 py-6 md:px-8 md:py-8'
+        compact ? 'mb-3 py-3 pl-4 pr-3' : 'mb-0 px-5 py-6 md:px-8 md:py-8'
       }`}
       style={{
         background: compact
@@ -72,37 +80,47 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
         aria-hidden
       />
 
-      <div className={`relative flex ${
-        compact
-          ? 'items-start justify-between gap-3'
-          : 'flex-col gap-4 md:flex-row md:items-end md:justify-between'
-      }`}>
+      <div
+        className={`relative flex ${
+          compact
+            ? 'items-start justify-between gap-3'
+            : 'flex-col gap-4 md:flex-row md:items-end md:justify-between'
+        }`}
+      >
         <div className={`min-w-0 ${compact ? 'flex-1' : ''}`}>
           <p className={`tracking-wide text-white/45 ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {compact ? chapterLabel(index, stageLabel) : `CHAPTER ${String(index + 1).padStart(2, '0')}`}
           </p>
-          <div className={`mt-1 flex min-w-0 items-baseline gap-x-2 ${compact ? 'flex-nowrap' : 'flex-wrap gap-y-1 md:gap-x-3'}`}>
-            <span
-              className={`shrink-0 font-mono font-light tabular-nums ${
+          <div
+            className={`mt-1 flex min-w-0 items-baseline gap-x-2 ${
+              compact ? 'flex-nowrap' : 'flex-wrap gap-y-1 md:gap-x-3'
+            }`}
+          >
+            {navTime && (
+              <span
+                className={`shrink-0 font-mono font-light tabular-nums ${
+                  compact ? 'text-lg' : 'text-xl md:text-3xl'
+                }`}
+                style={{ color: accent }}
+              >
+                {navTime}
+              </span>
+            )}
+            <h2
+              className={`min-w-0 truncate font-serif text-white ${
                 compact ? 'text-lg' : 'text-xl md:text-3xl'
               }`}
-              style={{ color: accent }}
             >
-              {stage.time}
-            </span>
-            <h2 className={`min-w-0 truncate font-serif text-white ${
-              compact ? 'text-lg' : 'text-xl md:text-3xl'
-            }`}>{stageLabel}</h2>
+              {stageLabel}
+            </h2>
           </div>
-          {(stage.description || marker?.description) && (
+          {description && (
             <div className={compact ? 'mt-1' : 'mt-2'}>
               {compact ? (
-                <p className="truncate text-xs leading-relaxed text-white/55">
-                  {stage.description || marker?.description}
-                </p>
+                <p className="truncate text-xs leading-relaxed text-white/55">{description}</p>
               ) : descOpen || !isMobile ? (
                 <p className="max-w-xl text-sm leading-relaxed text-white/70 md:text-base">
-                  {stage.description || marker?.description}
+                  {description}
                 </p>
               ) : (
                 <button
@@ -110,25 +128,29 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
                   onClick={() => setDescOpen(true)}
                   className="text-xs text-white/45"
                 >
-                  {stage.description || marker?.description} ▾
+                  {description} ▾
                 </button>
               )}
             </div>
           )}
-          <p className={`text-white/40 ${compact ? 'mt-1 text-[10px]' : 'mt-2 text-xs'}`}>{countLabel}</p>
+          <p className={`text-white/40 ${compact ? 'mt-1 text-[10px]' : 'mt-2 text-xs'}`}>
+            {countLabel}
+          </p>
         </div>
 
         {compact && (
           <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
-            <button
-              type="button"
-              onClick={() => onWatchVideo(stage.id)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)]/20 text-xs text-[var(--photo-gold-light)] transition active:scale-95 active:bg-[var(--photo-accent)]/35"
-              aria-label={`播放${stageLabel}影片`}
-              title={`播放${stageLabel}影片`}
-            >
-              ▶
-            </button>
+            {hasFilm && (
+              <button
+                type="button"
+                onClick={() => onWatchVideo(stage.id)}
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--photo-accent)]/45 bg-[var(--photo-accent)]/20 text-xs text-[var(--photo-gold-light)] transition active:scale-95 active:bg-[var(--photo-accent)]/35"
+                aria-label={`播放${stageLabel}影片`}
+                title={`播放${stageLabel}影片`}
+              >
+                ▶
+              </button>
+            )}
             {onExpandPhotos && (
               <button
                 type="button"
@@ -143,21 +165,35 @@ export const PhotoStageHeader: React.FC<PhotoStageHeaderProps> = ({
           </div>
         )}
 
-        {!compact && (
-          <button
-            type="button"
-            onClick={() => onWatchVideo(stage.id)}
-            className="photo-film-btn group flex shrink-0 items-center gap-2.5 self-start rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10 md:self-auto"
-          >
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
-              style={{ background: `color-mix(in srgb, ${accent} 55%, transparent)` }}
-              aria-hidden
-            >
-              ▶
-            </span>
-            <span>播放這段影片</span>
-          </button>
+        {!compact && (hasFilm || onExpandPhotos) && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 self-start md:self-auto">
+            {hasFilm && (
+              <button
+                type="button"
+                onClick={() => onWatchVideo(stage.id)}
+                className="photo-film-btn group flex items-center gap-2.5 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10 md:px-5 md:py-2.5"
+              >
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                  style={{ background: `color-mix(in srgb, ${accent} 55%, transparent)` }}
+                  aria-hidden
+                >
+                  ▶
+                </span>
+                <span>播放影片</span>
+              </button>
+            )}
+            {onExpandPhotos && (
+              <button
+                type="button"
+                onClick={onExpandPhotos}
+                className="photo-stage-cta flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium md:px-5 md:py-2.5"
+              >
+                進入本章
+                <span aria-hidden>↗</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
     </motion.header>

@@ -9,6 +9,7 @@ import { PhotoSearchBar } from '../components/photo/PhotoSearchBar';
 import { PhotoLightbox } from '../components/photo/PhotoLightbox';
 import { PhotoVideoPlayer } from '../components/photo/PhotoVideoPlayer';
 import { PhotoChapterRail } from '../components/photo/PhotoChapterRail';
+import { PhotoBrowseFilm } from '../components/photo/PhotoBrowseFilm';
 import {
   EMPTY_FILTER,
   filterPhotos,
@@ -19,7 +20,11 @@ import {
 } from '../utils/photoFilters';
 import { formatTableFilterTitle } from '../utils/tableLabels';
 import { getLightboxDisplayUrl } from '../utils/photoUrls';
-import { getStageFilmMarker, getStageFilmStart } from '../utils/weddingFilm';
+import {
+  getStageAccent,
+  getStageLabel,
+  stageHasFilm,
+} from '../utils/photoStageMeta';
 import { addRecentSearch } from '../utils/photoRecentSearch';
 import {
   DEFAULT_ANCHOR_OFFSET_PX,
@@ -31,7 +36,7 @@ import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useWeddingPhotos } from '../hooks/useWeddingPhotos';
 import { usePhotoBulkDownload } from '../hooks/usePhotoBulkDownload';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { readFilmExpanded } from '../utils/photoTheme';
+import { readFilmExpanded, writeFilmExpanded } from '../utils/photoTheme';
 import type { NameSearchScope, PhotoFilter, WeddingPhoto } from '../types';
 
 function GridSkeleton({ compact = false }: { compact?: boolean }) {
@@ -91,34 +96,25 @@ const PhotoPage: React.FC = () => {
   const stages = data?.WEDDING_STAGES ?? [];
   const allPhotos = data?.ALL_WEDDING_PHOTOS ?? [];
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
-  const featuredGuestPhotos = useMemo(() => {
-    const names = ['李謦伊', '張家銘'];
-    return Object.fromEntries(
-      names.map((name) => [
-        name,
-        allPhotos.find(
-          (photo) => photo.names.length === 1 && photo.names[0] === name
-        )?.publicId,
-      ])
-    );
-  }, [allPhotos]);
-  const heroCoverIds = useMemo(
-    () =>
-      allPhotos
-        .filter((photo) =>
-          photo.names.includes('張家銘') && photo.names.includes('李謦伊')
-        )
-        .slice(0, 8)
-        .map((photo) => photo.publicId),
-    [allPhotos]
+  const featuredGuestPhotos = useMemo(
+    () => ({
+      張家銘: 'wedding_20260530/260530-103',
+      李謦伊: 'wedding_20260530/260530-272',
+    }),
+    []
   );
+  const heroCoverIds = useMemo(() => {
+    const curated = data?.HERO_COVER_PUBLIC_IDS ?? [];
+    if (curated.length > 0) return [...curated];
+    return heroCoverId ? [heroCoverId] : [];
+  }, [data?.HERO_COVER_PUBLIC_IDS, heroCoverId]);
 
   const navItems = useMemo(
     () =>
       stages.map((s) => ({
         id: s.id,
         time: s.time,
-        label: s.title.replace(/^\d{1,2}:\d{2}\s*/, '') || s.title,
+        label: getStageLabel(s.id, s.title),
       })),
     [stages]
   );
@@ -151,9 +147,28 @@ const PhotoPage: React.FC = () => {
   useEffect(() => {
     if (!chapterFocusId) return;
     requestAnimationFrame(() => {
-      galleryRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+      if (useDockLayout && galleryRef.current) {
+        galleryRef.current.scrollTo({ top: 0, behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
     });
+  }, [chapterFocusId, useDockLayout]);
+
+  useEffect(() => {
+    if (!filmStageRequest || !stageHasFilm(filmStageRequest)) return;
+    setFilmExpanded(true);
+  }, [filmStageRequest]);
+
+  useEffect(() => {
+    if (!chapterFocusId) return;
+    setFilmExpanded(false);
+    setFilmStageRequest(null);
   }, [chapterFocusId]);
+
+  useEffect(() => {
+    writeFilmExpanded(filmExpanded);
+  }, [filmExpanded]);
 
   const handleStageSelect = useCallback(
     (stageId: string) => {
@@ -183,7 +198,7 @@ const PhotoPage: React.FC = () => {
     setGalleryEl(galleryRef.current);
   }, [loading, useDockLayout]);
 
-  const activeMarker = getStageFilmMarker(activeStageId);
+  const activeAccent = getStageAccent(activeStageId);
 
   const displayPhotos = filteredPhotos ?? allPhotos;
   const currentFilterLabel = filterLabel(filter);
@@ -218,22 +233,11 @@ const PhotoPage: React.FC = () => {
 
   const openVideo = useCallback(
     (stageId: string) => {
-      if (useDockLayout) {
-        setFilmStageRequest(stageId);
-        handleStageSelect(stageId);
-        return;
-      }
-      const marker = getStageFilmMarker(stageId);
-      const stage = stages.find((s) => s.id === stageId);
-      setVideoState({
-        startSec: getStageFilmStart(stageId),
-        title: stage?.title.replace(/^\d{1,2}:\d{2}\s*/, '') || marker?.label || '婚宴影片',
-        subtitle: marker
-          ? `影片 ${marker.filmTime} · ${stage?.description || marker.description}`
-          : stage?.description,
-      });
+      if (!stageHasFilm(stageId)) return;
+      setFilmStageRequest(stageId);
+      handleStageSelect(stageId);
     },
-    [stages, useDockLayout, handleStageSelect]
+    [handleStageSelect]
   );
 
   const openFullFilm = useCallback(() => {
@@ -447,7 +451,61 @@ const PhotoPage: React.FC = () => {
     }
   }, [filter, isFiltered]);
 
-  const hideSearchBar = !!selectedPhoto || !!videoState || useDockLayout;
+  const hideSearchBar =
+    !!selectedPhoto || !!videoState || useDockLayout || (!useDockLayout && filmExpanded);
+  const compactHeaders = useDockLayout || !!chapterFocusId;
+  const showChapterRail =
+    !isFiltered && !chapterFocusId && !loading && navItems.length > 1;
+  const showDesktopBrowseChrome =
+    !useDockLayout && !isFiltered && !chapterFocusId && !loading && (showNav || filmExpanded);
+  const isDesktopWatching = !useDockLayout && (filmExpanded || !!videoState);
+  const visibleStages = chapterFocusId
+    ? stages.filter((stage) => stage.id === chapterFocusId)
+    : stages;
+
+  const masonryGridProps = {
+    stages: visibleStages,
+    filteredPhotos,
+    isFiltered,
+    onPhotoClick: openPhoto,
+    onTagClick: handleTagClick,
+    onNameClick: handleNameClick,
+    onWatchVideo: openVideo,
+    onEnterChapter: handleEnterChapter,
+    showAllPhotos: !!chapterFocusId,
+    registerSection,
+    filterLabel: currentFilterLabel,
+    onDownloadAll: handleDownloadAll,
+    onShareFilter: handleShareFilter,
+    downloading,
+    downloadProgress,
+    compactHeaders,
+    nameScope: filter.nameScope,
+    onNameScopeChange: handleNameScopeChange,
+    guestTable: nameGuestTable,
+    showNameScope: useDockLayout ? false : showNameScope,
+  };
+
+  const searchBarProps = {
+    resultCount: isFiltered ? displayPhotos.length : null,
+    hasFilter: isFiltered,
+    filterLabel: currentFilterLabel,
+    autoExpand: expandSearch,
+    onExpandHandled: () => setExpandSearch(false),
+    onSearch: handleQuickSearch,
+    onTagSearch: handleTagClick,
+    onTableSelect: handleTableSelect,
+    onClearFilter: handleClearFilter,
+    onDownloadAll: isFiltered ? handleDownloadAll : undefined,
+    onShareFilter: isFiltered ? handleShareFilter : undefined,
+    downloading,
+    downloadProgress,
+    nameScope: filter.nameScope,
+    onNameScopeChange: handleNameScopeChange,
+    guestTable: nameGuestTable,
+    featuredGuestPhotos,
+    showNameScope: useDockLayout ? false : showNameScope,
+  };
 
   if (error) {
     return (
@@ -463,12 +521,18 @@ const PhotoPage: React.FC = () => {
         useDockLayout ? 'flex h-dvh flex-col overflow-hidden' : 'min-h-screen'
       }`}
       style={
-        activeMarker && !isFiltered
-          ? ({ '--stage-glow': activeMarker.accent } as React.CSSProperties)
+        activeAccent && !isFiltered
+          ? ({ '--stage-glow': activeAccent } as React.CSSProperties)
           : undefined
       }
     >
       <div className="photo-ambient-glow pointer-events-none fixed inset-0 -z-10" aria-hidden />
+      {!useDockLayout && (
+        <>
+          <div className="photo-ambient-drift pointer-events-none fixed inset-0 -z-[9]" aria-hidden />
+          <div className="photo-ambient-grain-browse pointer-events-none fixed inset-0 -z-[8]" aria-hidden />
+        </>
+      )}
       <div className="fixed inset-0 -z-20 bg-[#0c0b0a]" aria-hidden />
 
       {useDockLayout ? (
@@ -507,67 +571,26 @@ const PhotoPage: React.FC = () => {
             ref={galleryRef}
             className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
           >
-            {!isFiltered && !chapterFocusId && !loading && navItems.length > 1 && (
+            {showChapterRail && (
               <PhotoChapterRail
                 items={navItems}
                 activeStageId={activeStageId}
                 onSelect={handleStageSelect}
                 filmExpanded={filmExpanded}
+                variant="mobile"
               />
             )}
             {loading ? (
               <GridSkeleton compact />
             ) : (
-              <PhotoMasonryGrid
-                stages={
-                  chapterFocusId
-                    ? stages.filter((stage) => stage.id === chapterFocusId)
-                    : stages
-                }
-                filteredPhotos={filteredPhotos}
-                isFiltered={isFiltered}
-                onPhotoClick={openPhoto}
-                onTagClick={handleTagClick}
-                onNameClick={handleNameClick}
-                onWatchVideo={openVideo}
-                onEnterChapter={handleEnterChapter}
-                showAllPhotos={!!chapterFocusId}
-                registerSection={registerSection}
-                filterLabel={currentFilterLabel}
-                onDownloadAll={handleDownloadAll}
-                onShareFilter={handleShareFilter}
-                downloading={downloading}
-                downloadProgress={downloadProgress}
-                compactHeaders
-                nameScope={filter.nameScope}
-                onNameScopeChange={handleNameScopeChange}
-                guestTable={nameGuestTable}
-                showNameScope={false}
-              />
+              <PhotoMasonryGrid {...masonryGridProps} />
             )}
           </div>
 
           <PhotoSearchBar
             variant="dock"
             hidden={!!selectedPhoto || !!videoState}
-            resultCount={isFiltered ? displayPhotos.length : null}
-            hasFilter={isFiltered}
-            filterLabel={currentFilterLabel}
-            autoExpand={expandSearch}
-            onExpandHandled={() => setExpandSearch(false)}
-            onSearch={handleQuickSearch}
-            onTagSearch={handleTagClick}
-            onTableSelect={handleTableSelect}
-            onClearFilter={handleClearFilter}
-            onDownloadAll={isFiltered ? handleDownloadAll : undefined}
-            onShareFilter={isFiltered ? handleShareFilter : undefined}
-            downloading={downloading}
-            downloadProgress={downloadProgress}
-            nameScope={filter.nameScope}
-            onNameScopeChange={handleNameScopeChange}
-            guestTable={nameGuestTable}
-            featuredGuestPhotos={featuredGuestPhotos}
-            showNameScope={false}
+            {...searchBarProps}
           />
         </>
       ) : (
@@ -600,11 +623,36 @@ const PhotoPage: React.FC = () => {
         onQuickSearch={() => setExpandSearch(true)}
       />
 
-      {showNav && !isFiltered && !chapterFocusId && !loading && navItems.length > 0 && (
-        <PhotoTimelineNav
+      {showDesktopBrowseChrome && navItems.length > 0 && (
+        <div
+          className={`photo-browse-chrome sticky top-0 z-30 ${
+            filmExpanded ? 'photo-browse-chrome--watching' : ''
+          }`}
+        >
+          <PhotoTimelineNav
+            items={navItems}
+            activeStageId={activeStageId}
+            onSelect={handleStageSelect}
+            isSticky={false}
+          />
+          <PhotoBrowseFilm
+            activeStageId={activeStageId}
+            filmStageRequest={filmStageRequest}
+            filmExpanded={filmExpanded}
+            onFilmExpandedChange={setFilmExpanded}
+            navItems={navItems}
+            cinema
+          />
+        </div>
+      )}
+
+      {showChapterRail && !useDockLayout && showNav && !isDesktopWatching && (
+        <PhotoChapterRail
           items={navItems}
           activeStageId={activeStageId}
           onSelect={handleStageSelect}
+          filmExpanded={filmExpanded}
+          variant="desktop"
         />
       )}
 
@@ -628,54 +676,10 @@ const PhotoPage: React.FC = () => {
       {loading ? (
         <GridSkeleton />
       ) : (
-        <PhotoMasonryGrid
-          stages={
-            chapterFocusId
-              ? stages.filter((stage) => stage.id === chapterFocusId)
-              : stages
-          }
-          filteredPhotos={filteredPhotos}
-          isFiltered={isFiltered}
-          onPhotoClick={openPhoto}
-          onTagClick={handleTagClick}
-          onNameClick={handleNameClick}
-          onWatchVideo={openVideo}
-          onEnterChapter={handleEnterChapter}
-          showAllPhotos={!!chapterFocusId}
-          registerSection={registerSection}
-          filterLabel={currentFilterLabel}
-          onDownloadAll={handleDownloadAll}
-          onShareFilter={handleShareFilter}
-          downloading={downloading}
-          downloadProgress={downloadProgress}
-          nameScope={filter.nameScope}
-          onNameScopeChange={handleNameScopeChange}
-          guestTable={nameGuestTable}
-          showNameScope={showNameScope}
-        />
+        <PhotoMasonryGrid {...masonryGridProps} />
       )}
 
-      <PhotoSearchBar
-        resultCount={isFiltered ? displayPhotos.length : null}
-        hasFilter={isFiltered}
-        filterLabel={currentFilterLabel}
-        hidden={hideSearchBar}
-        autoExpand={expandSearch}
-        onExpandHandled={() => setExpandSearch(false)}
-        onSearch={handleQuickSearch}
-        onTagSearch={handleTagClick}
-        onTableSelect={handleTableSelect}
-        onClearFilter={handleClearFilter}
-        onDownloadAll={handleDownloadAll}
-        onShareFilter={handleShareFilter}
-        downloading={downloading}
-        downloadProgress={downloadProgress}
-        nameScope={filter.nameScope}
-        onNameScopeChange={handleNameScopeChange}
-        guestTable={nameGuestTable}
-        featuredGuestPhotos={featuredGuestPhotos}
-        showNameScope={showNameScope}
-      />
+      <PhotoSearchBar hidden={hideSearchBar} {...searchBarProps} />
         </>
       )}
 

@@ -16,7 +16,7 @@ import {
 import { buildPhotoShareUrl, buildPhotoShareTitle } from '../../hooks/usePhotoDeepLink';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLightboxZoom } from '../../hooks/useLightboxZoom';
-import { getStageFilmMarker } from '../../utils/weddingFilm';
+import { getStageLabel } from '../../utils/photoStageMeta';
 import { PHOTO_THEME } from '../../utils/photoTheme';
 import { formatTableTag, formatTableTagShort } from '../../utils/tableLabels';
 
@@ -45,6 +45,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [viewportWidth, setViewportWidth] = useState(
     () => (typeof window !== 'undefined' ? window.innerWidth : 1200)
   );
+  const [devicePixelRatio, setDevicePixelRatio] = useState(
+    () => (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1)
+  );
   const [copied, setCopied] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -71,12 +74,12 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   } = useLightboxZoom(isMobile);
 
   const displayUrl = useMemo(
-    () => getLightboxDisplayUrl(photo.publicId, viewportWidth),
-    [photo.publicId, viewportWidth]
+    () => getLightboxDisplayUrl(photo.publicId, viewportWidth, devicePixelRatio),
+    [photo.publicId, viewportWidth, devicePixelRatio]
   );
   const zoomUrl = useMemo(
-    () => getLightboxZoomUrl(photo.publicId, viewportWidth),
-    [photo.publicId, viewportWidth]
+    () => getLightboxZoomUrl(photo.publicId, viewportWidth, devicePixelRatio),
+    [photo.publicId, viewportWidth, devicePixelRatio]
   );
   const isDisplayingZoom = isZoomed && zoomLoaded;
   const imageUrl = isDisplayingZoom ? zoomUrl : displayUrl;
@@ -93,9 +96,13 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [allPhotos, currentIndex, onChange]);
 
   useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const syncViewport = () => {
+      setViewportWidth(window.innerWidth);
+      setDevicePixelRatio(window.devicePixelRatio || 1);
+    };
+    syncViewport();
+    window.addEventListener('resize', syncViewport);
+    return () => window.removeEventListener('resize', syncViewport);
   }, []);
 
   useEffect(() => {
@@ -148,8 +155,8 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   }, [isZoomed, zoomLoaded, zoomUrl]);
 
   useEffect(() => {
-    preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth);
-  }, [allPhotos, currentIndex, viewportWidth]);
+    preloadLightboxNeighbors(allPhotos, currentIndex, viewportWidth, undefined, devicePixelRatio);
+  }, [allPhotos, currentIndex, viewportWidth, devicePixelRatio]);
 
   useEffect(() => {
     const el = filmstripRef.current?.querySelector(`[data-photo-id="${photo.id}"]`);
@@ -205,8 +212,7 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const filmstripPhotos = allPhotos.slice(windowStart, windowEnd);
 
   const blurUrl = getBlurUrl(photo.publicId);
-  const stageMarker = getStageFilmMarker(photo.stageId);
-  const stageLabel = stageMarker?.label ?? '';
+  const stageLabel = getStageLabel(photo.stageId);
   const imageTransition = isPreloaded ? { duration: 0.12 } : { duration: 0.22 };
 
   return (
