@@ -803,7 +803,7 @@ function App() {
                   </div>
                   <h3 className="font-serif text-2xl md:text-3xl text-[#2C3E50] mb-3">找回您的婚禮瞬間</h3>
                   <p className="text-stone-500 text-sm leading-relaxed mb-6 max-w-lg">
-                    支援桌號 1–27、姓名與親友關係搜尋。可下載原檔、分享給親友。
+                    支援桌號 1–27、姓名與親友關係搜尋。手機可存進相簿，也能分享給親友。
                   </p>
                   <span className="inline-flex items-center gap-2 self-start rounded-full bg-[#B08D55] px-6 py-2.5 text-sm font-semibold text-white group-hover:bg-[#9a7849] transition-colors">
                     進入婚禮相簿

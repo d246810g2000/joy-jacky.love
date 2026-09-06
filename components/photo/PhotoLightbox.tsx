@@ -283,8 +283,9 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               onClick={handleDownload}
               disabled={downloadingOne}
               className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10 disabled:opacity-60"
+              aria-label={isMobile ? '儲存照片到相簿' : '下載照片'}
             >
-              {downloadingOne ? '下載中…' : '下載'}
+              {downloadingOne ? (isMobile ? '準備中…' : '下載中…') : isMobile ? '儲存' : '下載'}
             </button>
             <button
               type="button"

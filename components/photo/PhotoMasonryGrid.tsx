@@ -24,7 +24,13 @@ interface PhotoMasonryGridProps {
   onDownloadAll?: () => void;
   onShareFilter?: () => void;
   downloading?: boolean;
-  downloadProgress?: { done: number; total: number } | null;
+  downloadProgress?: {
+    done: number;
+    total: number;
+    part?: number;
+    parts?: number;
+    mode?: 'zip' | 'share';
+  } | null;
   compactHeaders?: boolean;
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
@@ -223,12 +229,16 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                   className="rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/15 px-4 py-2 text-xs font-medium text-[var(--photo-gold-light)] active:bg-[var(--photo-accent)]/25 disabled:opacity-60"
                 >
                   {downloading && downloadProgress
-                    ? `下載中 ${downloadProgress.done}/${downloadProgress.total}${
+                    ? `${downloadProgress.mode === 'share' ? '準備中' : '下載中'} ${downloadProgress.done}/${downloadProgress.total}${
                         downloadProgress.parts && downloadProgress.parts > 1
-                          ? ` (${downloadProgress.part}/${downloadProgress.parts}包)`
+                          ? ` (${downloadProgress.part}/${downloadProgress.parts}${
+                              downloadProgress.mode === 'share' ? '批' : '包'
+                            })`
                           : ''
                       }`
-                    : `↓ 下載精選 (${filteredPhotos.length})`}
+                    : isMobile
+                      ? `儲存到相簿 (${filteredPhotos.length})`
+                      : `↓ 下載精選 (${filteredPhotos.length})`}
                 </button>
               )}
             </div>

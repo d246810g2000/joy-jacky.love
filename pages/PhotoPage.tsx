@@ -725,17 +725,25 @@ const PhotoPage: React.FC = () => {
 
       {downloading && downloadProgress && (
         <div className="pointer-events-none fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
-          正在下載精選高清
+          {downloadProgress.mode === 'share'
+            ? downloadProgress.phase === 'share'
+              ? '請選「儲存影像」存到相簿'
+              : '正在準備照片'
+            : '正在下載精選高清'}
           <span className="mt-1 block font-mono text-xs text-white/70">
             {downloadProgress.done}/{downloadProgress.total}
             {downloadProgress.parts && downloadProgress.parts > 1
-              ? ` · 第 ${downloadProgress.part}/${downloadProgress.parts} 包`
+              ? downloadProgress.mode === 'share'
+                ? ` · 第 ${downloadProgress.part}/${downloadProgress.parts} 批`
+                : ` · 第 ${downloadProgress.part}/${downloadProgress.parts} 包`
               : ''}
             {downloadProgress.phase === 'zip'
               ? ' · 打包中'
-              : downloadProgress.phase === 'save'
-                ? ' · 儲存中'
-                : ''}
+              : downloadProgress.phase === 'share'
+                ? ' · 等待選單'
+                : downloadProgress.phase === 'save'
+                  ? ' · 儲存中'
+                  : ''}
           </span>
         </div>
       )}
