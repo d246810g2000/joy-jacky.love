@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import './styles.css';
 import App from './App';
 import RSVPPage from './pages/RSVPPage';
 import InvitationCardPage from './pages/InvitationCardPage';

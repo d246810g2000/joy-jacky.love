@@ -99,8 +99,15 @@ const PhotoPage: React.FC = () => {
   const heroCoverId = data?.HERO_COVER_PUBLIC_ID ?? 'disney-v-01';
   const featuredGuestPhotos = useMemo(
     () => ({
-      張家銘: 'wedding_20260530/260530-103',
-      李謦伊: 'wedding_20260530/260530-272',
+      // 依 face_index 座標緊裁頭像，避免全身照讓臉在圓框裡偏小
+      張家銘: {
+        publicId: 'wedding_20260530/260530-103',
+        face: { x: 0.3591, y: 0.2862, w: 0.1831, h: 0.1737 },
+      },
+      李謦伊: {
+        publicId: 'wedding_20260530/260530-28',
+        face: { x: 0.3405, y: 0.145, w: 0.3172, h: 0.272 },
+      },
     }),
     []
   );
@@ -476,6 +483,7 @@ const PhotoPage: React.FC = () => {
     showAllPhotos: !!chapterFocusId,
     registerSection,
     filterLabel: currentFilterLabel,
+    filter,
     onDownloadAll: handleDownloadAll,
     onShareFilter: handleShareFilter,
     downloading,
@@ -712,6 +720,23 @@ const PhotoPage: React.FC = () => {
           >
             知道了
           </button>
+        </div>
+      )}
+
+      {downloading && downloadProgress && (
+        <div className="pointer-events-none fixed bottom-24 left-1/2 z-[60] w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border border-[var(--photo-accent)]/35 bg-[#141210]/95 px-4 py-3 text-center text-sm text-[var(--photo-gold-light)] shadow-xl backdrop-blur-md photo-safe-bottom">
+          正在下載精選高清
+          <span className="mt-1 block font-mono text-xs text-white/70">
+            {downloadProgress.done}/{downloadProgress.total}
+            {downloadProgress.parts && downloadProgress.parts > 1
+              ? ` · 第 ${downloadProgress.part}/${downloadProgress.parts} 包`
+              : ''}
+            {downloadProgress.phase === 'zip'
+              ? ' · 打包中'
+              : downloadProgress.phase === 'save'
+                ? ' · 儲存中'
+                : ''}
+          </span>
         </div>
       )}
 

@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { PhotoFilter, WeddingPhoto } from '../../types';
 import {
   getBlurUrl,
+  getDownloadUrl,
   getLightboxDisplayUrl,
   getLightboxZoomUrl,
-  getOriginalUrl,
   getThumbUrl,
 } from '../../utils/photoUrls';
+import { downloadSinglePhoto } from '../../utils/photoDownload';
 import {
   isImagePreloaded,
   preloadImageUrl,
@@ -18,9 +19,19 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { useLightboxZoom } from '../../hooks/useLightboxZoom';
 import { getStageLabel } from '../../utils/photoStageMeta';
 import { PHOTO_THEME } from '../../utils/photoTheme';
+import {
+  getPrioritizedPhotoMeta,
+  photoNameMatchScore,
+  photoTableMatchScore,
+} from '../../utils/photoMetaDisplay';
 import { formatTableTag, formatTableTagShort } from '../../utils/tableLabels';
 
 const FILMSTRIP_WINDOW = 15;
+/** 燈箱手機：約兩排 chip；桌機空間大可多顯示 */
+const LIGHTBOX_MOBILE_NAME_CHIPS = 6;
+const LIGHTBOX_MOBILE_TABLE_CHIPS = 4;
+const LIGHTBOX_DESKTOP_NAME_CHIPS = 14;
+const LIGHTBOX_DESKTOP_TABLE_CHIPS = 8;
 
 interface PhotoLightboxProps {
   photo: WeddingPhoto;
@@ -54,13 +65,27 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
   const [zoomLoaded, setZoomLoaded] = useState(false);
   const [zoomLoading, setZoomLoading] = useState(false);
   const [expandedMeta, setExpandedMeta] = useState<'names' | 'tables' | null>(null);
+  const [downloadingOne, setDownloadingOne] = useState(false);
   const zoomRequestedRef = useRef(false);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const currentIndex = allPhotos.findIndex((p) => p.id === photo.id);
 
+  const { names: orderedNames, tables: orderedTables } = useMemo(
+    () => getPrioritizedPhotoMeta(photo, filter),
+    [photo, filter]
+  );
+  const nameChipLimit = isMobile ? LIGHTBOX_MOBILE_NAME_CHIPS : LIGHTBOX_DESKTOP_NAME_CHIPS;
+  const tableChipLimit = isMobile ? LIGHTBOX_MOBILE_TABLE_CHIPS : LIGHTBOX_DESKTOP_TABLE_CHIPS;
+  const visibleNames =
+    expandedMeta === 'names' ? orderedNames : orderedNames.slice(0, nameChipLimit);
+  const visibleTables =
+    expandedMeta === 'tables' ? orderedTables : orderedTables.slice(0, tableChipLimit);
+  const hiddenNameCount = Math.max(0, orderedNames.length - nameChipLimit);
+  const hiddenTableCount = Math.max(0, orderedTables.length - tableChipLimit);
+
   useEffect(() => {
     setExpandedMeta(null);
-  }, [photo.id]);
+  }, [photo.id, filter?.name, filter?.tag, filter?.table, filter?.query]);
 
   const {
     scale,
@@ -198,13 +223,20 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const a = document.createElement('a');
-    a.href = getOriginalUrl(photo.publicId);
-    a.download = `${photo.id}.jpg`;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.click();
+  const handleDownload = async () => {
+    if (downloadingOne) return;
+    setDownloadingOne(true);
+    try {
+      await downloadSinglePhoto(photo, 'print');
+    } catch {
+      const a = document.createElement('a');
+      a.href = getDownloadUrl(photo.publicId, 'print');
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+    } finally {
+      setDownloadingOne(false);
+    }
   };
 
   const windowStart = Math.max(0, currentIndex - FILMSTRIP_WINDOW);
@@ -249,9 +281,10 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
             <button
               type="button"
               onClick={handleDownload}
-              className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10"
+              disabled={downloadingOne}
+              className="rounded-lg px-3 py-1.5 text-sm hover:bg-white/10 disabled:opacity-60"
             >
-              {isMobile ? '下載' : '下載原圖'}
+              {downloadingOne ? '下載中…' : '下載'}
             </button>
             <button
               type="button"
@@ -384,52 +417,76 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
       </div>
 
       <footer className="shrink-0 space-y-2 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {photo.names.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {(expandedMeta === 'names' ? photo.names : photo.names.slice(0, 2)).map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => onNameClick?.(name)}
-                className="rounded-full border border-[#B08D55]/50 bg-[#B08D55]/20 px-2.5 py-0.5 text-xs text-[#F5E6C8]"
-              >
-                {name}
-              </button>
-            ))}
-            {photo.names.length > 2 && (
+        {orderedNames.length > 0 && (
+          <div
+            className={`flex flex-wrap content-start gap-1.5 ${
+              expandedMeta === 'names' ? '' : 'max-h-[3.75rem] overflow-hidden md:max-h-[4.5rem]'
+            }`}
+          >
+            {visibleNames.map((name) => {
+              const matched = photoNameMatchScore(name, filter) > 0;
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => onNameClick?.(name)}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                    matched
+                      ? 'border-[#B08D55]/70 bg-[#B08D55]/30 text-[#F5E6C8]'
+                      : 'border-[#B08D55]/50 bg-[#B08D55]/20 text-[#F5E6C8]'
+                  }`}
+                >
+                  {name}
+                </button>
+              );
+            })}
+            {hiddenNameCount > 0 && (
               <button
                 type="button"
                 onClick={() => setExpandedMeta(expandedMeta === 'names' ? null : 'names')}
                 className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/55"
                 aria-expanded={expandedMeta === 'names'}
               >
-                {expandedMeta === 'names' ? '−' : `+${photo.names.length - 2}`}
+                {expandedMeta === 'names' ? '−' : `+${hiddenNameCount}`}
               </button>
             )}
           </div>
         )}
 
-        {photo.tables.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {(expandedMeta === 'tables' ? photo.tables : photo.tables.slice(0, 2)).map((table) => (
-              <button
-                key={table}
-                type="button"
-                onClick={() => onTagClick?.(formatTableTag(table).replace(/^#/, ''))}
-                className="rounded-full border border-white/12 bg-white/5 px-2.5 py-0.5 text-xs text-white/72"
-                title={formatTableTag(table)}
-              >
-                {expandedMeta === 'tables' ? formatTableTag(table) : formatTableTagShort(table)}
-              </button>
-            ))}
-            {photo.tables.length > 2 && (
+        {orderedTables.length > 0 && (
+          <div
+            className={`flex flex-wrap content-start gap-1.5 ${
+              expandedMeta === 'tables' ? '' : 'max-h-[3.75rem] overflow-hidden md:max-h-[4.5rem]'
+            }`}
+          >
+            {visibleTables.map((table) => {
+              const matched = photoTableMatchScore(table, filter) > 0;
+              return (
+                <button
+                  key={table}
+                  type="button"
+                  onClick={() => onTagClick?.(formatTableTag(table).replace(/^#/, ''))}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                    matched
+                      ? 'border-white/25 bg-white/12 text-white/90'
+                      : 'border-white/12 bg-white/5 text-white/72'
+                  }`}
+                  title={formatTableTag(table)}
+                >
+                  {expandedMeta === 'tables' || !isMobile
+                    ? formatTableTag(table)
+                    : formatTableTagShort(table)}
+                </button>
+              );
+            })}
+            {hiddenTableCount > 0 && (
               <button
                 type="button"
                 onClick={() => setExpandedMeta(expandedMeta === 'tables' ? null : 'tables')}
                 className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs text-white/55"
                 aria-expanded={expandedMeta === 'tables'}
               >
-                {expandedMeta === 'tables' ? '−' : `+${photo.tables.length - 2}`}
+                {expandedMeta === 'tables' ? '−' : `+${hiddenTableCount}`}
               </button>
             )}
           </div>

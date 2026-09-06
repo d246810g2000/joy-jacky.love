@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { WeddingPhoto, WeddingStage } from '../../types';
+import type { NameSearchScope, PhotoFilter, WeddingPhoto, WeddingStage } from '../../types';
 import { PhotoCard } from './PhotoCard';
 import { PhotoStageHeader } from './PhotoStageHeader';
 import { FILTER_PAGE_SIZE, STAGE_PAGE_SIZE, usePhotoBatch } from '../../hooks/usePhotoBatch';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import type { NameSearchScope } from '../../types';
 import { getStageAccent } from '../../utils/photoStageMeta';
 import { PhotoNameScopeBar } from './PhotoNameScopeBar';
 
@@ -21,6 +20,7 @@ interface PhotoMasonryGridProps {
   showAllPhotos?: boolean;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   filterLabel?: string | null;
+  filter?: PhotoFilter | null;
   onDownloadAll?: () => void;
   onShareFilter?: () => void;
   downloading?: boolean;
@@ -58,6 +58,7 @@ function StageSection({
   showAllPhotos = false,
   registerSection,
   compactHeaders = false,
+  filter = null,
 }: {
   stage: WeddingStage;
   index: number;
@@ -69,6 +70,7 @@ function StageSection({
   showAllPhotos?: boolean;
   registerSection: (id: string) => (el: HTMLElement | null) => void;
   compactHeaders?: boolean;
+  filter?: PhotoFilter | null;
 }) {
   const isMobile = useIsMobile();
   const total = stage.photos.length;
@@ -116,6 +118,7 @@ function StageSection({
               onNameClick={onNameClick}
               dark
               compact
+              filter={filter}
             />
           ) : (
             <motion.div
@@ -131,6 +134,7 @@ function StageSection({
                 onTagClick={onTagClick}
                 onNameClick={onNameClick}
                 dark
+                filter={filter}
               />
             </motion.div>
           )
@@ -162,6 +166,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
   showAllPhotos = false,
   registerSection,
   filterLabel,
+  filter = null,
   onDownloadAll,
   onShareFilter,
   downloading = false,
@@ -218,8 +223,12 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                   className="rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/15 px-4 py-2 text-xs font-medium text-[var(--photo-gold-light)] active:bg-[var(--photo-accent)]/25 disabled:opacity-60"
                 >
                   {downloading && downloadProgress
-                    ? `打包中 ${downloadProgress.done}/${downloadProgress.total}`
-                    : `↓ 下載全部 (${filteredPhotos.length})`}
+                    ? `下載中 ${downloadProgress.done}/${downloadProgress.total}${
+                        downloadProgress.parts && downloadProgress.parts > 1
+                          ? ` (${downloadProgress.part}/${downloadProgress.parts}包)`
+                          : ''
+                      }`
+                    : `↓ 下載精選 (${filteredPhotos.length})`}
                 </button>
               )}
             </div>
@@ -252,6 +261,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
                   onNameClick={onNameClick}
                   dark
                   compact={compactHeaders}
+                  filter={filter}
                 />
               ))}
             </div>
@@ -282,6 +292,7 @@ export const PhotoMasonryGrid: React.FC<PhotoMasonryGridProps> = ({
           showAllPhotos={showAllPhotos}
           registerSection={registerSection}
           compactHeaders={compactHeaders}
+          filter={filter}
         />
       ))}
       {compactHeaders && !omitEndSpacer && <div className="h-[45vh] shrink-0" aria-hidden />}

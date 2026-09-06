@@ -25,7 +25,10 @@ interface PhotoSearchBarProps {
   nameScope?: NameSearchScope;
   onNameScopeChange?: (scope: NameSearchScope) => void;
   guestTable?: number | null;
-  featuredGuestPhotos?: Record<string, string | undefined>;
+  featuredGuestPhotos?: Record<
+    string,
+    { publicId: string; face: { x: number; y: number; w: number; h: number } } | undefined
+  >;
   showNameScope?: boolean;
 }
 
@@ -480,7 +483,11 @@ export const PhotoSearchBar: React.FC<PhotoSearchBarProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
               </svg>
               {downloading && downloadProgress
-                ? `${downloadProgress.done}/${downloadProgress.total}`
+                ? `${downloadProgress.done}/${downloadProgress.total}${
+                    downloadProgress.parts && downloadProgress.parts > 1
+                      ? `·${downloadProgress.part}/${downloadProgress.parts}`
+                      : ''
+                  }`
                 : '下載'}
             </button>
           )}

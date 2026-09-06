@@ -17,9 +17,46 @@ export const getBlurUrl = (publicId: string) =>
 export const getThumbUrl = (publicId: string, width = 96) =>
   buildUrl(publicId, `f_auto,q_auto:eco,w_${width},h_${width},c_fill`);
 
-/** 搜尋姓名頭像 — 由 Cloudinary 自動裁切臉部 */
-export const getFaceAvatarUrl = (publicId: string, size = 160) =>
-  buildUrl(publicId, `f_auto,q_auto:good,w_${size},h_${size},c_fill,g_face`);
+/** 正規化臉框（相對整張圖 0–1） */
+export type FaceBoxNorm = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+/** 把臉框擴成正方形頭像裁切區（pad > 1 會留一點額頭／下巴） */
+function faceBoxToSquareCrop(face: FaceBoxNorm, pad = 1.65) {
+  const side = Math.min(1, Math.max(face.w, face.h) * pad);
+  const cx = face.x + face.w / 2;
+  const cy = face.y + face.h / 2;
+  const x = Math.max(0, Math.min(cx - side / 2, 1 - side));
+  const y = Math.max(0, Math.min(cy - side / 2, 1 - side));
+  const r = (n: number) => (Math.round(n * 1000) / 1000).toFixed(3);
+  return { x: r(x), y: r(y), side: r(side) };
+}
+
+/**
+ * 搜尋姓名頭像。
+ * 有 face 時依標記座標緊裁；否則退回 Cloudinary g_face（較鬆）。
+ */
+export const getFaceAvatarUrl = (
+  publicId: string,
+  size = 160,
+  face?: FaceBoxNorm | null
+) => {
+  if (face && face.w > 0 && face.h > 0) {
+    const { x, y, side } = faceBoxToSquareCrop(face);
+    return buildUrl(
+      publicId,
+      `c_crop,w_${side},h_${side},x_${x},y_${y}/f_auto,q_auto:good,w_${size},h_${size},c_fill`
+    );
+  }
+  return buildUrl(
+    publicId,
+    `f_auto,q_auto:good,w_${size},h_${size},c_thumb,g_face,z_0.4`
+  );
+};
 
 const LIGHTBOX_WIDTH_STEPS = [1280, 1600, 1920, 2048, 2560, 2880, 3200, 3840, 4096] as const;
 const LIGHTBOX_DISPLAY_MAX = 3840;
@@ -84,8 +121,27 @@ export const getLightboxUrl = (publicId: string, viewportWidth?: number) =>
 export const getHeroCoverUrl = (publicId: string) =>
   buildUrl(publicId, 'f_auto,q_auto:good,w_1920,c_limit');
 
-/** 原檔下載 — 僅在使用者按下載時使用 */
+/** 原檔下載 — 僅在明確需要最高畫質時使用（流量大） */
 export const getOriginalUrl = (publicId: string) => buildUrl(publicId, '');
+
+/**
+ * 賓客下載用圖檔。
+ * - share：手機／社群分享（預設批次下載，約 0.2–0.5MB）
+ * - print：大圖沖印／桌布（約 0.6–1.5MB）
+ * - original：相機原檔（約 4–8MB，流量與時間成本高）
+ */
+export type PhotoDownloadQuality = 'share' | 'print' | 'original';
+
+export function getDownloadUrl(
+  publicId: string,
+  quality: PhotoDownloadQuality = 'share'
+): string {
+  if (quality === 'original') return getOriginalUrl(publicId);
+  if (quality === 'print') {
+    return buildUrl(publicId, 'f_jpg,q_auto:good,w_3840,c_limit');
+  }
+  return buildUrl(publicId, 'f_jpg,q_auto:good,w_2560,c_limit');
+}
 
 /** 響應式 grid srcSet */
 export const getGridSrcSet = (publicId: string) =>

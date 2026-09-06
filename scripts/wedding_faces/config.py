@@ -28,6 +28,7 @@ RESOLVED_STATUSES = frozenset({"not_face", "skipped", "staff", "confirmed"})
 # 二進 #279 @ 13:41、遊戲 #331 @ 13:45 同落 13:40 格 → 遊戲改用首張實際分鐘 13:45
 BANQUET_ARRIVAL_CLOCK = (11, 0)          # #1   @ 11:00 → 11:00
 BANQUET_ENTRANCE_CLOCK = (12, 10)        # #107 @ 12:17 → 12:10
+BANQUET_CEREMONY_CLOCK = (12, 20)        # #157 @ 12:24 → 12:20（交換婚戒起）
 BANQUET_SECOND_ENTRANCE_CLOCK = (13, 40) # #279 @ 13:41 → 13:40
 BANQUET_GAMES_CLOCK = (13, 45)           # #331 @ 13:45（避免與二進同為 13:40）
 BANQUET_TOAST_CLOCK = (14, 10)           # #440 @ 14:17 → 14:10
@@ -44,7 +45,8 @@ COUPLE_PORTRAIT_RANGES: Tuple[Tuple[int, int], ...] = (
 # 照片章節 — 依檔名編號（260530-N 的 N）
 # 1–102（含 14–33 綵排）→ 溫馨開場
 # 103–106、240–278、519–525、624–640 → 新人形象照
-# 107–239 → 新人進場
+# 107–156 → 璀璨進場（愛之雨與誓言；至交換婚戒前）
+# 157–239 → 儀式時刻（婚戒／父母／舉杯）
 # 279–330 → 二進驚喜
 # 331–439 → 互動遊戲
 # 440–518 → 逐桌敬酒
@@ -62,13 +64,23 @@ PHOTO_STAGES = [
     },
     {
         "id": "grand_entrance",
-        "label": "新人進場",
+        "label": "璀璨進場",
         "description": "男女主角璀璨進場｜愛之雨星光燈海 💖",
         "clockStart": BANQUET_ENTRANCE_CLOCK,
-        "clockEnd": (12, 50),  # #239 @ 12:42
+        "clockEnd": (12, 24),  # #156 @ 12:24
         "filmStartSec": 4 * 60 + 37,
-        "filmEndSec": 17 * 60 + 31,
+        "filmEndSec": 9 * 60 + 33,
         "accent": "#e6c07a",
+    },
+    {
+        "id": "ceremony_vows",
+        "label": "儀式時刻",
+        "description": "交換婚戒、感恩父母與舉杯 💍",
+        "clockStart": BANQUET_CEREMONY_CLOCK,
+        "clockEnd": (12, 50),  # #239 @ 12:42
+        "filmStartSec": 9 * 60 + 33,
+        "filmEndSec": 17 * 60 + 31,
+        "accent": "#c97b84",
     },
     {
         "id": "second_entrance",
@@ -132,7 +144,8 @@ STAGE_DESCRIPTIONS = {s["id"]: s["description"] for s in PHOTO_STAGES}
 
 STAGE_TAGS = {
     "opening_mermaid": ["開場", "綵排"],
-    "grand_entrance": ["進場", "一進"],
+    "grand_entrance": ["進場", "一進", "愛之雨"],
+    "ceremony_vows": ["儀式", "婚戒", "舉杯"],
     "second_entrance": ["二進"],
     "interactive_games": ["互動遊戲", "猜禮服", "賓果", "快問快答"],
     "table_toast": ["敬酒", "逐桌敬酒"],
@@ -158,8 +171,10 @@ def assign_stage_from_sort_index(sort_index: int, min_index: int = 0, max_index:
         return "couple_portraits"
     if n <= 102:
         return "opening_mermaid"  # 含 #14–33 進場綵排
-    if _in_range(n, 107, 239):
+    if _in_range(n, 107, 156):
         return "grand_entrance"
+    if _in_range(n, 157, 239):
+        return "ceremony_vows"
     if _in_range(n, 279, 330):
         return "second_entrance"
     if _in_range(n, 331, 439):

@@ -1,43 +1,70 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { WeddingPhoto } from '../types';
 import {
+  buildBulkDownloadConfirmMessage,
   downloadPhotosAsZip,
   sanitizeDownloadName,
   shouldConfirmBulkDownload,
   type DownloadProgress,
+  type PhotoDownloadQuality,
 } from '../utils/photoDownload';
 
 export function usePhotoBulkDownload() {
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const downloadAll = useCallback(async (photos: WeddingPhoto[], label: string) => {
-    if (downloading || photos.length === 0) return;
+  const downloadAll = useCallback(
+    async (
+      photos: WeddingPhoto[],
+      label: string,
+      quality: PhotoDownloadQuality = 'share'
+    ) => {
+      if (downloading || photos.length === 0) return;
 
-    if (shouldConfirmBulkDownload(photos.length)) {
-      const ok = window.confirm(
-        `即將打包下載 ${photos.length} 張原檔照片，檔案可能較大且需要一些時間，確定繼續嗎？`
-      );
-      if (!ok) return;
-    }
+      if (shouldConfirmBulkDownload(photos.length)) {
+        const ok = window.confirm(buildBulkDownloadConfirmMessage(photos.length, quality));
+        if (!ok) return;
+      }
 
-    setDownloading(true);
-    setError(null);
-    setProgress({ done: 0, total: photos.length });
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    try {
-      await downloadPhotosAsZip(photos, sanitizeDownloadName(label), setProgress);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '下載失敗，請稍後再試';
-      setError(message);
-    } finally {
-      setDownloading(false);
-      setProgress(null);
-    }
-  }, [downloading]);
+      setDownloading(true);
+      setError(null);
+      setProgress({ done: 0, total: photos.length, phase: 'fetch' });
+
+      try {
+        await downloadPhotosAsZip(photos, sanitizeDownloadName(label), {
+          quality,
+          signal: controller.signal,
+          onProgress: setProgress,
+        });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setError('下載已取消');
+        } else {
+          const message = err instanceof Error ? err.message : '下載失敗，請稍後再試';
+          setError(
+            `${message}。若張數很多，可再縮小搜尋範圍後重試；網路不穩時稍候再下載。`
+          );
+        }
+      } finally {
+        setDownloading(false);
+        setProgress(null);
+        if (abortRef.current === controller) abortRef.current = null;
+      }
+    },
+    [downloading]
+  );
+
+  const cancelDownload = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { downloading, progress, error, downloadAll, clearError };
+  return { downloading, progress, error, downloadAll, cancelDownload, clearError };
 }

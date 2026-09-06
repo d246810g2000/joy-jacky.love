@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import type { WeddingPhoto } from '../../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { PhotoFilter, WeddingPhoto } from '../../types';
 import {
   getBlurUrl,
   getGridSrcSet,
@@ -7,6 +7,11 @@ import {
   getResponsiveGridWidth,
   GRID_SIZES,
 } from '../../utils/photoUrls';
+import {
+  getPrioritizedPhotoMeta,
+  photoNameMatchScore,
+  photoTableMatchScore,
+} from '../../utils/photoMetaDisplay';
 import { formatTableTag, formatTableTagShort } from '../../utils/tableLabels';
 
 interface PhotoCardProps {
@@ -17,6 +22,8 @@ interface PhotoCardProps {
   dark?: boolean;
   /** 手機精簡：限制 chip 數、桌次縮寫；桌機顯示完整標籤 */
   compact?: boolean;
+  /** 目前篩選：命中標籤會排到最前 */
+  filter?: PhotoFilter | null;
 }
 
 const COMPACT_MAX_NAME_CHIPS = 2;
@@ -39,6 +46,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   onNameClick,
   dark = false,
   compact = false,
+  filter = null,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [gridWidth, setGridWidth] = useState(800);
@@ -53,21 +61,26 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 
   useEffect(() => {
     setExpandedRow(null);
-  }, [photo.id, compact]);
+  }, [photo.id, compact, filter?.name, filter?.tag, filter?.table, filter?.query]);
 
   const gridUrl = getGridUrl(photo.publicId, gridWidth);
   const blurUrl = getBlurUrl(photo.publicId);
   const srcSet = getGridSrcSet(photo.publicId);
 
+  const { names: orderedNames, tables: orderedTables } = useMemo(
+    () => getPrioritizedPhotoMeta(photo, filter),
+    [photo, filter]
+  );
+
   const nameLimit = compact ? COMPACT_MAX_NAME_CHIPS : null;
   const tableLimit = compact ? COMPACT_MAX_TABLE_CHIPS : null;
 
   const { visible: visibleNames, hidden: hiddenNames, hiddenItems: hiddenNameItems } = chipLabel(
-    photo.names,
+    orderedNames,
     nameLimit
   );
   const { visible: visibleTables, hiddenItems: hiddenTableNumbers } = chipLabel(
-    photo.tables,
+    orderedTables,
     tableLimit
   );
 
@@ -84,13 +97,31 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     setExpandedRow((current) => (current === row ? null : row));
   };
 
-  const nameChipClass = dark
-    ? 'rounded-full border border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/12 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-light)] hover:bg-[var(--photo-accent)]/22'
-    : 'rounded-full border border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--photo-gold-dark)] hover:bg-[var(--photo-accent)]/20';
+  const nameChipClass = (matched: boolean) =>
+    dark
+      ? `rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+          matched
+            ? 'border-[var(--photo-accent)]/55 bg-[var(--photo-accent)]/22 text-[var(--photo-gold-light)]'
+            : 'border-[var(--photo-accent)]/35 bg-[var(--photo-accent)]/12 text-[var(--photo-gold-light)] hover:bg-[var(--photo-accent)]/22'
+        }`
+      : `rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+          matched
+            ? 'border-[var(--photo-accent)]/50 bg-[var(--photo-accent)]/18 text-[var(--photo-gold-dark)]'
+            : 'border-[var(--photo-accent)]/30 bg-[var(--photo-accent)]/10 text-[var(--photo-gold-dark)] hover:bg-[var(--photo-accent)]/20'
+        }`;
 
-  const tagChipClass = dark
-    ? 'rounded-full border border-white/12 bg-white/6 px-2 py-0.5 text-[10px] text-white/72 hover:bg-white/10'
-    : 'rounded-full border border-[#E8E1D5] bg-[#FDFBF7] px-2 py-0.5 text-[10px] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40';
+  const tagChipClass = (matched: boolean) =>
+    dark
+      ? `rounded-full border px-2 py-0.5 text-[10px] ${
+          matched
+            ? 'border-white/25 bg-white/12 text-white/88'
+            : 'border-white/12 bg-white/6 text-white/72 hover:bg-white/10'
+        }`
+      : `rounded-full border px-2 py-0.5 text-[10px] ${
+          matched
+            ? 'border-[var(--photo-accent)]/40 bg-[#E8E1D5]/70 text-[var(--photo-accent)]'
+            : 'border-[#E8E1D5] bg-[#FDFBF7] text-[var(--photo-accent)] hover:bg-[#E8E1D5]/40'
+        }`;
 
   const moreChipClass = dark
     ? 'shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-white/55 transition active:scale-95 active:bg-white/10 hover:bg-white/10'
@@ -100,7 +131,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
     ? 'flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden'
     : 'flex min-w-0 flex-wrap items-center gap-1.5';
 
-  const hasMeta = photo.names.length > 0 || photo.tables.length > 0;
+  const hasMeta = orderedNames.length > 0 || orderedTables.length > 0;
   const namesExpanded = !compact || expandedRow === 'names';
   const tablesExpanded = !compact || expandedRow === 'tables';
 
@@ -117,7 +148,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
         type="button"
         onClick={() => onClick(photo)}
         className="group relative block w-full touch-manipulation text-left outline-none transition-transform active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-[var(--photo-gold-light)] focus-visible:ring-inset"
-        aria-label={`查看照片${photo.names.length ? `：${photo.names.join('、')}` : ''}`}
+        aria-label={`查看照片${orderedNames.length ? `：${orderedNames.join('、')}` : ''}`}
       >
         <div
           className={`photo-card-media relative overflow-hidden ${dark ? 'bg-black/30' : 'bg-[#F5F0E8]'} ${
@@ -129,7 +160,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
             src={loaded ? gridUrl : blurUrl}
             srcSet={loaded ? srcSet : undefined}
             sizes={loaded ? GRID_SIZES : undefined}
-            alt={photo.caption || photo.names.join('、') || '婚禮照片'}
+            alt={photo.caption || orderedNames.join('、') || '婚禮照片'}
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}
@@ -146,7 +177,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
 
       {hasMeta && (
         <div className={`space-y-1 px-2.5 py-2 ${compact ? '' : 'md:space-y-1.5 md:px-3'}`}>
-          {photo.names.length > 0 && (
+          {orderedNames.length > 0 && (
             <div className={namesExpanded ? 'flex min-w-0 flex-wrap items-center gap-1.5' : chipRowClass}>
               {visibleNames.map((name) => (
                 <button
@@ -156,7 +187,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onNameClick?.(name);
                   }}
-                  className={`${nameChipClass} ${compact ? 'max-w-[46%] truncate' : 'max-w-full'}`}
+                  className={`${nameChipClass(photoNameMatchScore(name, filter) > 0)} ${compact ? 'max-w-[46%] truncate' : 'max-w-full'}`}
                 >
                   {name}
                 </button>
@@ -171,7 +202,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                       onNameClick?.(name);
                       setExpandedRow(null);
                     }}
-                    className={`${nameChipClass} max-w-full truncate`}
+                    className={`${nameChipClass(photoNameMatchScore(name, filter) > 0)} max-w-full truncate`}
                   >
                     {name}
                   </button>
@@ -197,7 +228,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
             </div>
           )}
 
-          {photo.tables.length > 0 && (
+          {orderedTables.length > 0 && (
             <div className={tablesExpanded ? 'flex min-w-0 flex-wrap items-center gap-1.5' : chipRowClass}>
               {visibleTables.map((table) => (
                 <button
@@ -207,7 +238,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                     e.stopPropagation();
                     onTagClick?.(formatTableTag(table).replace(/^#/, ''));
                   }}
-                  className={`${tagChipClass} ${compact ? 'shrink-0 tabular-nums' : 'max-w-full text-left'}`}
+                  className={`${tagChipClass(photoTableMatchScore(table, filter) > 0)} ${compact ? 'shrink-0 tabular-nums' : 'max-w-full text-left'}`}
                   title={formatTableTag(table)}
                 >
                   {formatTableChip(table)}
@@ -223,7 +254,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
                       onTagClick?.(item.filterValue);
                       setExpandedRow(null);
                     }}
-                    className={`${tagChipClass} max-w-full truncate`}
+                    className={`${tagChipClass(false)} max-w-full truncate`}
                   >
                     {item.label}
                   </button>

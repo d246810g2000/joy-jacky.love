@@ -27,12 +27,19 @@ export const PHOTO_SEARCH_SIDES = [
   { key: '女方' as const, label: '女方親友', relationTitle: '與新娘的關係' },
 ] as const;
 
+/** 高曝光身分：不進關係 chips，改以姓名搜尋（避免親戚／群組被主家照片淹蓋）。 */
+const HIDDEN_RELATION_CHIPS = new Set(['新人', '父母']);
+
+/** 關係群組瀏覽上限：每人最多貢獻幾張；總量超過再做公平抽樣。 */
+const RELATION_MAX_PER_GUEST = 8;
+const RELATION_SOFT_CAP = 48;
+
 /** 從實際 guest 標籤建立關係選項，保留資料檔中的自訂分類與順序。 */
 function uniqueGuestRelations(guests: GuestRecord[]): string[] {
   const relations = new Map<string, string>();
   for (const guest of guests) {
     const relation = guest.relation.trim();
-    if (!relation) continue;
+    if (!relation || HIDDEN_RELATION_CHIPS.has(relation)) continue;
     const key = relation.toLocaleLowerCase();
     if (!relations.has(key)) relations.set(key, relation);
   }
@@ -80,14 +87,16 @@ export function guestMatchesRelationQuery(guest: GuestRecord, query: string): bo
     return side ? guestSide.includes(side) : false;
   }
 
-  return (
-    guestRelation === relQ ||
-    guestRelation.includes(relQ) ||
-    relQ.includes(guestRelation)
-  );
+  // 精確比對（避免「同事」與「前同事」互相污染）
+  if (guestRelation === relQ) return true;
+
+  // 無側別的泛稱：輸入「同學」可涵蓋高中／大學／碩士同學
+  if (!side && relQ === '同學' && guestRelation.endsWith('同學')) return true;
+
+  return false;
 }
 
-const GROUP_SEARCH_KEYWORDS = ['同學', '同事', '親戚', '朋友', '教授'];
+const GROUP_SEARCH_KEYWORDS = ['同學', '同事', '親戚', '朋友'];
 
 export function isRelationOrSideQuery(query: string): boolean {
   const { side, relation } = parseSideRelationQuery(query);
@@ -107,6 +116,111 @@ export function isRelationOrSideQuery(query: string): boolean {
   if (GROUP_SEARCH_KEYWORDS.some((keyword) => relQ.includes(keyword))) return true;
 
   return hits.length >= 2;
+}
+
+/** 關係標籤：優先命中該關係賓客本人／眷屬；同桌僅在該側過半同關係時才擴充（避免混桌噪音）。 */
+function photoMatchesRelationTag(photo: WeddingPhoto, relationQuery: string): boolean {
+  const guests = GUEST_INDEX.guests.filter((g) => guestMatchesRelationQuery(g, relationQuery));
+  if (guests.length === 0) return false;
+
+  for (const guest of guests) {
+    if (matchesName(photo, guest.name, 'person')) return true;
+  }
+
+  const { side } = parseSideRelationQuery(relationQuery);
+  const tables = new Set(
+    guests.map((g) => g.table).filter((t): t is number => t != null)
+  );
+
+  for (const table of tables) {
+    if (!photo.tables.includes(table)) continue;
+    const seatmates = GUEST_INDEX.guests.filter(
+      (g) =>
+        g.table === table &&
+        Boolean(g.relation.trim()) &&
+        (g.side.includes('男方') || g.side.includes('女方')) &&
+        (!side || g.side.includes(side))
+    );
+    if (seatmates.length === 0) continue;
+    const matchCount = seatmates.filter((g) =>
+      guestMatchesRelationQuery(g, relationQuery)
+    ).length;
+    if (matchCount < 2 || matchCount < Math.ceil(seatmates.length * 0.6)) continue;
+
+    // 同桌擴充只收「尚未標人名」的桌照；已有人名卻無此關係賓客者視為混桌噪音
+    if (photo.names.length === 0) return true;
+  }
+
+  return false;
+}
+
+function relationGuestsInPhoto(photo: WeddingPhoto, guests: GuestRecord[]): GuestRecord[] {
+  return guests.filter((guest) => matchesName(photo, guest.name, 'person'));
+}
+
+/**
+ * 關係搜尋結果預算：每人有上限，避免少數高曝光賓客佔滿；
+ * 仍超標時以 round-robin 公平保留各成員代表作。
+ */
+function applyRelationPhotoBudget(
+  photos: WeddingPhoto[],
+  guests: GuestRecord[]
+): WeddingPhoto[] {
+  if (photos.length <= RELATION_SOFT_CAP || guests.length === 0) return photos;
+
+  let pool = photos;
+  for (let cap = RELATION_MAX_PER_GUEST; cap >= 3; cap -= 1) {
+    const counts = new Map<string, number>();
+    const next: WeddingPhoto[] = [];
+    for (const photo of pool) {
+      const hits = relationGuestsInPhoto(photo, guests);
+      if (hits.length === 0) {
+        // 無人名的同桌擴充照：名額緊時優先丟掉
+        if (cap >= RELATION_MAX_PER_GUEST && next.length < RELATION_SOFT_CAP) {
+          next.push(photo);
+        }
+        continue;
+      }
+      const underCap = hits.some((g) => (counts.get(g.name) ?? 0) < cap);
+      const multiMember = hits.length >= 2;
+      if (!underCap && !multiMember) continue;
+      next.push(photo);
+      for (const guest of hits) {
+        counts.set(guest.name, (counts.get(guest.name) ?? 0) + 1);
+      }
+    }
+    pool = next;
+    if (pool.length <= RELATION_SOFT_CAP) return pool;
+  }
+
+  // Round-robin：每位關係賓客輪流取一張尚未入選的照片
+  const queues = new Map<string, WeddingPhoto[]>();
+  for (const guest of guests) {
+    queues.set(
+      guest.name,
+      pool.filter((photo) => matchesName(photo, guest.name, 'person'))
+    );
+  }
+
+  const picked = new Set<string>();
+  const out: WeddingPhoto[] = [];
+  let progress = true;
+  while (out.length < RELATION_SOFT_CAP && progress) {
+    progress = false;
+    for (const queue of queues.values()) {
+      while (queue.length > 0 && picked.has(queue[0].id)) queue.shift();
+      if (queue.length === 0) continue;
+      const photo = queue.shift()!;
+      picked.add(photo.id);
+      out.push(photo);
+      progress = true;
+      if (out.length >= RELATION_SOFT_CAP) break;
+    }
+  }
+
+  // 維持時間序
+  const order = new Map(photos.map((photo, index) => [photo.id, index]));
+  return out.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }
 
 /** 將搜尋框文字轉成篩選條件（桌號 / 關係標籤 / 姓名 / 一般關鍵字） */
@@ -257,7 +371,18 @@ export function filterPhotos(stages: WeddingStage[], filter: PhotoFilter): Weddi
   const all = stages.flatMap((s) => s.photos);
   if (isFilterEmpty(filter)) return all;
 
-  return all.filter((photo) => matchesFilter(photo, filter));
+  let result = all.filter((photo) => matchesFilter(photo, filter));
+
+  // 關係／親友別群組：限制結果量，避免少數高曝光人把整個群組撐爆
+  if (filter.tag) {
+    const rel = parseRelationFromTag(filter.tag);
+    if (rel && isRelationOrSideQuery(rel)) {
+      const guests = GUEST_INDEX.guests.filter((g) => guestMatchesRelationQuery(g, rel));
+      result = applyRelationPhotoBudget(result, guests);
+    }
+  }
+
+  return result;
 }
 
 export function isFilterEmpty(filter: PhotoFilter): boolean {
@@ -289,13 +414,7 @@ function matchesFilter(photo: WeddingPhoto, filter: PhotoFilter): boolean {
       const tagNorm = (filter.tag.startsWith('#') ? filter.tag.slice(1) : filter.tag).toLowerCase();
       const tagHit =
         photo.tags.some((t) => t.toLowerCase().includes(tagNorm)) ||
-        (rel &&
-          GUEST_INDEX.guests.some(
-            (g) =>
-              g.table != null &&
-              photo.tables.includes(g.table) &&
-              guestMatchesRelationQuery(g, rel)
-          ));
+        (rel != null && photoMatchesRelationTag(photo, rel));
       if (!tagHit) return false;
     }
   }

@@ -6,7 +6,7 @@ import {
   POPULAR_TAGS,
 } from '../../utils/photoFilters';
 import { listTableOptions } from '../../utils/tableLabels';
-import { getFaceAvatarUrl } from '../../utils/photoUrls';
+import { getFaceAvatarUrl, type FaceBoxNorm } from '../../utils/photoUrls';
 
 interface SearchFilterSectionProps<T> {
   title: string;
@@ -60,7 +60,10 @@ function SearchFilterSection<T>({
 
 interface PhotoSearchFilterSectionsProps {
   featuredGuests: GuestRecord[];
-  featuredGuestPhotos?: Record<string, string | undefined>;
+  featuredGuestPhotos?: Record<
+    string,
+    { publicId: string; face: FaceBoxNorm } | undefined
+  >;
   recent: string[];
   onSubmit: (query: string) => void;
   onSubmitTag: (tag: string) => void;
@@ -110,32 +113,36 @@ export const PhotoSearchFilterSections: React.FC<PhotoSearchFilterSectionsProps>
         />
       )}
 
-      <section className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5">
-        <h2 className="mb-2 text-sm font-medium text-white/90">搜尋姓名</h2>
-        <div className="flex gap-3">
+      <section className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-3">
+        <h2 className="mb-3 text-sm font-medium text-white/90">搜尋姓名</h2>
+        <div className="flex justify-around gap-4 px-2">
           {featuredGuests.map((guest) => (
             <button
               key={guest.id}
               type="button"
               onClick={() => onSubmit(guest.name)}
-              className="flex w-14 shrink-0 flex-col items-center gap-1"
+              className="flex min-w-0 flex-1 flex-col items-center gap-2"
             >
               {featuredGuestPhotos?.[guest.name] && !avatarFallbacks[guest.name] ? (
                 <img
-                  src={getFaceAvatarUrl(featuredGuestPhotos[guest.name]!, 160)}
+                  src={getFaceAvatarUrl(
+                    featuredGuestPhotos[guest.name]!.publicId,
+                    320,
+                    featuredGuestPhotos[guest.name]!.face
+                  )}
                   alt={`${guest.name} 的照片`}
-                  className="h-11 w-11 rounded-full border border-white/20 object-cover"
+                  className="h-20 w-20 rounded-full border border-white/20 object-cover shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
                   loading="lazy"
                   onError={() =>
                     setAvatarFallbacks((current) => ({ ...current, [guest.name]: true }))
                   }
                 />
               ) : (
-                <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-sm text-white">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-[#d5b37a] to-[#604a32] text-2xl text-white">
                   {guest.name.slice(0, 1)}
                 </span>
               )}
-              <span className="w-full truncate text-center text-[10px] text-white/70">
+              <span className="w-full truncate text-center text-sm text-white/80">
                 {guest.name}
               </span>
             </button>
