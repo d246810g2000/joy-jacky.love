@@ -181,9 +181,45 @@
 
       .photo-ambient-glow {
         background:
-          radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, var(--stage-glow) 12%, transparent), transparent 70%),
-          radial-gradient(ellipse 60% 40% at 80% 100%, color-mix(in srgb, var(--stage-glow) 8%, transparent), transparent);
+          radial-gradient(ellipse 90% 55% at 50% -5%, color-mix(in srgb, var(--stage-glow) 16%, transparent), transparent 72%),
+          radial-gradient(ellipse 70% 45% at 12% 85%, color-mix(in srgb, var(--stage-glow) 10%, transparent), transparent 68%),
+          radial-gradient(ellipse 65% 42% at 88% 72%, color-mix(in srgb, var(--stage-glow) 9%, transparent), transparent 70%);
         transition: background 1.2s ease;
+      }
+
+      /* 桌機瀏覽區：第二層緩慢漂移光暈（無 WebGL） */
+      .photo-ambient-drift {
+        opacity: 0.9;
+        background:
+          radial-gradient(ellipse 48% 38% at 20% 55%, color-mix(in srgb, var(--stage-glow) 11%, transparent), transparent 62%),
+          radial-gradient(ellipse 52% 40% at 78% 30%, color-mix(in srgb, var(--stage-glow) 8%, transparent), transparent 68%);
+        transition: background 1.4s ease, opacity 1s ease;
+        animation: photo-ambient-drift 20s ease-in-out infinite alternate;
+      }
+      @keyframes photo-ambient-drift {
+        from { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
+        to { transform: translate3d(0, -1.2%, 0) scale(1.015); opacity: 0.95; }
+      }
+
+      .photo-ambient-grain-browse {
+        opacity: 0.045;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+        animation: photo-ambient-grain 12s steps(6) infinite;
+      }
+      @keyframes photo-ambient-grain {
+        0%, 100% { opacity: 0.035; }
+        50% { opacity: 0.055; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .photo-ambient-drift,
+        .photo-ambient-grain-browse { animation: none; }
+      }
+
+      @media (max-width: 767px) {
+        .photo-ambient-drift,
+        .photo-ambient-grain-browse { display: none; }
       }
 
       .photo-timeline-nav {
@@ -298,8 +334,70 @@
         position: absolute;
         inset: 0;
         box-shadow: inset 0 0 40px 8px rgba(0,0,0,0.35);
-        background: radial-gradient(ellipse at center, transparent 55%, rgba(20,12,8,0.25) 100%);
+        background: radial-gradient(ellipse at center, transparent 50%, rgba(20,12,8,0.32) 100%);
         pointer-events: none;
+        transition: opacity 0.35s ease;
+      }
+
+      .photo-stage-section {
+        --card-accent: var(--stage-glow, #B08D55);
+      }
+
+      @media (min-width: 768px) {
+        .photo-card--dark {
+          transition:
+            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 0.35s ease,
+            box-shadow 0.35s ease;
+        }
+        .photo-card--dark:hover {
+          transform: translateY(-4px);
+          border-color: color-mix(in srgb, var(--card-accent) 45%, transparent);
+          box-shadow:
+            0 14px 36px -10px color-mix(in srgb, var(--card-accent) 28%, transparent),
+            0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+        .photo-card--dark .photo-card-media img {
+          transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .photo-card--dark:hover .photo-card-media img {
+          transform: scale(1.03);
+        }
+        .photo-card--dark:hover .photo-card-vignette {
+          opacity: 0.92;
+        }
+        .photo-card--dark:hover .photo-time-badge {
+          border-color: color-mix(in srgb, var(--card-accent) 55%, transparent);
+          background: rgba(0, 0, 0, 0.68);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .photo-card--dark:hover {
+          transform: none;
+        }
+        .photo-card--dark:hover .photo-card-media img {
+          transform: none;
+        }
+      }
+
+      .photo-stage-cta {
+        border-color: color-mix(in srgb, var(--card-accent) 38%, transparent);
+        background: color-mix(in srgb, var(--card-accent) 12%, transparent);
+        color: var(--photo-gold-light);
+        transition:
+          transform 0.2s ease,
+          background 0.25s ease,
+          border-color 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+      .photo-stage-cta:hover {
+        border-color: color-mix(in srgb, var(--card-accent) 55%, transparent);
+        background: color-mix(in srgb, var(--card-accent) 20%, transparent);
+        box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--card-accent) 35%, transparent);
+      }
+      .photo-stage-cta:active {
+        transform: scale(0.99);
       }
 
       .photo-time-badge {
@@ -332,10 +430,24 @@
         max-height: min(52dvh, 320px);
         overflow: hidden;
       }
+
+      .photo-chapter-rail--desktop {
+        max-height: min(68vh, 520px);
+      }
+
+      .photo-browse-chrome {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(
+          180deg,
+          rgba(12, 11, 10, 0.96) 0%,
+          rgba(12, 11, 10, 0.88) 100%
+        );
+        backdrop-filter: blur(12px);
+      }
     </style>
-  <script type="module" crossorigin src="/joy-jacky.love/assets/index-C1UBU7DR.js"></script>
+  <script type="module" crossorigin src="/joy-jacky.love/assets/index-_cCgayet.js"></script>
   <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-framer-Cc4KS4wO.js">
-  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-0OLr2min.js">
+  <link rel="modulepreload" crossorigin href="/joy-jacky.love/assets/vendor-three-DUGtFLSZ.js">
 </head>
   <body>
     <!-- Persistent Gradient Background -->
